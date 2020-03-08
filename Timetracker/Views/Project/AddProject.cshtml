@@ -1,0 +1,18 @@
+﻿@model Timetracker.Entities.Models.Project
+
+
+
+@Html.HiddenFor(x => x.Id)
+
+@using (Html.BeginForm("AddProject", "Home", FormMethod.Post))
+{
+
+    @Html.EditorForModel()
+    <input type="submit" value="Отправить">
+}
+
+@section scripts{
+
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

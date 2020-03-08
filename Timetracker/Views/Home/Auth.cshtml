@@ -1,0 +1,14 @@
+﻿@model Timetracker.Entities.Models.User
+
+@Html.HiddenFor(x => x.Id)
+@using (Html.BeginForm("Auth", "Home", FormMethod.Post))
+{
+
+    @Html.EditorForModel()
+    <input type="submit" value="Войти">
+}
+
+@section scripts{
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}
