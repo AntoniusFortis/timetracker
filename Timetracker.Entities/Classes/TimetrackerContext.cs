@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Threading.Tasks;
 using Timetracker.Entities.Models;
 
 namespace Timetracker.Entities.Classes
@@ -11,8 +13,25 @@ namespace Timetracker.Entities.Classes
         public DbSet<Project> Projects { get; set; }
         public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
 
-        public TimetrackerContext(DbContextOptions options) : base(options)
+        private readonly IMemoryCache _cache;
+
+        public TimetrackerContext(DbContextOptions options, IMemoryCache cache) : base(options)
         {
+            _cache = cache;
+        }
+        
+        public async Task<User> GetUser(string name)
+        {
+            if (!_cache.TryGetValue(name, out User user))
+            {
+                user = await Users.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name);
+                if (user != null)
+                {
+                    _cache.Set(user.Name, user, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(30)));
+                }
+            }
+
+            return user;
         }
 
         public override void Dispose()
