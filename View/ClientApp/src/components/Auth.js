@@ -93,18 +93,17 @@ export class Registration extends Component {
             return;
         }
 
-        const data = new FormData();
-        data.append("Name", userName);
-        data.append("Password", userPassword);
-
-        var xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-            if (xhr.status === 200)
-                window.location.href = "/"
-        }.bind(this);
-        xhr.open("post", "Auth/Registration", false);
-
-        xhr.send(data);
+        fetch('Auth/Registration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify({ Name: userName })
+        })
+            .then(x => {
+                if (x.status === 200)
+                    window.location.href = "/"
+            });
     }
 
     render() {

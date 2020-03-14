@@ -27,7 +27,7 @@ namespace Timetracker.Entities.Classes
                 user = await Users.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name);
                 if (user != null)
                 {
-                    _cache.Set(user.Name, user, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(30)));
+                    _cache.Set(user.Name, user, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1)));
                 }
             }
 

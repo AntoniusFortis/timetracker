@@ -1,9 +1,8 @@
 ﻿using System.Linq;
-using System.Runtime.Serialization.Json;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
 
@@ -33,9 +32,11 @@ namespace View.Controllers
 
             var user = await _dbContext.GetUser(userName);
 
+            var projectsView = new ProjectsView();
+
             if (user == null)
             {
-                return View();
+                return new JsonResult(projectsView) { StatusCode = (int)HttpStatusCode.Forbidden };
             }
 
             var userProjects = _dbContext.AuthorizedUsers.AsNoTracking().Where(x => x.UserId == user.Id);
@@ -52,15 +53,13 @@ namespace View.Controllers
                 .Select(x => x.Project)
                 .ToArrayAsync();
 
-            var projectsView = new ProjectsView
+            projectsView = new ProjectsView
             {
                 SignedProjects = projects,
                 NotSignedProjects = notSignedProjects
             };
 
-            var json = Json(projectsView);
-
-            return new OkObjectResult(json);
+            return new JsonResult(projectsView);
         }
 
         [HttpPost("[controller]/AddProject")]

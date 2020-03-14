@@ -1,4 +1,6 @@
 ﻿import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
+import { NavLink } from 'reactstrap';
 
 export class Projects extends Component {
     constructor(props) {
@@ -10,7 +12,7 @@ export class Projects extends Component {
         this.getProjectsData();
     }
 
-    static renderForecastsTable(forecasts) {
+    static renderForecastsTable(projects) {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
@@ -21,12 +23,13 @@ export class Projects extends Component {
                 </thead>
                 <tbody>
                     {
-                        forecasts.value.signedProjects.map(forecast => {
-                            console.log(forecast);
-                            return (<tr key={forecast.id} >
-                                <td>{forecast.title}</td>
+                        projects.map(forecast => {
+                            return <tr key={forecast.id}>
+                                <td>
+                                    <NavLink tag={Link} className="text-dark" to="/projects">{forecast.title}</NavLink>
+                                </td>
                                 <td>{forecast.description}</td>
-                            </tr>);
+                            </tr>;
                         })
                     }
                 </tbody>
@@ -34,52 +37,31 @@ export class Projects extends Component {
         );
     }
 
-    static renderForecastsTable2(forecasts) {
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        forecasts.value.notSignedProjects.map(forecast => {
-                            console.log(forecast);
-                            return (<tr key={forecast.id} >
-                                <td>{forecast.title}</td>
-                                <td>{forecast.description}</td>
-                            </tr>);
-                        })
-                    }
-                </tbody>
-            </table>
-        );
-    }
 
     render() {
-        let contents = this.state.loading
+        let signedProjects = this.state.loading
             ? <p><em>Loading...</em></p>
-            : Projects.renderForecastsTable(this.state.projectView);
-        let contents2 = this.state.loading
+            : Projects.renderForecastsTable(this.state.projectView.signedProjects);
+        let notSignedProjects = this.state.loading
             ? <p><em>Loading...</em></p>
-            : Projects.renderForecastsTable2(this.state.projectView);
+            : Projects.renderForecastsTable(this.state.projectView.notSignedProjects);
 
         return (
             <div>
-                <h1 id="tabelLabel" >My projects</h1>
+                <h1 id="tabelLabel">My projects</h1>
                 <p>Projects</p>
-                {contents}
+                {signedProjects}
                 <p>You was invited to Projects</p>
-                {contents2}
+                {notSignedProjects}
             </div>
         );
     }
 
     async getProjectsData() {
-        const response = await fetch('Project');
-        const data = await response.json();
-        this.setState({ projectView: data, loading: false });
+        fetch('Project')
+            .then(x => x.json())
+            .then(x => {
+                this.setState({ projectView: x, loading: false });
+            });
     }
 }

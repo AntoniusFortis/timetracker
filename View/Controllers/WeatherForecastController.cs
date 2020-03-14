@@ -62,11 +62,9 @@ namespace View.Controllers
         }
 
         [HttpPost("[controller]/Registration")]
-        public async Task<IActionResult> Registration([FromForm] User user)
+        public async Task<IActionResult> Registration([FromBody] User user)
         {
-            var users = _dbContext.Users.AsNoTracking();
-
-            var userExists = await users.AnyAsync(x => x.Name == user.Name);
+            var userExists = (await _dbContext.GetUser(user.Name)) != null;
 
             if (userExists)
             {
@@ -86,36 +84,5 @@ namespace View.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok();
         }
-    }
-
-    [ApiController]
-    public class WeatherForecastController : ControllerBase
-    {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
-
-        [HttpGet]
-        [Route("[controller]")]
-        public IEnumerable<WeatherForecast> Get()
-        {
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
-            })
-            .ToArray();
-        }
- 
-
-
-
-
-
-
     }
 }
