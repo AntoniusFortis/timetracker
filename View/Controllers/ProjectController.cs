@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
+using System.Runtime.Serialization.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
 
@@ -18,19 +17,17 @@ namespace View.Controllers
 
     }
     [ApiController]
-    [Route("[controller]/[action]")]
     public class ProjectController : Controller
     {
         private readonly TimetrackerContext _dbContext;
-        private readonly IMemoryCache _cache;
 
-        public ProjectController(TimetrackerContext authorizedUsersRepository, IMemoryCache cache)
+        public ProjectController(TimetrackerContext authorizedUsersRepository)
         {
             _dbContext = authorizedUsersRepository;
-            _cache = cache;
         }
 
-        public async Task<IActionResult> Projects()
+        [HttpGet("[controller]")]
+        public async Task<IActionResult> Get()
         {
             var userName = HttpContext.User.Identity.Name;
 
@@ -60,18 +57,14 @@ namespace View.Controllers
                 SignedProjects = projects,
                 NotSignedProjects = notSignedProjects
             };
-            
-            return new OkObjectResult(Json(projectsView));
+
+            var json = Json(projectsView);
+
+            return new OkObjectResult(json);
         }
 
-        [HttpGet]
-        public IActionResult AddProject()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> AddProject(Project project)
+        [HttpPost("[controller]/AddProject")]
+        public async Task<IActionResult> AddProject([FromForm] Project project, [FromBody] string[] users)
         {
             var userName = HttpContext.User.Identity.Name;
             var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Name == userName);
@@ -87,8 +80,7 @@ namespace View.Controllers
 
             await _dbContext.SaveChangesAsync();
 
-            return RedirectToAction("Projects");
+            return Ok();
         }
-
     }
 }

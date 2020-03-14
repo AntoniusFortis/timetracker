@@ -12,39 +12,17 @@ using Timetracker.Entities.Models;
 
 namespace View.Controllers
 {
-
     [ApiController]
-    public class WeatherForecastController : ControllerBase
+    public class AuthController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
         private readonly TimetrackerContext _dbContext;
 
-        public WeatherForecastController(TimetrackerContext dbContext)
+        public AuthController(TimetrackerContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        [HttpGet]
-        [Route("[controller]")]
-        public IEnumerable<WeatherForecast> Get()
-        {
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
-            })
-            .ToArray();
-        }
- 
-
-        [HttpPost]
-        [Route("[controller]/Auth")]
+        [HttpPost("[controller]/Auth")]
         public async Task<IActionResult> Auth([FromForm] User user)
         {
             var users = _dbContext.Users.AsNoTracking();
@@ -59,23 +37,32 @@ namespace View.Controllers
 
             return Ok();
         }
-        [Route("[controller]/IsAuth")]
+
+        private async Task Authenticate(string userName)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
+            };
+
+            var id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+        }
+
+        [HttpGet("[controller]/IsAuth")]
         public IActionResult IsAuth()
         {
             if (HttpContext.User.Identity.IsAuthenticated)
             {
                 return Ok();
             }
-            else
-            {
-                return StatusCode(500);
 
-            }
+            return StatusCode(500);
         }
 
-        [Route("[controller]/Registration")]
-        [HttpPost]
-        public async Task<IActionResult> Registration(User user)
+        [HttpPost("[controller]/Registration")]
+        public async Task<IActionResult> Registration([FromForm] User user)
         {
             var users = _dbContext.Users.AsNoTracking();
 
@@ -93,23 +80,42 @@ namespace View.Controllers
             return Ok();
         }
 
-        [Route("[controller]/SignOut")]
+        [HttpGet("[controller]/SignOut")]
         public async Task<IActionResult> SignOut()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok();
         }
+    }
 
-        private async Task Authenticate(string userName)
+    [ApiController]
+    public class WeatherForecastController : ControllerBase
+    {
+        private static readonly string[] Summaries = new[]
         {
-            var claims = new List<Claim>
+            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+        };
+
+
+        [HttpGet]
+        [Route("[controller]")]
+        public IEnumerable<WeatherForecast> Get()
+        {
+            var rng = new Random();
+            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
-                new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
-            };
-
-            var id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+                Date = DateTime.Now.AddDays(index),
+                TemperatureC = rng.Next(-20, 55),
+                Summary = Summaries[rng.Next(Summaries.Length)]
+            })
+            .ToArray();
         }
+ 
+
+
+
+
+
+
     }
 }

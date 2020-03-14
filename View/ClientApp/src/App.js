@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
-import { FetchData } from './components/FetchData';
-import { Counter,Auth } from './components/Auth';
+import { Auth, Registration } from './components/Auth';
+import { Projects } from './components/Project';
 
 import './custom.css'
 
@@ -15,6 +15,9 @@ export default class App extends Component {
       <Layout>
             <Route exact path='/' component={Home} />
             <Route path='/auth' component={Auth} />
+            <Route path='/Reg' component={Registration} />
+            <Route path='/projects' component={Projects} />
+
       </Layout>
     );
   }

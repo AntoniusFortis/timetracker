@@ -2,21 +2,22 @@ import React, { Component } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
+import { IsAuth } from './Auth';
 
 export class NavMenu extends Component {
   static displayName = NavMenu.name;
 
-  constructor (props) {
-    super(props);
+    constructor(props) {
+        super(props);
 
-    this.toggleNavbar = this.toggleNavbar.bind(this);
-      this.state = {
-        auth: false,
-      collapsed: true
-    };
-  }
+        this.toggleNavbar = this.toggleNavbar.bind(this);
+        this.state = {
+            auth: false,
+            collapsed: true
+        };
+    }
     componentDidMount() {
-        this.setState({ auth: this.isAuth() });
+        this.setState({ auth: IsAuth() });
     }
 
   toggleNavbar () {
@@ -25,22 +26,9 @@ export class NavMenu extends Component {
     });
   }
 
-    isAuth() {
-        var tt = false;
-        var xhr = new XMLHttpRequest();
-        xhr.open("get", "WeatherForecast/IsAuth", false);
-        xhr.onload = function () {
-            if (xhr.status == 200 || xhr.status == 304) {
-                tt = true;
-            }
-        }.bind(this);
-        xhr.send();
-        return tt;
-    }
-
     Signout() {
         var xhr = new XMLHttpRequest();
-        xhr.open("get", "WeatherForecast/SignOut", false);
+        xhr.open("get", "Auth/SignOut", false);
         xhr.send();
         this.setState({ collapsed: false, auth: false });
     }
@@ -62,6 +50,9 @@ export class NavMenu extends Component {
                                     <NavItem>
                                         <NavLink tag={Link} onClick={x => { this.Signout(); }} className="text-dark" to="/">SignOut</NavLink>
                                     </NavItem>
+                                    <NavItem>
+                                        <NavLink tag={Link} className="text-dark" to="/projects">Projects</NavLink>
+                                    </NavItem>
                                 </ul>
                             </Collapse>
                         </Container>
@@ -81,6 +72,9 @@ export class NavMenu extends Component {
                                 <ul className="navbar-nav flex-grow">
                                     <NavItem>
                                         <NavLink tag={Link} className="text-dark" to="/Auth">Auth</NavLink>
+                                    </NavItem>
+                                    <NavItem>
+                                        <NavLink tag={Link} className="text-dark" to="/Reg">Reg</NavLink>
                                     </NavItem>
                                 </ul>
                             </Collapse>

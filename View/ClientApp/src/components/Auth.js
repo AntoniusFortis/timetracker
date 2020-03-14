@@ -1,5 +1,22 @@
 import React, { Component } from 'react';
 
+export function IsAuth() {
+    var result = false;
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("get", "Auth/IsAuth", false);
+
+    xhr.onload = function () {
+        if (xhr.status == 200)
+            result = true;
+    };
+
+    xhr.send();
+
+    return result;
+}
+
 export class Auth extends Component {
 
     constructor(props) {
@@ -27,12 +44,65 @@ export class Auth extends Component {
 
         var xhr = new XMLHttpRequest();
         xhr.onload = function () {
-            if (xhr.status == 200) {
+            if (xhr.status === 200)
                 window.location.href = "/"
-                //this.props.history.push("/");
-            }
         }.bind(this);
-        xhr.open("post", "/WeatherForecast/Auth", false);
+        xhr.open("post", "Auth/Auth", false);
+        xhr.send(data);
+    }
+
+    render() {
+        return (
+            <form onSubmit={this.onSubmit}>
+                <p>
+                    <input type="text" placeholder="Name" value={this.state.name} onChange={this.onNameChange} />
+                </p>
+                <input type="submit" value="Sign In" />
+            </form>
+        );
+    }
+}
+
+export class Registration extends Component {
+
+    constructor(props) {
+        super(props);
+        this.state = { name: "", password: "" };
+
+        this.onSubmit = this.onSubmit.bind(this);
+        this.onNameChange = this.onNameChange.bind(this);
+    }
+
+    onNameChange(e) {
+        this.setState({ name: e.target.value });
+    }
+
+    onPasswordChange(e) {
+        this.setState({ password: e.target.value });
+    }
+
+    onSubmit(e) {
+        e.preventDefault();
+        var userName = this.state.name.trim();
+        if (!userName) {
+            return;
+        }
+
+        var userPassword = this.state.password.trim();
+        if (!userPassword) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append("Name", userName);
+        data.append("Password", userPassword);
+
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            if (xhr.status === 200)
+                window.location.href = "/"
+        }.bind(this);
+        xhr.open("post", "Auth/Registration", false);
 
         xhr.send(data);
     }
@@ -43,7 +113,10 @@ export class Auth extends Component {
                 <p>
                     <input type="text" placeholder="Name" value={this.state.name} onChange={this.onNameChange} />
                 </p>
-                <input type="submit" value="Save" />
+                <p>
+                    <input type="password" placeholder="Password" value={this.state.password} onChange={x => { this.onPasswordChange(x) }} />
+                </p>
+                <input type="submit" value="Sign Up" />
             </form>
         );
     }
