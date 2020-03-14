@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -23,7 +22,7 @@ namespace View.Controllers
         }
 
         [HttpPost("[controller]/Auth")]
-        public async Task<IActionResult> Auth([FromForm] User user)
+        public async Task<IActionResult> Auth([FromBody] User user)
         {
             var users = _dbContext.Users.AsNoTracking();
 
@@ -58,7 +57,7 @@ namespace View.Controllers
                 return Ok();
             }
 
-            return StatusCode(500);
+            return StatusCode((int)HttpStatusCode.InternalServerError);
         }
 
         [HttpPost("[controller]/Registration")]
@@ -68,8 +67,7 @@ namespace View.Controllers
 
             if (userExists)
             {
-                ModelState.AddModelError("Name", "Пользователь с таким именем уже существует!");
-                return StatusCode(500);
+                return StatusCode((int)HttpStatusCode.InternalServerError);
             }
 
             await _dbContext.AddAsync(user);

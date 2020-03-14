@@ -13,8 +13,8 @@ namespace View.Controllers
         public Project[] SignedProjects { get; set; }
 
         public Project[] NotSignedProjects { get; set; }
-
     }
+
     [ApiController]
     public class ProjectController : Controller
     {
@@ -63,10 +63,11 @@ namespace View.Controllers
         }
 
         [HttpPost("[controller]/AddProject")]
-        public async Task<IActionResult> AddProject([FromForm] Project project, [FromBody] string[] users)
+        public async Task<IActionResult> AddProject([FromBody] Project project)
         {
             var userName = HttpContext.User.Identity.Name;
-            var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Name == userName);
+
+            var user = await _dbContext.GetUser(userName);
 
             await _dbContext.AddAsync(project);
             await _dbContext.AddAsync(new AuthorizedUser

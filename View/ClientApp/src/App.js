@@ -3,7 +3,7 @@ import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
 import { Auth, Registration } from './components/Auth';
-import { Projects } from './components/Project';
+import { Projects, NewProject } from './components/Project';
 
 import './custom.css'
 
@@ -17,7 +17,7 @@ export default class App extends Component {
             <Route path='/auth' component={Auth} />
             <Route path='/Reg' component={Registration} />
             <Route path='/projects' component={Projects} />
-
+            <Route path='/addproject' component={NewProject} />
       </Layout>
     );
   }

@@ -39,16 +39,17 @@ export class Auth extends Component {
         }
         this.setState({ name: "" });
 
-        const data = new FormData();
-        data.append("Name", userName);
-
-        var xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-            if (xhr.status === 200)
-                window.location.href = "/"
-        }.bind(this);
-        xhr.open("post", "Auth/Auth", false);
-        xhr.send(data);
+        fetch('Auth/Auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify({ Name: userName })
+        })
+            .then(x => {
+                if (x.status === 200)
+                    window.location.href = "/"
+            });
     }
 
     render() {
