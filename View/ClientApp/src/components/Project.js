@@ -65,14 +65,37 @@ export class Projects extends Component {
     }
 }
 
-export class NewProject extends Component {
+export class AddProject_User extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { data: props.user };
+        this.onClick = this.onClick.bind(this);
+    }
+
+    onClick(e) {
+        this.props.onRemove(this.state.data);
+    }
+
+    render() {
+        return <div>
+            <p><b>{this.state.data}</b></p>
+            <p><button onClick={this.onClick}>Удалить</button></p>
+        </div>;
+    }
+}
+
+export class AddProject extends Component {
 
     constructor(props) {
         super(props);
-        this.state = { title: "", description: "", users: [] };
+        this.state = { title: "", description: "", users: [], user_input: "" };
 
         this.onSubmit = this.onSubmit.bind(this);
+
         this.onNameChange = this.onTitleChange.bind(this);
+        this.onDescriptionChange = this.onDescriptionChange.bind(this);
+        this.onAddingUser = this.onAddingUser.bind(this);
+        this.onRemoveUser = this.onRemoveUser.bind(this);
     }
 
     onTitleChange(e) {
@@ -81,6 +104,10 @@ export class NewProject extends Component {
 
     onDescriptionChange(e) {
         this.setState({ description: e.target.value });
+    }
+
+    onUserInputChange(e) {
+        this.setState({ user_input: e.target.value });
     }
 
     onSubmit(e) {
@@ -95,29 +122,56 @@ export class NewProject extends Component {
             return;
         }
 
+        var users = this.state.users;
+
         fetch('Project/AddProject', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json;charset=utf-8'
             },
-            body: JSON.stringify({ Title: title, Description: description })
+            body: JSON.stringify({ Project: { Title: title, Description: description }, Users: users })
         })
             .then(x => {
-                if (x.status === 200)
-                    window.location.href = "/"
+                if (x.status === 200) window.location.href = "/";
             });
     }
 
+    onRemoveUser(data) {
+        var arr = this.state.users;
+        let tttt = arr.indexOf(data.Name);
+        arr.splice(tttt, 1); 
+        this.setState({ users: arr });
+    }
+
+    onAddingUser(e) {
+        e.preventDefault();
+        var arr = this.state.users;
+        arr.push(this.state.user_input);
+        this.setState({ users: arr });
+    }
+
     render() {
+        var rem = this.onRemoveUser;
         return (
             <form onSubmit={this.onSubmit}>
                 <p>
                     <input type="text" placeholder="Title" value={this.state.title} onChange={ x => this.onTitleChange(x) } />
                 </p>
                 <p>
-                    <input type="text" placeholder="Description" value={this.state.description} onChange={x => { this.onDescriptionChange(x) }} />
+                    <input type="text" placeholder="Description" value={this.state.description} onChange={x => this.onDescriptionChange(x) } />
                 </p>
                 <input type="submit" value="Add" />
+
+                <input type="text" placeholder="user name" onChange={x => this.onUserInputChange(x)} />
+                <button onClick={x => this.onAddingUser(x)}>Add user</button>
+
+                <div>
+                    {
+                        this.state.users.map(function (x) {
+                            return <AddProject_User key={x.id} user={x} onRemove={rem} />
+                        })
+                    }
+                </div>
             </form>
         );
     }

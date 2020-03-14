@@ -15,6 +15,13 @@ namespace View.Controllers
         public Project[] NotSignedProjects { get; set; }
     }
 
+    public class AddProjectView
+    {
+        public Project Project { get; set; }
+
+        public string[] Users { get; set; }
+    }
+
     [ApiController]
     public class ProjectController : Controller
     {
@@ -28,9 +35,7 @@ namespace View.Controllers
         [HttpGet("[controller]")]
         public async Task<IActionResult> Get()
         {
-            var userName = HttpContext.User.Identity.Name;
-
-            var user = await _dbContext.GetUser(userName);
+            var user = await _dbContext.GetUser(HttpContext.User.Identity.Name);
 
             var projectsView = new ProjectsView();
 
@@ -63,20 +68,31 @@ namespace View.Controllers
         }
 
         [HttpPost("[controller]/AddProject")]
-        public async Task<IActionResult> AddProject([FromBody] Project project)
+        public async Task<IActionResult> AddProject([FromBody] AddProjectView project)
         {
-            var userName = HttpContext.User.Identity.Name;
+            var user = await _dbContext.GetUser(HttpContext.User.Identity.Name);
 
-            var user = await _dbContext.GetUser(userName);
-
-            await _dbContext.AddAsync(project);
+            await _dbContext.AddAsync(project.Project);
             await _dbContext.AddAsync(new AuthorizedUser
             {
                 IsSigned = true,
-                Project = project,
+                Project = project.Project,
                 RightId = 1,
                 UserId = user.Id
             });
+
+            foreach (var userName in project.Users)
+            {
+                var userInviting = await _dbContext.GetUser(userName);
+
+                await _dbContext.AddAsync(new AuthorizedUser
+                {
+                    IsSigned = false,
+                    Project = project.Project,
+                    RightId = 1,
+                    UserId = userInviting.Id
+                });
+            }
 
             await _dbContext.SaveChangesAsync();
 
