@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
+using Timetracker.View;
 
 namespace View.Controllers
 {
-    [ApiController]
+    //[ApiController]
+    //[Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
@@ -24,17 +26,24 @@ namespace View.Controllers
         [HttpPost("[controller]/Auth")]
         public async Task<IActionResult> Auth([FromBody] User user)
         {
-            var users = _dbContext.Users.AsNoTracking();
+            var dbUser = await _dbContext.GetUser(user.Login);
 
-            if (!await users.AnyAsync(x => x.Name == user.Name))
+            if (dbUser == null)
             {
-                ModelState.AddModelError("Name", "Такого пользователя не существует!");
-                return StatusCode(500);
+                return StatusCode((int)HttpStatusCode.InternalServerError);
             }
 
-            await Authenticate(user.Name);
+            var salt = dbUser.Salt;
+            var hash = PasswordHelpers.EncryptPassword(user.Pass, salt, 1024);
 
-            return Ok();
+            if (!PasswordHelpers.SlowEquals(hash, dbUser.Pass))
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError);
+            }
+
+            await Authenticate(user.Login);
+
+            return Ok("Вы успешно авторизовались!");
         }
 
         private async Task Authenticate(string userName)
@@ -60,20 +69,26 @@ namespace View.Controllers
             return StatusCode((int)HttpStatusCode.InternalServerError);
         }
 
-        [HttpPost("[controller]/Registration")]
-        public async Task<IActionResult> Registration([FromBody] User user)
+        [HttpPost("[controller]/signup")]
+        public async Task<IActionResult> SignUp([FromBody] User user)
         {
-            var userExists = (await _dbContext.GetUser(user.Name)) != null;
+            var userExists = (await _dbContext.GetUser(user.Login)) != null;
 
             if (userExists)
             {
                 return StatusCode((int)HttpStatusCode.InternalServerError);
             }
 
+            var salt = PasswordHelpers.GenerateSalt(16);
+            var hash = PasswordHelpers.EncryptPassword(user.Pass, salt, 1024);
+
+            user.Pass = hash;
+            user.Salt = salt;
+
             await _dbContext.AddAsync(user);
             await _dbContext.SaveChangesAsync();
 
-            return Ok();
+            return Ok("Вы успешно зарегистрировались!");
         }
 
         [HttpGet("[controller]/SignOut")]

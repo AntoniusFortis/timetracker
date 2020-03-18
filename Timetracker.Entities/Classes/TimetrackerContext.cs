@@ -24,10 +24,10 @@ namespace Timetracker.Entities.Classes
         {
             if (!_cache.TryGetValue(name, out User user))
             {
-                user = await Users.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name);
+                user = await Users.AsNoTracking().FirstOrDefaultAsync(p => p.Login == name);
                 if (user != null)
                 {
-                    _cache.Set(user.Name, user, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1)));
+                    _cache.Set(user.Login, user, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1)));
                 }
             }
 

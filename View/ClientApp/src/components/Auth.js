@@ -21,7 +21,7 @@ export class Auth extends Component {
 
     constructor(props) {
         super(props);
-        this.state = { name: "" };
+        this.state = { name: "", password: "" };
 
         this.onSubmit = this.onSubmit.bind(this);
         this.onNameChange = this.onNameChange.bind(this);
@@ -31,20 +31,29 @@ export class Auth extends Component {
         this.setState({ name: e.target.value });
     }
 
+    onPasswordChange(e) {
+        this.setState({ password: e.target.value });
+    }
+
     onSubmit(e) {
         e.preventDefault();
+
         var userName = this.state.name.trim();
         if (!userName) {
             return;
         }
-        this.setState({ name: "" });
+
+        var userPassword = this.state.password.trim();
+        if (!userPassword) {
+            return;
+        }
 
         fetch('Auth/Auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json;charset=utf-8'
             },
-            body: JSON.stringify({ Name: userName })
+            body: JSON.stringify({ Login: userName, Pass: userPassword })
         })
             .then(x => {
                 if (x.status === 200)
@@ -57,6 +66,9 @@ export class Auth extends Component {
             <form onSubmit={this.onSubmit}>
                 <p>
                     <input type="text" placeholder="Name" value={this.state.name} onChange={this.onNameChange} />
+                </p>
+                <p>
+                    <input type="password" placeholder="Password" value={this.state.password} onChange={x => { this.onPasswordChange(x) }} />
                 </p>
                 <input type="submit" value="Sign In" />
             </form>
@@ -84,6 +96,7 @@ export class Registration extends Component {
 
     onSubmit(e) {
         e.preventDefault();
+
         var userName = this.state.name.trim();
         if (!userName) {
             return;
@@ -94,12 +107,12 @@ export class Registration extends Component {
             return;
         }
 
-        fetch('Auth/Registration', {
+        fetch('Auth/SignUp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json;charset=utf-8'
             },
-            body: JSON.stringify({ Name: userName })
+            body: JSON.stringify({ Login: userName, Pass: userPassword })
         })
             .then(x => {
                 if (x.status === 200)

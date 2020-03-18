@@ -4,11 +4,12 @@ namespace Timetracker.Entities.Models
 {
     public class User
     {
-        [ScaffoldColumn(false)]
         public int Id { get; set; }
+ 
+        public string Login { get; set; }
 
-        [Required]
-        [Display(Name = "Имя пользователя")]
-        public string Name { get; set; }
+        public string Pass { get; set; }
+
+        public byte[] Salt { get; set; }
     }
 }

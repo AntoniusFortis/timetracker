@@ -33,7 +33,7 @@ namespace View
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options => //CookieAuthenticationOptions
                 {
-                    options.LoginPath = new PathString("/WeatherForecast/Auth");
+                    options.LoginPath = new PathString("/Auth/Auth");
                 });
 
             // In production, the React files will be served from this directory
