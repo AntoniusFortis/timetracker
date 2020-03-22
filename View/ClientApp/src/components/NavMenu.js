@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
-import { IsAuth } from './Auth';
+import { hasAuthorized } from './Account';
 
 export class NavMenu extends Component {
   static displayName = NavMenu.name;
@@ -17,7 +17,7 @@ export class NavMenu extends Component {
         };
     }
     componentDidMount() {
-        this.setState({ auth: IsAuth() });
+        this.setState({ auth: hasAuthorized() });
     }
 
   toggleNavbar () {
@@ -27,9 +27,7 @@ export class NavMenu extends Component {
   }
 
     Signout() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("get", "Auth/SignOut", false);
-        xhr.send();
+        localStorage.removeItem('tokenKey');
         this.setState({ collapsed: false, auth: false });
     }
 
@@ -74,7 +72,7 @@ export class NavMenu extends Component {
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                                 <ul className="navbar-nav flex-grow">
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/Auth">Auth</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/signin">Sign In</NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink tag={Link} className="text-dark" to="/Reg">Reg</NavLink>

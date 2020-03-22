@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Timetracker.Entities.Classes;
@@ -23,6 +24,7 @@ namespace View.Controllers
     }
 
     [ApiController]
+    [Route("api/[controller]")]
     public class ProjectController : Controller
     {
         private readonly TimetrackerContext _dbContext;
@@ -32,19 +34,14 @@ namespace View.Controllers
             _dbContext = authorizedUsersRepository;
         }
 
-        [HttpGet("[controller]")]
+        [Route("GetProjects")]
+        [Authorize]
         public async Task<IActionResult> Get()
         {
-            var user = await _dbContext.GetUser(HttpContext.User.Identity.Name);
+            var user = await _dbContext.GetUser(User.Identity.Name);
 
-            var projectsView = new ProjectsView();
-
-            if (user == null)
-            {
-                return new JsonResult(projectsView) { StatusCode = (int)HttpStatusCode.Forbidden };
-            }
-
-            var userProjects = _dbContext.AuthorizedUsers.AsNoTracking().Where(x => x.UserId == user.Id);
+            var userProjects = _dbContext.AuthorizedUsers.AsNoTracking()
+                .Where(x => x.UserId == user.Id);
 
             var projects = await userProjects
                 .Where(x => x.IsSigned)
@@ -58,7 +55,7 @@ namespace View.Controllers
                 .Select(x => x.Project)
                 .ToArrayAsync();
 
-            projectsView = new ProjectsView
+            var projectsView = new ProjectsView
             {
                 SignedProjects = projects,
                 NotSignedProjects = notSignedProjects
@@ -67,10 +64,11 @@ namespace View.Controllers
             return new JsonResult(projectsView);
         }
 
-        [HttpPost("[controller]/AddProject")]
+        [Route("AddProject")]
+        [Authorize]
         public async Task<IActionResult> AddProject([FromBody] AddProjectView project)
         {
-            var user = await _dbContext.GetUser(HttpContext.User.Identity.Name);
+            var user = await _dbContext.GetUser(User.Identity.Name);
 
             await _dbContext.AddAsync(project.Project);
             await _dbContext.AddAsync(new AuthorizedUser

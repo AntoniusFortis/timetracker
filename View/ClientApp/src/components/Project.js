@@ -13,7 +13,13 @@ export class Projects extends Component {
     }
 
     async getProjectsData() {
-        fetch('Project')
+        var myHeaders = new Headers();
+        myHeaders.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+
+        fetch('api/project/getprojects', {
+            method: "GET",
+            headers: myHeaders
+        })
             .then(x => x.json())
             .then(x => {
                 this.setState({ projectView: x, loading: false });
@@ -123,16 +129,18 @@ export class AddProject extends Component {
         }
 
         var users = this.state.users;
+        var myHeaders = new Headers();
+        myHeaders.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+        myHeaders.append("Content-Type", "application/json;charset=utf-8");
 
-        fetch('Project/AddProject', {
+        fetch('api/project/addproject', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json;charset=utf-8'
-            },
+            headers: myHeaders,
             body: JSON.stringify({ Project: { Title: title, Description: description }, Users: users })
         })
             .then(x => {
-                if (x.status === 200) window.location.href = "/";
+                if (x.status === 200)
+                    window.location.href = "/";
             });
     }
 

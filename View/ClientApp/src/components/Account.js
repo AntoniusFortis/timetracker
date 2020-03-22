@@ -1,23 +1,11 @@
 import React, { Component } from 'react';
 
-export function IsAuth() {
-    var result = false;
-
-    var xhr = new XMLHttpRequest();
-
-    xhr.open("get", "Auth/IsAuth", false);
-
-    xhr.onload = function () {
-        if (xhr.status == 200)
-            result = true;
-    };
-
-    xhr.send();
-
+export function hasAuthorized() {
+    var result = localStorage.getItem('tokenKey') != undefined;
     return result;
 }
 
-export class Auth extends Component {
+export class SignIn extends Component {
 
     constructor(props) {
         super(props);
@@ -48,16 +36,21 @@ export class Auth extends Component {
             return;
         }
 
-        fetch('Auth/Auth', {
+        fetch('api/account/signin', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json;charset=utf-8'
             },
             body: JSON.stringify({ Login: userName, Pass: userPassword })
         })
+            .then(x => x.json())
             .then(x => {
-                if (x.status === 200)
-                    window.location.href = "/"
+                if (x.status === 200) {
+                    console.log(x.access_token);
+
+                    localStorage.setItem('tokenKey', x.access_token);
+                    window.location.href = "/";
+                }
             });
     }
 
@@ -76,7 +69,7 @@ export class Auth extends Component {
     }
 }
 
-export class Registration extends Component {
+export class SignUp extends Component {
 
     constructor(props) {
         super(props);
@@ -107,7 +100,7 @@ export class Registration extends Component {
             return;
         }
 
-        fetch('Auth/SignUp', {
+        fetch('api/account/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json;charset=utf-8'
