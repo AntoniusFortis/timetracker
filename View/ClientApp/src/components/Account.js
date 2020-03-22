@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 export function hasAuthorized() {
-    var result = localStorage.getItem('tokenKey') != undefined;
+    var result = localStorage.getItem('tokenKey') !== undefined;
     return result;
 }
 
@@ -46,8 +46,6 @@ export class SignIn extends Component {
             .then(x => x.json())
             .then(x => {
                 if (x.status === 200) {
-                    console.log(x.access_token);
-
                     localStorage.setItem('tokenKey', x.access_token);
                     window.location.href = "/";
                 }

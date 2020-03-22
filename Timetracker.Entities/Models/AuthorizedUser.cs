@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Timetracker.Entities.Models
+﻿namespace Timetracker.Entities.Models
 {
     public class AuthorizedUser
     {
@@ -9,6 +7,8 @@ namespace Timetracker.Entities.Models
         public int RightId { get; set; }
 
         public int UserId { get; set; }
+
+        public User User { get; set; }
 
         public int ProjectId { get; set; }
 

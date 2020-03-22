@@ -1,11 +1,10 @@
 ﻿import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
-import { NavLink } from 'reactstrap';
 
-export class Projects extends Component {
+export class CurrentProject extends Component {
     constructor(props) {
         super(props);
-        this.state = { projectView: [], loading: true };
+
+        this.state = { project: null, loading: true, users: [] };
     }
 
     componentDidMount() {
@@ -16,17 +15,17 @@ export class Projects extends Component {
         var myHeaders = new Headers();
         myHeaders.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
 
-        fetch('api/project/getprojects', {
+        fetch('api/project/getproject?id=' + this.props.match.params.projectId, {
             method: "GET",
             headers: myHeaders
         })
             .then(x => x.json())
             .then(x => {
-                this.setState({ projectView: x, loading: false });
+                this.setState({ project: x.project, loading: false, users: x.users });
             });
     }
 
-    static renderProjectsTable(projects) {
+    static renderProjectsTable(project) {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
@@ -36,13 +35,28 @@ export class Projects extends Component {
                     </tr>
                 </thead>
                 <tbody>
+                    <tr key={project.id}>
+                        <td>{project.title}</td>
+                        <td>{project.description}</td>
+                    </tr>
+                </tbody>
+            </table>
+        );
+    }
+
+    static renderUsersTable(users) {
+        return (
+            <table className='table table-striped' aria-labelledby="tabelLabel">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {
-                        projects.map(x => {
-                            return <tr key={x.id}>
-                                <td>
-                                    <NavLink tag={Link} className="text-dark" to="/projects">{x.title}</NavLink>
-                                </td>
-                                <td>{x.description}</td>
+                        users.map(x => {
+                            return <tr>
+                                <td>{x.login}</td>
                             </tr>;
                         })
                     }
@@ -52,20 +66,20 @@ export class Projects extends Component {
     }
 
     render() {
-        let signedProjects = this.state.loading
+        let project = this.state.loading
             ? <p><em>Loading...</em></p>
-            : Projects.renderProjectsTable(this.state.projectView.signedProjects);
-        let notSignedProjects = this.state.loading
+            : CurrentProject.renderProjectsTable(this.state.project);
+
+        let users = this.state.loading
             ? <p><em>Loading...</em></p>
-            : Projects.renderProjectsTable(this.state.projectView.notSignedProjects);
+            : CurrentProject.renderUsersTable(this.state.users);
 
         return (
             <div>
-                <h1 id="tabelLabel">My projects</h1>
-                <p>Projects</p>
-                {signedProjects}
-                <p>You was invited to Projects</p>
-                {notSignedProjects}
+                <p>Project</p>
+                {project}
+                <p>Users</p>
+                {users}
             </div>
         );
     }
