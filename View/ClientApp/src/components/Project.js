@@ -5,6 +5,8 @@ export class CurrentProject extends Component {
         super(props);
 
         this.state = { project: null, loading: true, users: [] };
+
+        this.onRemoveProject = this.onRemoveProject.bind(this);
     }
 
     componentDidMount() {
@@ -35,9 +37,9 @@ export class CurrentProject extends Component {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr key={project.id}>
-                        <td>{project.title}</td>
-                        <td>{project.description}</td>
+                    <tr key={project.Id}>
+                        <td>{project.Title}</td>
+                        <td>{project.Description}</td>
                     </tr>
                 </tbody>
             </table>
@@ -56,13 +58,30 @@ export class CurrentProject extends Component {
                     {
                         users.map(x => {
                             return <tr>
-                                <td>{x.login}</td>
+                                <td>{x.Login}</td>
                             </tr>;
                         })
                     }
                 </tbody>
             </table>
         );
+    }
+
+    onRemoveProject(e) {
+        e.preventDefault();
+
+        var myHeaders = new Headers();
+        myHeaders.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+        myHeaders.append("Content-Type", "application/json;charset=utf-8");
+
+        fetch('api/project/remove?id=' + this.state.project.Id, {
+            method: 'POST',
+            headers: myHeaders
+        })
+            .then(x => {
+                if (x.status === 200)
+                    window.location.href = "/projects";
+            });
     }
 
     render() {
@@ -77,6 +96,9 @@ export class CurrentProject extends Component {
         return (
             <div>
                 <p>Project</p>
+                <form onSubmit={this.onRemoveProject}>
+                    <button>Remove Project</button>
+                </form>
                 {project}
                 <p>Users</p>
                 {users}

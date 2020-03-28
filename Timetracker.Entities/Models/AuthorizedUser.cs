@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
 
-        public int RightId { get; set; }
+        public byte RightId { get; set; }
 
         public int UserId { get; set; }
 
