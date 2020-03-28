@@ -47,6 +47,7 @@ export class CurrentProject extends Component {
     }
 
     static renderUsersTable(users) {
+        debugger;
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
@@ -58,7 +59,7 @@ export class CurrentProject extends Component {
                     {
                         users.map(x => {
                             return <tr>
-                                <td>{x.Login}</td>
+                                <td>{x}</td>
                             </tr>;
                         })
                     }
@@ -96,6 +97,7 @@ export class CurrentProject extends Component {
         return (
             <div>
                 <p>Project</p>
+                <button onClick={x => { window.location.href = "/editproject/" + this.state.project.Id; }}>Edit Project</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Remove Project</button>
                 </form>

@@ -7,6 +7,7 @@ import { AddProject, CurrentProject } from './components/Project';
 import { Projects } from './components/Projects';
 
 import './custom.css'
+import { editProject } from './components/editProject';
 
 export default class App extends Component {
   static displayName = App.name;
@@ -16,7 +17,8 @@ export default class App extends Component {
       <Layout>
             <Route exact path='/' component={Home} />
             <Route path='/signin' component={SignIn} />
-            <Route path='/project/:projectId' component={CurrentProject} />
+            <Route exact path='/project/:projectId' component={CurrentProject} />
+            <Route path='/editproject/:projectId' component={editProject} />
 
             <Route path='/Reg' component={SignUp} />
             <Route path='/projects' component={Projects} />

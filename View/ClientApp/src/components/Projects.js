@@ -2,6 +2,18 @@
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 
+export function Get(uri, callback) {
+    let headers = new Headers();
+    headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+
+    fetch(uri, {
+        method: "GET",
+        headers: headers
+    })
+        .then(x => x.json())
+        .then(x => callback(x));
+}
+
 export class Projects extends Component {
     constructor(props) {
         super(props);
@@ -13,20 +25,12 @@ export class Projects extends Component {
     }
 
     async getProjectsData() {
-        var myHeaders = new Headers();
-        myHeaders.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
-
-        fetch('api/project/getprojects', {
-            method: "GET",
-            headers: myHeaders
-        })
-            .then(x => x.json())
-            .then(x => {
-                this.setState({ projectView: x, loading: false });
-            });
+        Get('api/project/getall', (result) => {
+            this.setState({ projectView: result, loading: false });
+        });
     }
 
-    static renderProjectsTable(projects) {
+    renderProjectsTable(projects) {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
@@ -55,17 +59,17 @@ export class Projects extends Component {
     render() {
         let signedProjects = this.state.loading
             ? <p><em>Loading...</em></p>
-            : Projects.renderProjectsTable(this.state.projectView.signedProjects);
+            : this.renderProjectsTable(this.state.projectView.signedProjects);
         let notSignedProjects = this.state.loading
             ? <p><em>Loading...</em></p>
-            : Projects.renderProjectsTable(this.state.projectView.notSignedProjects);
+            : this.renderProjectsTable(this.state.projectView.notSignedProjects);
 
         return (
             <div>
                 <h1 id="tabelLabel">My projects</h1>
                 <p>Projects</p>
                 {signedProjects}
-                <p>You was invited to Projects</p>
+                <p>You were invited to Projects</p>
                 {notSignedProjects}
             </div>
         );

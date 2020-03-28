@@ -25,7 +25,7 @@ namespace View
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMemoryCache();
-            services.AddDbContext<TimetrackerContext>(x => x.UseSqlServer(Configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Singleton);
+            services.AddDbContext<TimetrackerContext>(x => x.UseSqlServer(Configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Scoped);
 
 
             services.AddControllersWithViews();
@@ -40,7 +40,6 @@ namespace View
                             ValidIssuer = AuthOptions.ISSUER,
 
                             ValidateAudience = true,
-                            // установка потребителя токена
                             ValidAudience = AuthOptions.AUDIENCE,
                             // будет ли валидироваться время существования
                             ValidateLifetime = true,
