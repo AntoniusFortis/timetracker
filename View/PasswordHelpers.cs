@@ -30,7 +30,7 @@ namespace Timetracker.View
         {
             var pbkdf2 = new Rfc2898DeriveBytes(pass, salt, iterations, HashAlgorithmName.SHA512);
 
-            var key = pbkdf2.GetBytes(64);
+            var key = pbkdf2.GetBytes(128);
             pbkdf2.Reset();
 
             var keyB64 = Convert.ToBase64String(key);

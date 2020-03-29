@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Timetracker.Entities.Models;
 
@@ -19,8 +20,15 @@ namespace Timetracker.Entities.Classes
         {
             _cache = cache;
         }
-        
-        public async Task<User> GetUser(string name)
+
+        public bool UserExist(string name)
+        {
+            var exist = Users.AsNoTracking().Any(p => p.Login.Contains(name));
+
+            return exist;
+        }
+
+        public async Task<User> GetUserAsync(string name)
         {
             if (!_cache.TryGetValue(name, out User user))
             {

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Timetracker.Entities.Classes;
@@ -13,8 +16,10 @@ using Timetracker.View;
 
 namespace View.Controllers
 {
+    [Produces("application/json")]
     [ApiController]
-    [Route("api/[controller]")]
+    [AllowAnonymous]
+    [Route("api/[controller]/[action]")]
     public class AccountController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
@@ -24,11 +29,10 @@ namespace View.Controllers
             _dbContext = dbContext;
         }
 
-        [Route("SignIn")]
-        [AllowAnonymous]
-        public async Task<IActionResult> SignIn([FromBody] User user)
+        [HttpPost]
+        public async Task<IActionResult> SignIn(User user)
         {
-            var dbUser = await _dbContext.GetUser(user.Login);
+            var dbUser = await _dbContext.GetUserAsync(user.Login);
             if (dbUser == null)
             {
                 return Unauthorized();
@@ -49,12 +53,12 @@ namespace View.Controllers
 
             var now = DateTime.UtcNow;
             var jwt = new JwtSecurityToken(
-                    issuer: AuthOptions.ISSUER,
-                    audience: AuthOptions.AUDIENCE,
+                    issuer: TimetrackerAuthorizationOptions.ISSUER,
+                    audience: TimetrackerAuthorizationOptions.AUDIENCE,
                     notBefore: now,
                     claims: claimsIdentity.Claims,
-                    expires: now.Add(TimeSpan.FromDays(AuthOptions.LIFETIME)),
-                    signingCredentials: new SigningCredentials(AuthOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+                    expires: now.Add(TimeSpan.FromDays(TimetrackerAuthorizationOptions.LIFETIME)),
+                    signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
 
@@ -66,14 +70,13 @@ namespace View.Controllers
 
             return new JsonResult(response);
         }
- 
-        [Route("SignUp")]
-        [AllowAnonymous]
-        public async Task<IActionResult> SignUp([FromBody] User user)
-        {
-            var userExists = (await _dbContext.GetUser(user.Login)) != null;
 
-            if (userExists)
+        [HttpPost]
+        public async Task<IActionResult> SignUp(User user)
+        {
+            var userExist = _dbContext.UserExist(user.Login);
+
+            if (userExist)
             {
                 return BadRequest(new
                 {

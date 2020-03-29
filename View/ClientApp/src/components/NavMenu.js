@@ -49,10 +49,10 @@ export class NavMenu extends Component {
                                         <NavLink tag={Link} onClick={x => { this.Signout(); }} className="text-dark" to="/">SignOut</NavLink>
                                     </NavItem>
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/projects">Projects</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/project/all">Projects</NavLink>
                                     </NavItem>
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/addproject">Add project</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/project/add">Add project</NavLink>
                                     </NavItem>
                                 </ul>
                             </Collapse>
@@ -72,10 +72,10 @@ export class NavMenu extends Component {
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                                 <ul className="navbar-nav flex-grow">
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/signin">Sign In</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/account/signin">Sign In</NavLink>
                                     </NavItem>
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/Reg">Reg</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/account/signup">Reg</NavLink>
                                     </NavItem>
                                 </ul>
                             </Collapse>

@@ -2,12 +2,16 @@ import React, { Component } from 'react';
 import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
-import { SignIn, SignUp } from './components/Account';
-import { AddProject, CurrentProject } from './components/Project';
-import { Projects } from './components/Projects';
+
+import { SignIn } from './components/Account/SignIn';
+import { SignUp } from './components/Account/SignUp';
+
+import { ProjectGetAll } from './components/Project/GetAll';
+import { ProjectGet } from './components/Project/Get';
+import { ProjectAdd } from './components/Project/Add';
+import { ProjectUpdate } from './components/Project/Update';
 
 import './custom.css'
-import { editProject } from './components/editProject';
 
 export default class App extends Component {
   static displayName = App.name;
@@ -17,12 +21,14 @@ export default class App extends Component {
       <Layout>
             <Route exact path='/' component={Home} />
             <Route path='/signin' component={SignIn} />
-            <Route exact path='/project/:projectId' component={CurrentProject} />
-            <Route path='/editproject/:projectId' component={editProject} />
 
-            <Route path='/Reg' component={SignUp} />
-            <Route path='/projects' component={Projects} />
-            <Route path='/addproject' component={AddProject} />
+            <Route exact path='/account/signin' component={SignIn} />
+            <Route exact path='/account/signup' component={SignUp} />
+
+            <Route exact path='/project/all' component={ProjectGetAll} />
+            <Route exact path='/project/get/:projectId' component={ProjectGet} />
+            <Route exact path='/project/add' component={ProjectAdd} />
+            <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
       </Layout>
     );
   }
