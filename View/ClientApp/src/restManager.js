@@ -30,3 +30,20 @@ export function Post(uri, body, callback) {
     })
         .then(result => callback(result));
 }
+
+export function Delete(uri, body, callback) {
+    const headers = new Headers();
+
+    if (hasAuthorized()) {
+        headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+    }
+
+    headers.append("Content-Type", "application/json;charset=utf-8");
+
+    fetch(uri, {
+        method: "DELETE",
+        headers: headers,
+        body: JSON.stringify(body)
+    })
+        .then(result => callback(result));
+}

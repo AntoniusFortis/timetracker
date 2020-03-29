@@ -42,6 +42,14 @@ namespace Timetracker.Entities.Classes
             return user;
         }
 
+        public bool CheckAccessForProject(int projectId, User user)
+        {
+            var hasAU = AuthorizedUsers.AsNoTracking()
+                .Any(x => x.ProjectId == projectId && x.User.Id == user.Id);
+
+            return hasAU;
+        }
+
         public override void Dispose()
         {
             GC.SuppressFinalize(this);

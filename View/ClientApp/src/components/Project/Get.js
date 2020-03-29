@@ -1,5 +1,5 @@
 ﻿import React, { Component } from 'react';
-import { Get, Post } from '../../restManager';
+import { Get, Delete } from '../../restManager';
 
 export class ProjectGet extends Component {
     constructor(props) {
@@ -23,7 +23,11 @@ export class ProjectGet extends Component {
         Get("api/project/get?id=" + this.props.match.params.projectId, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ project: result.project, loading: false, users: result.users  });
+                    this.setState({
+                        project: result.project,
+                        loading: false,
+                        users: result.users
+                    });
                 });
         });
     }
@@ -33,8 +37,8 @@ export class ProjectGet extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Description</th>
+                        <th>Название</th>
+                        <th>Описание</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,17 +56,16 @@ export class ProjectGet extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Имя пользователя</th>
                     </tr>
                 </thead>
                 <tbody>
                     {
                         users.map(x => (
-                                <tr>
-                                    <td>{x}</td>
-                                </tr>
-                            )
-                        )
+                            <tr>
+                                <td>{x}</td>
+                            </tr>
+                        ))
                     }
                 </tbody>
             </table>
@@ -72,7 +75,7 @@ export class ProjectGet extends Component {
     onRemoveProject(e) {
         e.preventDefault();
 
-        Post("api/project/remove?id=" + this.state.project.Id,
+        Delete("api/project/delete?Id=" + this.state.project.Id,
             { },
             (response) => {
                 if (response.status === 200) {
@@ -87,17 +90,17 @@ export class ProjectGet extends Component {
 
     render() {
         const project = this.state.loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderProjectsTable(this.state.project);
 
         const users = this.state.loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users);
 
         return (
             <div>
-                <p>Project</p>
-                <button onClick={this.onClickEditProject}>Edit Project</button>
+                <p>Проект</p>
+                <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>
                 </form>

@@ -216,27 +216,21 @@ namespace View.Controllers
             });
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Remove(int? id)
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int? Id)
         {
-            if (!id.HasValue)
+            var id = Id.Value;
+            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+
+            if (!_dbContext.CheckAccessForProject(id, user))
             {
                 return new JsonResult(new
                 {
-                    status = HttpStatusCode.InternalServerError
-                });
+                    status = HttpStatusCode.Unauthorized
+                }, _jsonOptions);
             }
 
-            var project = await _dbContext.Projects.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (project == null)
-            {
-                return new JsonResult(new
-                {
-                    text = "Не существует проекта с таким Id",
-                    status = HttpStatusCode.BadRequest
-                });
-            }
+            var project = await _dbContext.Projects.SingleAsync(x => x.Id == id);
 
             _dbContext.Remove(project);
 
@@ -245,7 +239,7 @@ namespace View.Controllers
             return new JsonResult(new
             {
                 status = HttpStatusCode.OK
-            });
+            }, _jsonOptions);
         }
     }
 }
