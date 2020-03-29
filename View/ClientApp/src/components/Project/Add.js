@@ -90,7 +90,7 @@ export class ProjectAdd extends Component {
                 <input type="submit" value="Add" />
 
                 <input type="text" placeholder="user name" onChange={x => this.onUserInputChange(x)} />
-                <button onClick={this.onAddingUser}>Add user</button>
+                <button onClick={this.onAddingUser}>Добавить пользователя</button>
 
                 <div>
                     {

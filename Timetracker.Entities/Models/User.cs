@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
 {
@@ -9,8 +10,10 @@ namespace Timetracker.Entities.Models
         public string Login { get; set; }
 
         [StringLength(200)]
+        [JsonIgnore]
         public string Pass { get; set; }
 
+        [JsonIgnore]
         public byte[] Salt { get; set; }
     }
 }

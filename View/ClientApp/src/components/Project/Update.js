@@ -23,10 +23,11 @@ export class ProjectUpdate extends Component {
 
         this.onSubmit = this.onSubmit.bind(this);
 
-        this.onNameChange = this.onTitleChange.bind(this);
+        this.onTitleChange = this.onTitleChange.bind(this);
         this.onDescriptionChange = this.onDescriptionChange.bind(this);
         this.onAddingUser = this.onAddingUser.bind(this);
         this.onRemoveUser = this.onRemoveUser.bind(this);
+        this.onUserInputChange = this.onUserInputChange.bind(this);
     }
 
     componentDidMount() {
@@ -42,7 +43,7 @@ export class ProjectUpdate extends Component {
     }
 
     onUserInputChange(e) {
-        this.setState({ user_input: e.target.value.trim() });
+        this.setState({ user_input: e.target.value });
     }
 
     async getProjectsData() {
@@ -67,7 +68,7 @@ export class ProjectUpdate extends Component {
             { Project: { Id: project.Id, Title: title, Description: description }, Users: users },
             (response) => {
                 if (response.status === 200) {
-                    window.location.href = "/projects/get?id=" + this.props.match.params.projectId;
+                    window.location.href = "/projects/get/" + this.props.match.params.projectId;
                 }
             });
     }
@@ -103,13 +104,13 @@ export class ProjectUpdate extends Component {
                 </p>
                 <input type="submit" value="Update" />
 
-                <input type="text" placeholder="user name" onChange={this.onUserInputChange} />
+                <input type="text" placeholder="user name" onChange={x => this.onUserInputChange(x)} />
                 <button onClick={x => this.onAddingUser(x)}>Add user</button>
 
                 <div>
                     {
-                        this.state.users.map(name => (
-                            <UserAdd userName={name} onRemove={this.onRemoveUser} />
+                        this.state.users.map(userName => (
+                            <UserAdd userName={userName} onRemove={this.onRemoveUser} />
                         ))
                     }
                 </div>

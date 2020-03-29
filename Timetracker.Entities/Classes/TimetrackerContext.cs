@@ -13,12 +13,16 @@ namespace Timetracker.Entities.Classes
         public DbSet<Right> Rights { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
+        public DbSet<WorkTask> Tasks { get; set; }
 
         private readonly IMemoryCache _cache;
 
         public TimetrackerContext(DbContextOptions options, IMemoryCache cache) : base(options)
         {
             _cache = cache;
+
+            Users.Load();
+            AuthorizedUsers.Load();
         }
 
         public bool UserExist(string name)

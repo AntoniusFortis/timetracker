@@ -1,5 +1,7 @@
 ﻿import React, { Component } from 'react';
 import { Get, Delete } from '../../restManager';
+import { Link } from 'react-router-dom';
+import { NavLink } from 'reactstrap';
 
 export class ProjectGet extends Component {
     constructor(props) {
@@ -26,7 +28,8 @@ export class ProjectGet extends Component {
                     this.setState({
                         project: result.project,
                         loading: false,
-                        users: result.users
+                        users: result.users,
+                        tasks: result.tasks
                     });
                 });
         });
@@ -61,9 +64,30 @@ export class ProjectGet extends Component {
                 </thead>
                 <tbody>
                     {
-                        users.map(x => (
+                        users.map(userName => (
+                            <tr><td>{userName}</td></tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        );
+    }
+
+    renderTasksTable(tasks) {
+        return (
+            <table className='table table-striped' aria-labelledby="tabelLabel">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        tasks.map(task => (
                             <tr>
-                                <td>{x}</td>
+                                <td>
+                                    <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
+                                </td>
                             </tr>
                         ))
                     }
@@ -97,6 +121,10 @@ export class ProjectGet extends Component {
             ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users);
 
+        const tasks = this.state.loading
+            ? <p><em>Загрузка...</em></p>
+            : this.renderTasksTable(this.state.tasks);
+        
         return (
             <div>
                 <p>Проект</p>
@@ -107,6 +135,8 @@ export class ProjectGet extends Component {
                 {project}
                 <p>Пользователи</p>
                 {users}
+                <p>Задачи</p>
+                {tasks}
             </div>
         );
     }

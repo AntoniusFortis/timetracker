@@ -16,6 +16,13 @@ using Timetracker.View;
 
 namespace View.Controllers
 {
+    public class UserView
+    {
+        public string Login { get; set; }
+
+        public string Pass { get; set; }
+    }
+
     [Produces("application/json")]
     [ApiController]
     [AllowAnonymous]
@@ -30,15 +37,15 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignIn(User user)
+        public async Task<IActionResult> SignIn(UserView view)
         {
-            var dbUser = await _dbContext.GetUserAsync(user.Login);
+            var dbUser = await _dbContext.GetUserAsync(view.Login);
             if (dbUser == null)
             {
                 return Unauthorized();
             }
 
-            var password = PasswordHelpers.EncryptPassword(user.Pass, dbUser.Salt, 1024);
+            var password = PasswordHelpers.EncryptPassword(view.Pass, dbUser.Salt, 1024);
             if (!PasswordHelpers.SlowEquals(password, dbUser.Pass))
             {
                 return Unauthorized();
@@ -72,9 +79,9 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignUp(User user)
+        public async Task<IActionResult> SignUp(UserView view)
         {
-            var userExist = _dbContext.UserExist(user.Login);
+            var userExist = _dbContext.UserExist(view.Login);
 
             if (userExist)
             {
@@ -85,11 +92,15 @@ namespace View.Controllers
             }
 
             var salt = PasswordHelpers.GenerateSalt(16);
-            var hash = PasswordHelpers.EncryptPassword(user.Pass, salt, 1024);
+            var hash = PasswordHelpers.EncryptPassword(view.Pass, salt, 1024);
 
-            user.Pass = hash;
-            user.Salt = salt;
-
+            var user = new User
+            {
+                Login = view.Login,
+                Pass = hash,
+                Salt = salt
+            };
+  
             await _dbContext.AddAsync(user);
             await _dbContext.SaveChangesAsync();
 
