@@ -11,6 +11,8 @@ import { ProjectGet } from './components/Project/Get';
 import { ProjectAdd } from './components/Project/Add';
 import { ProjectUpdate } from './components/Project/Update';
 
+import { TaskGet } from './components/Task/Get';
+
 import './custom.css'
 
 export default class App extends Component {
@@ -29,6 +31,9 @@ export default class App extends Component {
             <Route exact path='/project/get/:projectId' component={ProjectGet} />
             <Route exact path='/project/add' component={ProjectAdd} />
             <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
+
+            <Route exact path='/task/get/:taskId' component={TaskGet} />
+
       </Layout>
     );
   }

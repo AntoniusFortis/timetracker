@@ -14,6 +14,7 @@ namespace Timetracker.Entities.Classes
         public DbSet<Project> Projects { get; set; }
         public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
         public DbSet<WorkTask> Tasks { get; set; }
+        public DbSet<State> States { get; set; }
 
         private readonly IMemoryCache _cache;
 
@@ -23,6 +24,9 @@ namespace Timetracker.Entities.Classes
 
             Users.Load();
             AuthorizedUsers.Load();
+            Tasks.Load();
+            Projects.Load();
+            States.Load();
         }
 
         public bool UserExist(string name)

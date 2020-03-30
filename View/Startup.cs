@@ -88,7 +88,6 @@ namespace View
 
             app.UseExceptionHandler("/Error");
 
-
             if (!env.IsDevelopment())
             {
                 app.UseHsts();
@@ -96,7 +95,6 @@ namespace View
 
             app.UseHttpsRedirection();
             app.UseSpaStaticFiles();
-
 
             app.UseAuthentication();
             app.UseRouting();

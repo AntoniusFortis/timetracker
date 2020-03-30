@@ -40,7 +40,7 @@ namespace Timetracker.View.Controllers
 
             // Проверяем, что есть доступ
             var hasAccess = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .AnyAsync(x => x.UserId == user.Id);
+                .AnyAsync(x => x.UserId == user.Id && x.ProjectId == worktask.ProjectId);
 
             if (!hasAccess)
             {
@@ -57,7 +57,7 @@ namespace Timetracker.View.Controllers
                 status = HttpStatusCode.InternalServerError,
                 project = worktask.Project,
                 worktask = worktask
-            });
+            }, _jsonOptions);
         }
     }
 }
