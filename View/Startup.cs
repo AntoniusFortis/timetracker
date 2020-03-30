@@ -54,7 +54,7 @@ namespace View
                        };
                    });
 
-            services.AddMvc();
+            //services.AddMvc();
 
             services.AddSwaggerGen(c =>
             {

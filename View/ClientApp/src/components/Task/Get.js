@@ -1,4 +1,5 @@
 ﻿import React, { Component } from 'react';
+import Select from 'react-select';
 import { Get, Delete } from '../../restManager';
 
 export class TaskGet extends Component {
@@ -15,10 +16,10 @@ export class TaskGet extends Component {
     }
 
     componentDidMount() {
-        this.getProjectsData();
+        this.getTaskData();
     }
 
-    async getProjectsData() {
+    async getTaskData() {
         Get("api/task/get?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
@@ -54,17 +55,17 @@ export class TaskGet extends Component {
     onRemoveProject(e) {
         e.preventDefault();
 
-        Delete("api/task/delete?Id=" + this.state.project.Id,
+        Delete("api/task/delete?Id=" + this.state.worktask.Id,
             {},
             (response) => {
                 if (response.status === 200) {
-                    window.location.href = "/project/get/" + this.state.project.Id;
+                    window.location.href = "/project/get/" + this.state.worktask.Project.Id;
                 }
             });
     }
 
     onClickEditProject(e) {
-        window.location.href = "/task/update/" + this.state.worktask.Project.Id;
+        window.location.href = "/task/update/" + this.state.worktask.Id;
     }
 
     render() {

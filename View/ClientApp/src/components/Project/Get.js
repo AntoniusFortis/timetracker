@@ -15,6 +15,7 @@ export class ProjectGet extends Component {
 
         this.onRemoveProject = this.onRemoveProject.bind(this);
         this.onClickEditProject = this.onClickEditProject.bind(this);
+        this.onClickAddTask = this.onClickAddTask.bind(this);
     }
 
     componentDidMount() {
@@ -112,6 +113,10 @@ export class ProjectGet extends Component {
         window.location.href = "/project/update/" + this.state.project.Id;
     }
 
+    onClickAddTask(e) {
+        window.location.href = "/task/add/" + this.state.project.Id;
+    }
+
     render() {
         const project = this.state.loading
             ? <p><em>Загрузка...</em></p>
@@ -127,15 +132,16 @@ export class ProjectGet extends Component {
         
         return (
             <div>
-                <p>Проект</p>
+                <h6>Проект</h6>
                 <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>
                 </form>
                 {project}
-                <p>Пользователи</p>
+                <h6>Пользователи</h6>
                 {users}
-                <p>Задачи</p>
+                <button onClick={this.onClickAddTask}>Добавить задачу</button>
+                <h6>Задачи</h6>
                 {tasks}
             </div>
         );
