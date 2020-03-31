@@ -16,6 +16,24 @@ export function Get(uri, callback) {
 
 export function Post(uri, body, callback) {
     const headers = new Headers();
+    if (hasAuthorized()) {
+        headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+    }
+
+    headers.append("Content-Type", "application/json;charset=utf-8");
+
+    const json = JSON.stringify(body);
+
+    fetch(uri, {
+        method: "POST",
+        headers: headers,
+        body: json
+    })
+        .then(result => callback(result));
+}
+
+export function Delete(uri, body, callback) {
+    const headers = new Headers();
 
     if (hasAuthorized()) {
         headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
@@ -23,10 +41,12 @@ export function Post(uri, body, callback) {
 
     headers.append("Content-Type", "application/json;charset=utf-8");
 
+    const json = JSON.stringify(body);
+
     fetch(uri, {
-        method: "POST",
+        method: "DELETE",
         headers: headers,
-        body: JSON.stringify(body)
+        body: json
     })
         .then(result => callback(result));
 }

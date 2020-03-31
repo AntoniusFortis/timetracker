@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+﻿import React, { Component } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
@@ -52,7 +52,7 @@ export class NavMenu extends Component {
                                         <NavLink tag={Link} className="text-dark" to="/project/all">Projects</NavLink>
                                     </NavItem>
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/project/add">Add project</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/project/add">Новый проект</NavLink>
                                     </NavItem>
                                 </ul>
                             </Collapse>
@@ -75,7 +75,7 @@ export class NavMenu extends Component {
                                         <NavLink tag={Link} className="text-dark" to="/account/signin">Sign In</NavLink>
                                     </NavItem>
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/account/signup">Reg</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/account/signup">Регистрация</NavLink>
                                     </NavItem>
                                 </ul>
                             </Collapse>

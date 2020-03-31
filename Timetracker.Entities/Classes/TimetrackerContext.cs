@@ -13,12 +13,20 @@ namespace Timetracker.Entities.Classes
         public DbSet<Right> Rights { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
+        public DbSet<WorkTask> Tasks { get; set; }
+        public DbSet<State> States { get; set; }
 
         private readonly IMemoryCache _cache;
 
         public TimetrackerContext(DbContextOptions options, IMemoryCache cache) : base(options)
         {
             _cache = cache;
+
+            Users.Load();
+            Projects.Load();
+            AuthorizedUsers.Load();
+            Tasks.Load();
+            States.Load();
         }
 
         public bool UserExist(string name)
@@ -40,6 +48,14 @@ namespace Timetracker.Entities.Classes
             }
 
             return user;
+        }
+
+        public bool CheckAccessForProject(int projectId, User user)
+        {
+            var hasAU = AuthorizedUsers.AsNoTracking()
+                .Any(x => x.ProjectId == projectId && x.User.Id == user.Id);
+
+            return hasAU;
         }
 
         public override void Dispose()

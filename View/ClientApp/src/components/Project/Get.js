@@ -1,18 +1,58 @@
 ﻿import React, { Component } from 'react';
-import { Get, Post } from '../../restManager';
+import { Get, Delete } from '../../restManager';
+import { Link } from 'react-router-dom';
+import { NavLink } from 'reactstrap';
+
+export class TaskList extends Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        const orderedtasks = this.props.orderFunc(this.props.tasks.slice());
+
+        return (
+            <table className='table table-striped' aria-labelledby="tabelLabel">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Состояние</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        !!orderedtasks && orderedtasks.map(task => (
+                            <tr>
+                                <td>
+                                    <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
+                                </td>
+                                <td>{task.State.Title}</td>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        )
+    }
+}
 
 export class ProjectGet extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            project: null,
+            project: {},
             loading: true,
-            users: []
+            users: [],
+            tasks: [],
+            orderTasksFunc: (tasks) => tasks
         };
 
         this.onRemoveProject = this.onRemoveProject.bind(this);
         this.onClickEditProject = this.onClickEditProject.bind(this);
+        this.onClickAddTask = this.onClickAddTask.bind(this);
+        this.onClickSortTasks = this.onClickSortTasks.bind(this);
+        this.onClickSortDefTasks = this.onClickSortDefTasks.bind(this);
     }
 
     componentDidMount() {
@@ -23,7 +63,12 @@ export class ProjectGet extends Component {
         Get("api/project/get?id=" + this.props.match.params.projectId, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ project: result.project, loading: false, users: result.users  });
+                    this.setState({
+                        project: result.project,
+                        loading: false,
+                        users: result.users,
+                        tasks: result.tasks
+                    });
                 });
         });
     }
@@ -33,8 +78,8 @@ export class ProjectGet extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Description</th>
+                        <th>Название</th>
+                        <th>Описание</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,17 +97,14 @@ export class ProjectGet extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>Имя пользователя</th>
                     </tr>
                 </thead>
                 <tbody>
                     {
-                        users.map(x => (
-                                <tr>
-                                    <td>{x}</td>
-                                </tr>
-                            )
-                        )
+                        users.map(userName => (
+                            <tr><td>{userName}</td></tr>
+                        ))
                     }
                 </tbody>
             </table>
@@ -72,7 +114,7 @@ export class ProjectGet extends Component {
     onRemoveProject(e) {
         e.preventDefault();
 
-        Post("api/project/remove?id=" + this.state.project.Id,
+        Delete("api/project/delete?Id=" + this.state.project.Id,
             { },
             (response) => {
                 if (response.status === 200) {
@@ -85,25 +127,43 @@ export class ProjectGet extends Component {
         window.location.href = "/project/update/" + this.state.project.Id;
     }
 
+    onClickAddTask(e) {
+        window.location.href = "/task/add/" + this.state.project.Id;
+    }
+
+    onClickSortTasks(e) {
+        this.setState({ orderTasksFunc: (tasks) => tasks.sort((a, b) => a.StateId >= b.StateId ? 1 : -1) });
+    }
+
+    onClickSortDefTasks(e) {
+        this.setState({ orderTasksFunc: (tasks) => tasks });
+    }
+
     render() {
         const project = this.state.loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderProjectsTable(this.state.project);
 
         const users = this.state.loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users);
-
+        
         return (
             <div>
-                <p>Project</p>
-                <button onClick={this.onClickEditProject}>Edit Project</button>
+                <h4>Проект</h4>
+                <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>
                 </form>
                 {project}
-                <p>Пользователи</p>
+                <h6>Пользователи</h6>
                 {users}
+                <button onClick={this.onClickAddTask}>Добавить задачу</button>
+                <h6>Задачи</h6>
+                <button onClick={this.onClickSortTasks}>Отсортировать по их состоянию</button>
+                <button onClick={this.onClickSortDefTasks}>Сортировка по умолчанию</button>
+
+                <TaskList tasks={this.state.tasks} orderFunc={this.state.orderTasksFunc} />
             </div>
         );
     }

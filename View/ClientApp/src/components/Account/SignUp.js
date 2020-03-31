@@ -52,12 +52,12 @@ export class SignUp extends Component {
         return (
             <form onSubmit={this.onSubmit}>
                 <p>
-                    <input type="text" placeholder="Name" value={this.state.name} onChange={this.onNameChange} />
+                    <input type="text" placeholder="Логин" value={this.state.name} onChange={this.onNameChange} />
                 </p>
                 <p>
-                    <input type="password" placeholder="Password" value={this.state.password} onChange={this.onPasswordChange} />
+                    <input type="password" placeholder="Пароль" value={this.state.password} onChange={this.onPasswordChange} />
                 </p>
-                <input type="submit" value="Sign Up" />
+                <input type="submit" value="Зарегистрироваться" />
             </form>
         );
     }

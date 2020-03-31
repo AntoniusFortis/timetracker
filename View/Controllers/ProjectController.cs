@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -26,14 +29,64 @@ namespace View.Controllers
         private readonly TimetrackerContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public ProjectController(TimetrackerContext authorizedUsersRepository)
+        public ProjectController(TimetrackerContext dbcontext)
         {
-            _dbContext = authorizedUsersRepository;
+            _dbContext = dbcontext;
 
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             };
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add([FromBody] CU_ProjectView projectView)
+        {
+            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+
+            if (await _dbContext.Projects.AsNoTracking()
+                .AnyAsync(x => x.Title == projectView.Project.Title))
+            {
+                return new JsonResult(new
+                {
+                    status = HttpStatusCode.BadRequest,
+                    text = "Проект с таким именем уже существует"
+                });
+            }
+
+            await _dbContext.AddAsync(projectView.Project);
+
+            await _dbContext.AddAsync(new AuthorizedUser
+            {
+                IsSigned = true,
+                Project = projectView.Project,
+                RightId = 1,
+                UserId = user.Id
+            });
+
+            var users = projectView.Users.Distinct().ToArray();
+            foreach (var userName in users)
+            {
+                var userInviting = await _dbContext.GetUserAsync(userName);
+
+                if (userInviting == null)
+                    continue;
+
+                await _dbContext.AddAsync(new AuthorizedUser
+                {
+                    IsSigned = false,
+                    Project = projectView.Project,
+                    RightId = 1,
+                    UserId = userInviting.Id
+                });
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return new JsonResult(new
+            {
+                status = HttpStatusCode.OK
+            });
         }
 
         [HttpGet]
@@ -100,67 +153,23 @@ namespace View.Controllers
                     Login = x.User.Login,
                     ProjectId = x.ProjectId
                 })
-                .Where(x => x.ProjectId == id && x.Login != user.Login)
+                .Where(x => x.ProjectId == id)
                 .Select(x => x.Login)
+                .ToArrayAsync();
+
+            var tasks =  await _dbContext.Tasks
+                .Where(x => x.ProjectId == id)
                 .ToArrayAsync();
 
             var response = new
             {
                 status = HttpStatusCode.OK,
                 project = project,
-                users = users
+                users = users,
+                tasks = tasks
             };
 
             return new JsonResult(response, _jsonOptions);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add([FromBody] CU_ProjectView projectView)
-        {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
-
-            if (await _dbContext.Projects.AsNoTracking()
-                .AnyAsync(x => x.Title == projectView.Project.Title))
-            {
-                return new JsonResult(new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    text = "Проект с таким именем уже существует"
-                });
-            }
-
-            await _dbContext.AddAsync(projectView.Project);
-
-            await _dbContext.AddAsync(new AuthorizedUser
-            {
-                IsSigned = true,
-                Project = projectView.Project,
-                RightId = 1,
-                UserId = user.Id
-            });
-
-            foreach (var userName in projectView.Users)
-            {
-                var userInviting = await _dbContext.GetUserAsync(userName);
-
-                if (userInviting == null)
-                    continue;
-
-                await _dbContext.AddAsync(new AuthorizedUser
-                {
-                    IsSigned = false,
-                    Project = projectView.Project,
-                    RightId = 1,
-                    UserId = userInviting.Id
-                });
-            }
-
-            await _dbContext.SaveChangesAsync();
-
-            return new JsonResult(new
-            {
-                status = HttpStatusCode.OK
-            });
         }
 
         [HttpPost]
@@ -175,68 +184,99 @@ namespace View.Controllers
                 });
             }
 
-            var updatedProject = _dbContext.Update(view.Project);
             var user = await _dbContext.GetUserAsync(User.Identity.Name);
 
-            var authorizedUsers = _dbContext.AuthorizedUsers.AsNoTracking()
-                .Where(x => x.ProjectId == view.Project.Id && x.User.Id != user.Id);
-
-            var toremove = authorizedUsers
-                .Where(x => view.Users.Any(y => x.User.Login != y));
-
-            if (toremove.Any())
-                _dbContext.RemoveRange(toremove);
-
-            foreach (var userName in view.Users)
+            if (!_dbContext.CheckAccessForProject(view.Project.Id, user))
             {
-                if (userName == User.Identity.Name)
-                    continue;
-
-                var userInviting = await _dbContext.GetUserAsync(userName);
-
-                if (userInviting == null)
-                    continue;
-
-                await _dbContext.AddAsync(new AuthorizedUser
+                return new JsonResult(new
                 {
-                    IsSigned = false,
-                    Project = view.Project,
-                    RightId = 1,
-                    UserId = userInviting.Id
+                    status = HttpStatusCode.Unauthorized
+                }, _jsonOptions);
+            }
+
+            var users = view.Users.Distinct().ToArray();
+            var authorizedUsers = _dbContext.AuthorizedUsers
+                .Where(x => x.ProjectId == view.Project.Id);
+
+            _dbContext.Update(view.Project);
+
+            if (users.Length == 0)
+            {
+                await _dbContext.SaveChangesAsync();
+
+                return new JsonResult(new
+                {
+                    project = view.Project,
+                    users = authorizedUsers.Select(x => x.User).ToArray(),
+                    status = HttpStatusCode.OK
                 });
+            }
+
+            var dictionary = _dbContext.AuthorizedUsers
+                .Where(x => x.ProjectId == view.Project.Id && x.IsSigned)
+                .ToDictionary(x => x.User.Login, StringComparer.OrdinalIgnoreCase);
+
+            _dbContext.AuthorizedUsers.RemoveRange(await authorizedUsers.ToArrayAsync());
+
+            foreach (var userName in users)
+            {
+                if (dictionary.ContainsKey(userName))
+                {
+                    var obj = dictionary[userName];
+                    _dbContext.AuthorizedUsers.Add(new AuthorizedUser
+                    {
+                        Id = obj.Id,
+                        IsSigned = true,
+                        ProjectId = obj.ProjectId,
+                        RightId = obj.RightId,
+                        UserId = obj.UserId
+                    });
+                }
+                else
+                {
+                    var userInviting = await _dbContext.GetUserAsync(userName);
+
+                    if (userInviting == null)
+                        continue;
+
+                    _dbContext.Add(new AuthorizedUser {
+                        IsSigned = false,
+                        Project = view.Project,
+                        RightId = 1,
+                        UserId = userInviting.Id
+                    });
+                }
             }
 
             await _dbContext.SaveChangesAsync();
 
             return new JsonResult(new
             {
-                project = updatedProject,
-                users = authorizedUsers.ToArray(),
-                status = HttpStatusCode.OK
-            });
+                status = HttpStatusCode.OK,
+                project = view.Project,
+                users = authorizedUsers.Select(x => x.User).ToArray(),
+            }, _jsonOptions);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Remove(int? id)
+        /// <summary>
+        /// Удалить проект
+        /// </summary>
+        /// <param name="Id"></param>     
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int? Id)
         {
-            if (!id.HasValue)
+            var id = Id.Value;
+            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+
+            if (!_dbContext.CheckAccessForProject(id, user))
             {
                 return new JsonResult(new
                 {
-                    status = HttpStatusCode.InternalServerError
-                });
+                    status = HttpStatusCode.Unauthorized
+                }, _jsonOptions);
             }
 
-            var project = await _dbContext.Projects.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (project == null)
-            {
-                return new JsonResult(new
-                {
-                    text = "Не существует проекта с таким Id",
-                    status = HttpStatusCode.BadRequest
-                });
-            }
+            var project = await _dbContext.Projects.SingleAsync(x => x.Id == id);
 
             _dbContext.Remove(project);
 
@@ -245,7 +285,7 @@ namespace View.Controllers
             return new JsonResult(new
             {
                 status = HttpStatusCode.OK
-            });
+            }, _jsonOptions);
         }
     }
 }

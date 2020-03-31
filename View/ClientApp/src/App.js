@@ -11,6 +11,10 @@ import { ProjectGet } from './components/Project/Get';
 import { ProjectAdd } from './components/Project/Add';
 import { ProjectUpdate } from './components/Project/Update';
 
+import { TaskGet } from './components/Task/Get';
+import { TaskUpdate } from './components/Task/Update';
+import { TaskAdd } from './components/Task/Add';
+
 import './custom.css'
 
 export default class App extends Component {
@@ -20,7 +24,6 @@ export default class App extends Component {
     return (
       <Layout>
             <Route exact path='/' component={Home} />
-            <Route path='/signin' component={SignIn} />
 
             <Route exact path='/account/signin' component={SignIn} />
             <Route exact path='/account/signup' component={SignUp} />
@@ -29,6 +32,10 @@ export default class App extends Component {
             <Route exact path='/project/get/:projectId' component={ProjectGet} />
             <Route exact path='/project/add' component={ProjectAdd} />
             <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
+
+            <Route exact path='/task/get/:taskId' component={TaskGet} />
+            <Route exact path='/task/update/:taskId' component={TaskUpdate} />
+            <Route exact path='/task/add/:projectId' component={TaskAdd} />
       </Layout>
     );
   }

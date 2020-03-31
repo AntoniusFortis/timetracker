@@ -4,5 +4,11 @@
         <name>Timetracker.View</name>
     </assembly>
     <members>
+        <member name="M:View.Controllers.ProjectController.Delete(System.Nullable{System.Int32})">
+            <summary>
+            Удалить проект
+            </summary>
+            <param name="Id"></param>     
+        </member>
     </members>
 </doc>
