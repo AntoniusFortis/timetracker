@@ -3,19 +3,56 @@ import { Get, Delete } from '../../restManager';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 
+export class TaskList extends Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        const orderedtasks = this.props.orderFunc(this.props.tasks.slice());
+
+        return (
+            <table className='table table-striped' aria-labelledby="tabelLabel">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Состояние</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        !!orderedtasks && orderedtasks.map(task => (
+                            <tr>
+                                <td>
+                                    <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
+                                </td>
+                                <td>{task.State.Title}</td>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        )
+    }
+}
+
 export class ProjectGet extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            project: null,
+            project: {},
             loading: true,
-            users: []
+            users: [],
+            tasks: [],
+            orderTasksFunc: (tasks) => tasks
         };
 
         this.onRemoveProject = this.onRemoveProject.bind(this);
         this.onClickEditProject = this.onClickEditProject.bind(this);
         this.onClickAddTask = this.onClickAddTask.bind(this);
+        this.onClickSortTasks = this.onClickSortTasks.bind(this);
+        this.onClickSortDefTasks = this.onClickSortDefTasks.bind(this);
     }
 
     componentDidMount() {
@@ -74,29 +111,6 @@ export class ProjectGet extends Component {
         );
     }
 
-    renderTasksTable(tasks) {
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        tasks.map(task => (
-                            <tr>
-                                <td>
-                                    <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
-                                </td>
-                            </tr>
-                        ))
-                    }
-                </tbody>
-            </table>
-        );
-    }
-
     onRemoveProject(e) {
         e.preventDefault();
 
@@ -117,6 +131,14 @@ export class ProjectGet extends Component {
         window.location.href = "/task/add/" + this.state.project.Id;
     }
 
+    onClickSortTasks(e) {
+        this.setState({ orderTasksFunc: (tasks) => tasks.sort((a, b) => a.StateId >= b.StateId ? 1 : -1) });
+    }
+
+    onClickSortDefTasks(e) {
+        this.setState({ orderTasksFunc: (tasks) => tasks });
+    }
+
     render() {
         const project = this.state.loading
             ? <p><em>Загрузка...</em></p>
@@ -125,14 +147,10 @@ export class ProjectGet extends Component {
         const users = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users);
-
-        const tasks = this.state.loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderTasksTable(this.state.tasks);
         
         return (
             <div>
-                <h6>Проект</h6>
+                <h4>Проект</h4>
                 <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>
@@ -142,7 +160,10 @@ export class ProjectGet extends Component {
                 {users}
                 <button onClick={this.onClickAddTask}>Добавить задачу</button>
                 <h6>Задачи</h6>
-                {tasks}
+                <button onClick={this.onClickSortTasks}>Отсортировать по их состоянию</button>
+                <button onClick={this.onClickSortDefTasks}>Сортировка по умолчанию</button>
+
+                <TaskList tasks={this.state.tasks} orderFunc={this.state.orderTasksFunc} />
             </div>
         );
     }

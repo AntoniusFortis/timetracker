@@ -1,30 +1,50 @@
 ﻿import React, { Component } from 'react';
 import Select from 'react-select';
-import { Get, Delete } from '../../restManager';
+import { Get, Delete, Post } from '../../restManager';
 
 export class TaskGet extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            worktask: null,
-            loading: true
+            worktask: {},
+            loading: true,
+            states: [],
+            project: {}
         };
 
         this.onRemoveProject = this.onRemoveProject.bind(this);
         this.onClickEditProject = this.onClickEditProject.bind(this);
+        this.onStateChange = this.onStateChange.bind(this);
+        this.renderTaskTable = this.renderTaskTable.bind(this);
     }
 
     componentDidMount() {
-        this.getTaskData();
+        this.getTaskData().then(this.getStatesData());
     }
 
     async getTaskData() {
         Get("api/task/get?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
+                    this.setState({ worktask: result.worktask, project: result.project });
+                });
+        });
+    }
+
+    async getStatesData() {
+        Get("api/state/getall", (response) => {
+            response.json()
+                .then(result => {
+                    const states = result.states.map(state => {
+                        return {
+                            value: state.Id,
+                            label: state.Title
+                        }
+                    });
+
                     this.setState({
-                        worktask: result.worktask,
+                        states: states,
                         loading: false
                     });
                 });
@@ -44,12 +64,33 @@ export class TaskGet extends Component {
                         <td>Часов: {worktask.Duration}</td>
                     </tr>
                     <tr key={worktask.Id}>
-                        <td>Состояние: {worktask.State.Title}</td>
-                        <td>Проект: {worktask.Project.Title}</td>
+                        <td>Состояние:
+                            <Select options={this.state.states} defaultValue={this.state.states[worktask.StateId - 1]} onChange={this.onStateChange} />
+                        </td>
+                        <td>Проект: {this.state.project.Title}</td>
                     </tr>
                 </tbody>
             </table>
         );
+    }
+
+    onStateChange(e) {
+        const { worktask } = this.state;
+
+        worktask.State = {
+            Id: e.value,
+            Title: e.label
+        }
+        worktask.StateId = e.Id;
+
+        Post("api/task/update",
+            { worktask: worktask },
+            (response) => {
+                if (response.status === 200) {
+                    alert("Статус задания изменён");
+                    //window.location.href = "/task/get/" + this.props.match.params.taskId;
+                }
+            });
     }
 
     onRemoveProject(e) {
@@ -75,6 +116,9 @@ export class TaskGet extends Component {
 
         return (
             <div>
+                <div style={{ display: "inline-block", paddingRight: "10px" }}>
+                    <h4>Задача</h4>
+                </div>
                 <div style={{ display: "inline-block" }}>
                     <button onClick={this.onClickEditProject}>Редактировать задачу</button>
                 </div>
@@ -83,8 +127,6 @@ export class TaskGet extends Component {
                         <button>Удалить задачу</button>
                     </form>
                 </div>
-
-                <h6>Задача</h6>
                 {worktask}
             </div>
         );

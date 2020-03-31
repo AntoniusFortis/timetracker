@@ -157,10 +157,9 @@ namespace View.Controllers
                 .Select(x => x.Login)
                 .ToArrayAsync();
 
-            var tasks =  _dbContext.Tasks
-                .AsNoTracking()
-                .Where(x => x.Project.Id == id)
-                .ToArray();
+            var tasks =  await _dbContext.Tasks
+                .Where(x => x.ProjectId == id)
+                .ToArrayAsync();
 
             var response = new
             {

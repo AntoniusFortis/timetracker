@@ -20,11 +20,11 @@ export class TaskAdd extends Component {
     }
 
     onTitleChange(e) {
-        this.setState({ title: e.target.value.trim() });
+        this.setState({ title: e.target.value });
     }
 
     onDescriptionChange(e) {
-        this.setState({ description: e.target.value.trim() });
+        this.setState({ description: e.target.value });
     }
 
     onDurationChange(e) {

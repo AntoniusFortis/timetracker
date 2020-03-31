@@ -23,9 +23,9 @@ namespace Timetracker.Entities.Classes
             _cache = cache;
 
             Users.Load();
+            Projects.Load();
             AuthorizedUsers.Load();
             Tasks.Load();
-            Projects.Load();
             States.Load();
         }
 

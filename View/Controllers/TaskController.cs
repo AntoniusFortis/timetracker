@@ -82,7 +82,7 @@ namespace Timetracker.View.Controllers
 
             return new JsonResult(new
             {
-                status = HttpStatusCode.InternalServerError,
+                status = HttpStatusCode.OK,
                 project = worktask.Project,
                 worktask = worktask
             }, _jsonOptions);
@@ -106,6 +106,8 @@ namespace Timetracker.View.Controllers
             dbWorkTask.Title = view.worktask.Title;
             dbWorkTask.Description = view.worktask.Description;
             dbWorkTask.Duration = view.worktask.Duration;
+            dbWorkTask.StateId = view.worktask.State.Id;
+            dbWorkTask.State = view.worktask.State;
 
             _dbContext.Update(dbWorkTask);
             
