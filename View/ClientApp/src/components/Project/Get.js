@@ -73,25 +73,6 @@ export class ProjectGet extends Component {
         });
     }
 
-    renderProjectsTable(project) {
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Описание</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr key={project.Id}>
-                        <td>{project.Title}</td>
-                        <td>{project.Description}</td>
-                    </tr>
-                </tbody>
-            </table>
-        );
-    }
-
     renderUsersTable(users) {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
@@ -140,22 +121,17 @@ export class ProjectGet extends Component {
     }
 
     render() {
-        const project = this.state.loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderProjectsTable(this.state.project);
-
         const users = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users);
         
         return (
             <div>
-                <h4>Проект</h4>
+                <h4>Проект: {this.state.project.Title}</h4>
                 <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>
                 </form>
-                {project}
                 <h6>Пользователи</h6>
                 {users}
                 <button onClick={this.onClickAddTask}>Добавить задачу</button>

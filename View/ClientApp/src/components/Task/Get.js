@@ -56,18 +56,18 @@ export class TaskGet extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <tbody>
                     <tr key={worktask.Id}>
-                        <td>Название: {worktask.Title}</td>
                         <td>Описание: {worktask.Description}</td>
+                        <td>Проект: {this.state.project.Title}</td>
                     </tr>
                     <tr key={worktask.Id}>
                         <td>Дата создания: {worktask.CreatedDate}</td>
                         <td>Часов: {worktask.Duration}</td>
                     </tr>
                     <tr key={worktask.Id}>
-                        <td>Состояние:
+                        <td>Состояние:</td>
+                        <td>
                             <Select options={this.state.states} defaultValue={this.state.states[worktask.StateId - 1]} onChange={this.onStateChange} />
                         </td>
-                        <td>Проект: {this.state.project.Title}</td>
                     </tr>
                 </tbody>
             </table>
@@ -117,7 +117,7 @@ export class TaskGet extends Component {
         return (
             <div>
                 <div style={{ display: "inline-block", paddingRight: "10px" }}>
-                    <h4>Задача</h4>
+                    <h4>Задача {this.state.worktask.Id}: { this.state.worktask.Title }</h4>
                 </div>
                 <div style={{ display: "inline-block" }}>
                     <button onClick={this.onClickEditProject}>Редактировать задачу</button>

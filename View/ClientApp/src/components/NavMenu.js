@@ -3,6 +3,7 @@ import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLi
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
 import { hasAuthorized } from './Account';
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 
 export class NavMenu extends Component {
   static displayName = NavMenu.name;
@@ -10,21 +11,73 @@ export class NavMenu extends Component {
     constructor(props) {
         super(props);
 
-        this.toggleNavbar = this.toggleNavbar.bind(this);
         this.state = {
             auth: false,
-            collapsed: true
+            collapsed: true,
+            message: '',
+            hubConnection: null,
+            buttonToggle: true
         };
+
+        this.toggleNavbar = this.toggleNavbar.bind(this);
     }
+
     componentDidMount() {
+
+        const hubConnection = new HubConnectionBuilder()
+            .withUrl("/chat", { accessTokenFactory: () => localStorage.getItem('tokenKey') })
+            .configureLogging(LogLevel.Information)
+            .build();
+            
+        this.setState({ hubConnection }, () => {
+            this.state.hubConnection
+                .start()
+                .then(() => console.log('Connection started!'))
+                .catch(err => console.log('Error while establishing connection :('));
+
+            this.state.hubConnection.on('sendToAll', (receivedMessage, status) => {
+                if (status === 200) {
+                    this.setState({ buttonToggle: false });
+                }
+                else {
+                    this.setState({ message: '', buttonToggle: true });
+                }
+                alert(receivedMessage);
+            });
+
+            this.state.hubConnection.on('StopTracking', (receivedMessage, status) => {
+                this.setState({ buttonToggle: true });
+                alert(receivedMessage);
+            });
+        });
+
         this.setState({ auth: hasAuthorized() });
     }
 
-  toggleNavbar () {
-      this.setState({
-      collapsed: !this.state.collapsed
-    });
-  }
+    sendMessage = () => {
+        this.state.hubConnection
+            .invoke('sendToAll', this.state.message)
+            .catch(err => {
+                console.error(err);
+                this.setState({ message: '', buttonToggle: true });
+            });
+    };
+
+    stopTracking = () => {
+        this.state.hubConnection
+            .invoke('StopTracking', this.state.message)
+            .catch(err => {
+                console.error(err);
+                this.setState({ message: '', buttonToggle: true });
+            });
+
+    };
+
+    toggleNavbar() {
+        this.setState({
+            collapsed: !this.state.collapsed
+        });
+    }
 
     Signout() {
         localStorage.removeItem('tokenKey');
@@ -41,6 +94,17 @@ export class NavMenu extends Component {
                             <NavbarBrand tag={Link} to="/">View</NavbarBrand>
                             <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
+                                <div style={{ display: (this.state.buttonToggle ? 'block' : 'none') }}>
+                                <input 
+                                    type="text"
+                                    value={this.state.message}
+                                    onChange={e => this.setState({ message: e.target.value })}
+                                />
+
+                                    <button onClick={this.sendMessage}>Send</button>
+                                </div>
+                                <button style={{ display: (this.state.buttonToggle ? 'none' : 'block') }} onClick={this.stopTracking}>Stop tracking</button>
+
                                 <ul className="navbar-nav flex-grow">
                                     <NavItem>
                                         <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
@@ -49,7 +113,7 @@ export class NavMenu extends Component {
                                         <NavLink tag={Link} onClick={x => { this.Signout(); }} className="text-dark" to="/">SignOut</NavLink>
                                     </NavItem>
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/project/all">Projects</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/project/all">Проекты</NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink tag={Link} className="text-dark" to="/project/add">Новый проект</NavLink>
@@ -72,7 +136,7 @@ export class NavMenu extends Component {
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                                 <ul className="navbar-nav flex-grow">
                                     <NavItem>
-                                        <NavLink tag={Link} className="text-dark" to="/account/signin">Sign In</NavLink>
+                                        <NavLink tag={Link} className="text-dark" to="/account/signin">Авторизация</NavLink>
                                     </NavItem>
                                     <NavItem>
                                         <NavLink tag={Link} className="text-dark" to="/account/signup">Регистрация</NavLink>

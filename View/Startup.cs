@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.IO;
 using System.Reflection;
+using Timetracker.View.Hubs;
 
 namespace View
 {
@@ -52,10 +53,25 @@ namespace View
                            IssuerSigningKey = TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(),
                            ValidateIssuerSigningKey = true,
                        };
+                       options.Events = new JwtBearerEvents
+                       {
+                           OnMessageReceived = context =>
+                           {
+                               var accessToken = context.Request.Query["access_token"];
+
+                               // если запрос направлен хабу
+                               var path = context.HttpContext.Request.Path;
+                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/chat")))
+                               {
+                                   // получаем токен из строки запроса
+                                   context.Token = accessToken;
+                               }
+                               return System.Threading.Tasks.Task.CompletedTask;
+                           }
+                       };
                    });
 
-            //services.AddMvc();
-
+            services.AddSignalR();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -64,7 +80,6 @@ namespace View
                     Title = "Timetracker API"
                 });
 
-                // Set the comments path for the Swagger JSON and UI.
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
@@ -102,6 +117,7 @@ namespace View
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHub<ChatHub>("/chat");
                 endpoints.MapControllers();
             });
 
