@@ -21,11 +21,6 @@ export class ProjectUpdate extends Component {
             user_input: ""
         };
 
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onTitleChange = this.onTitleChange.bind(this);
-        this.onDescriptionChange = this.onDescriptionChange.bind(this);
-        this.onAddingUser = this.onAddingUser.bind(this);
         this.onRemoveUser = this.onRemoveUser.bind(this);
         this.onUserInputChange = this.onUserInputChange.bind(this);
     }
@@ -34,12 +29,12 @@ export class ProjectUpdate extends Component {
         this.getProjectsData();
     }
 
-    onTitleChange(e) {
-        this.setState({ title: e.target.value.trim() });
+    onTitleChange = (event) => {
+        this.setState({ title: event.target.value });
     }
 
-    onDescriptionChange(e) {
-        this.setState({ description: e.target.value.trim() });
+    onDescriptionChange = (event) => {
+        this.setState({ description: event.target.value });
     }
 
     onUserInputChange(e) {
@@ -60,12 +55,12 @@ export class ProjectUpdate extends Component {
         });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
         const { description, title, project, users } = this.state;
 
         Post("api/project/update",
-            { Project: { Id: project.Id, Title: title, Description: description }, Users: users },
+            { Project: { Id: project.Id, Title: title.trim(), Description: description.trim() }, Users: users },
             (response) => {
                 if (response.status === 200) {
                     window.location.href = "/projects/get/" + this.props.match.params.projectId;
@@ -82,8 +77,8 @@ export class ProjectUpdate extends Component {
         this.setState({ users: this.state.users });
     }
 
-    onAddingUser(e) {
-        e.preventDefault();
+    onAddingUser = (event) => {
+        event.preventDefault();
 
         const name = this.state.user_input;
         this.setState(prevState => {

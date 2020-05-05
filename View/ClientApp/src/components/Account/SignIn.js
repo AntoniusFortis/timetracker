@@ -10,23 +10,18 @@ export class SignIn extends Component {
             name: "",
             password: ""
         };
-
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onNameChange = this.onNameChange.bind(this);
-        this.onPasswordChange = this.onPasswordChange.bind(this);
     }
 
-    onNameChange(e) {
-        this.setState({ name: e.target.value });
+    onNameChange = (event) => {
+        this.setState({ name: event.target.value });
     }
 
-    onPasswordChange(e) {
-        this.setState({ password: e.target.value });
+    onPasswordChange = (event) => {
+        this.setState({ password: event.target.value });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
 
         const { name, password } = this.state;
 
@@ -57,7 +52,7 @@ export class SignIn extends Component {
                 <p>
                     <input type="password" placeholder="Пароль" value={this.state.password} onChange={this.onPasswordChange} />
                 </p>
-                <input type="submit" value="Войти" />
+                <input type="submit" value="Авторизоваться" />
             </form>
         );
     }

@@ -18,6 +18,7 @@ export class ProjectGetAll extends Component {
     }
 
     async getProjectsData() {
+        debugger; 
         Get('api/project/getall', (response) => {
             response.json()
                 .then(result => {
@@ -57,19 +58,19 @@ export class ProjectGetAll extends Component {
         const { loading, projectView } = this.state;
 
         const signedProjects = loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderTable(projectView.SignedProjects);
 
         const notSignedProjects = loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderTable(projectView.NotSignedProjects);
 
         return (
             <div>
-                <h1 id="tabelLabel">My projects</h1>
+                <h1 id="tabelLabel">Проекты</h1>
                 <p>Projects</p>
                 {signedProjects}
-                <p>You were invited to Projects</p>
+                <p>Проекты в которые вы были приглашены</p>
                 {notSignedProjects}
             </div>
         );

@@ -18,23 +18,16 @@ using Timetracker.View.Hubs;
 
 namespace View
 {
-    public class Startup
+    public static class IServiceCollectionExtented
     {
-        public Startup(IConfiguration configuration)
+        public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-            Configuration = configuration;
+            services.AddDbContext<TimetrackerContext>(x =>
+                x.UseSqlServer(configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Scoped);
         }
 
-        public IConfiguration Configuration { get; }
-
-
-        public void ConfigureServices(IServiceCollection services)
+        public static void AddAuth(this IServiceCollection services)
         {
-            services.AddMemoryCache();
-            services.AddDbContext<TimetrackerContext>(x => 
-                x.UseSqlServer(Configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Scoped);
-
-            services.AddControllers();
             services.AddAuthorization();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                    .AddJwtBearer(options =>
@@ -59,18 +52,34 @@ namespace View
                            {
                                var accessToken = context.Request.Query["access_token"];
 
-                               // если запрос направлен хабу
                                var path = context.HttpContext.Request.Path;
-                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/chat")))
+                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/tracking")))
                                {
-                                   // получаем токен из строки запроса
                                    context.Token = accessToken;
                                }
                                return System.Threading.Tasks.Task.CompletedTask;
                            }
                        };
                    });
+        }
+    }
 
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMemoryCache();
+            services.AddDatabase(Configuration);
+            services.AddControllers();
+            services.AddAuth();
             services.AddSignalR();
             services.AddSwaggerGen(c =>
             {
@@ -117,7 +126,7 @@ namespace View
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<ChatHub>("/chat");
+                endpoints.MapHub<TrackingHub>("/tracking");
                 endpoints.MapControllers();
             });
 

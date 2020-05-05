@@ -1,6 +1,89 @@
 ﻿import React, { Component } from 'react';
 import Select from 'react-select';
 import { Get, Delete, Post } from '../../restManager';
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+
+export class TaskTracking extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            hubConnection: null,
+            buttonToggle: true
+        };
+    }
+
+    showMessage(text)
+    {
+        if (text.trim() !== '') {
+            alert(text);
+        }
+    }
+
+    componentDidMount() {
+        const hubConnection = new HubConnectionBuilder()
+            .withUrl("/tracking", { accessTokenFactory: () => localStorage.getItem('tokenKey') })
+            .configureLogging(LogLevel.Information)
+            .build();
+
+        this.setState({ hubConnection }, () => {
+            this.state.hubConnection.start()
+                .catch(err => console.log(err));
+
+            this.state.hubConnection.on('StartTracking', (receivedMessage, status) => {
+                this.setState({ buttonToggle: false });
+                this.showMessage(receivedMessage);
+            });
+
+            this.state.hubConnection.on('StopTracking', (receivedMessage, status) => {
+                this.setState({ buttonToggle: true });
+                this.showMessage(receivedMessage);
+            });
+
+            this.state.hubConnection.on('GetActiveTracking', (istracking) => {
+                this.setState({ buttonToggle: !istracking });
+            });
+        });
+
+    }
+
+    getActiveTracking = () => {
+        this.state.hubConnection
+            .invoke('GetActiveTracking')
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
+    }
+
+    startTracking = () => {
+        this.state.hubConnection
+            .invoke('StartTracking', this.props.worktaskId)
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
+    };
+
+    stopTracking = () => {
+        this.state.hubConnection
+            .invoke('StopTracking')
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
+    };
+
+    render() {
+        return (
+            <div>
+                <div style={{ display: (this.state.buttonToggle ? 'block' : 'none') }}>
+                    <button onClick={this.startTracking}>Начать отслеживание</button>
+                </div>
+                <button style={{ display: (this.state.buttonToggle ? 'none' : 'block') }} onClick={this.stopTracking}>Остановить отслеживание</button>
+            </div>);
+    }
+}
 
 export class TaskGet extends Component {
     constructor(props) {
@@ -10,17 +93,15 @@ export class TaskGet extends Component {
             worktask: {},
             loading: true,
             states: [],
-            project: {}
+            project: {},
+            worktracks: []
         };
-
-        this.onRemoveProject = this.onRemoveProject.bind(this);
-        this.onClickEditProject = this.onClickEditProject.bind(this);
-        this.onStateChange = this.onStateChange.bind(this);
-        this.renderTaskTable = this.renderTaskTable.bind(this);
     }
 
     componentDidMount() {
-        this.getTaskData().then(this.getStatesData());
+        this.getTaskData()
+            .then(this.getStatesData())
+            .then(this.getWorktacksData());
     }
 
     async getTaskData() {
@@ -28,6 +109,15 @@ export class TaskGet extends Component {
             response.json()
                 .then(result => {
                     this.setState({ worktask: result.worktask, project: result.project });
+                });
+        });
+    }
+
+    async getWorktacksData() {
+        Get("api/worktrack/getall?worktaskId=" + this.props.match.params.taskId, (response) => {
+            response.json()
+                .then(result => {
+                    this.setState({ worktracks: result });
                 });
         });
     }
@@ -51,7 +141,7 @@ export class TaskGet extends Component {
         });
     }
 
-    renderTaskTable(worktask) {
+    renderTaskTable = (worktask) => {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <tbody>
@@ -69,32 +159,63 @@ export class TaskGet extends Component {
                             <Select options={this.state.states} defaultValue={this.state.states[worktask.StateId - 1]} onChange={this.onStateChange} />
                         </td>
                     </tr>
+                    <tr>
+                        <TaskTracking worktaskId={worktask.Id} />
+                    </tr>
                 </tbody>
             </table>
         );
     }
 
-    onStateChange(e) {
+    renderWorktracksTable(worktracks) {
+        return (
+            <table className='table table-striped' aria-labelledby="tabelLabel">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Время начала</th>
+                        <th>Время окончания</th>
+                        <th>Затраченное время</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        worktracks.map(worktrack =>
+                            (
+                                <tr key={worktrack.Id}>
+                                    <td>{worktrack.User}</td>
+                                    <td>{worktrack.StartedTime}</td>
+                                    <td>{worktrack.StoppedTime}</td>
+                                    <td>{worktrack.TotalTime}</td>
+                                </tr>
+                            )
+                        )
+                    }
+                </tbody>
+            </table>
+        );
+    }
+
+    onStateChange = (event) => {
         const { worktask } = this.state;
 
         worktask.State = {
-            Id: e.value,
-            Title: e.label
+            Id: event.value,
+            Title: event.label
         }
-        worktask.StateId = e.Id;
+        worktask.StateId = event.Id;
 
         Post("api/task/update",
             { worktask: worktask },
             (response) => {
-                if (response.status === 200) {
-                    alert("Статус задания изменён");
-                    //window.location.href = "/task/get/" + this.props.match.params.taskId;
-                }
+                //if (response.status === 200) {
+                //    window.location.href = "/task/get/" + this.props.match.params.taskId;
+                //}
             });
     }
 
-    onRemoveProject(e) {
-        e.preventDefault();
+    onRemoveProject = (event) => {
+        event.preventDefault();
 
         Delete("api/task/delete?Id=" + this.state.worktask.Id,
             {},
@@ -105,7 +226,7 @@ export class TaskGet extends Component {
             });
     }
 
-    onClickEditProject(e) {
+    onClickEditProject = (event) => {
         window.location.href = "/task/update/" + this.state.worktask.Id;
     }
 
@@ -113,6 +234,9 @@ export class TaskGet extends Component {
         const worktask = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderTaskTable(this.state.worktask);
+        const worktracks = this.state.loading
+            ? <p><em>Загрузка...</em></p>
+            : this.renderWorktracksTable(this.state.worktracks);
 
         return (
             <div>
@@ -128,6 +252,7 @@ export class TaskGet extends Component {
                     </form>
                 </div>
                 {worktask}
+                {worktracks}
             </div>
         );
     }

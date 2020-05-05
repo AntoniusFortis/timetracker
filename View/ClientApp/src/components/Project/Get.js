@@ -48,8 +48,6 @@ export class ProjectGet extends Component {
             orderTasksFunc: (tasks) => tasks
         };
 
-        this.onRemoveProject = this.onRemoveProject.bind(this);
-        this.onClickEditProject = this.onClickEditProject.bind(this);
         this.onClickAddTask = this.onClickAddTask.bind(this);
         this.onClickSortTasks = this.onClickSortTasks.bind(this);
         this.onClickSortDefTasks = this.onClickSortDefTasks.bind(this);
@@ -92,8 +90,8 @@ export class ProjectGet extends Component {
         );
     }
 
-    onRemoveProject(e) {
-        e.preventDefault();
+    onRemoveProject = (event) => {
+        event.preventDefault();
 
         Delete("api/project/delete?Id=" + this.state.project.Id,
             { },
@@ -104,7 +102,7 @@ export class ProjectGet extends Component {
             });
     }
 
-    onClickEditProject(e) {
+    onClickEditProject = (event) => {
         window.location.href = "/project/update/" + this.state.project.Id;
     }
 
@@ -127,7 +125,9 @@ export class ProjectGet extends Component {
         
         return (
             <div>
-                <h4>Проект: {this.state.project.Title}</h4>
+                <div style={{ display: "inline-block", paddingRight: "10px" }}>
+                    <h4>Проект: {this.state.project.Title}</h4>
+                </div>
                 <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>

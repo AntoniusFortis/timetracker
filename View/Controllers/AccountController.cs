@@ -81,7 +81,7 @@ namespace View.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp(UserView view)
         {
-            var userExist = _dbContext.UserExist(view.Login);
+            var userExist = _dbContext.UserExists(view.Login);
 
             if (userExist)
             {
