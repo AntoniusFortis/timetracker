@@ -1,52 +1,36 @@
 ﻿import { hasAuthorized } from './components/Account'
 
-export function Get(uri, callback) {
+function fetchServer(uri, callback, body, method) {
     const headers = new Headers();
 
     if (hasAuthorized()) {
         headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
     }
 
+    if (body) {
+        headers.append("Content-Type", "application/json;charset=utf-8");
+    }
+
     fetch(uri, {
-        method: "GET",
-        headers: headers
+        method: method,
+        headers: headers,
+        body: body
     })
         .then(result => callback(result));
+}
+
+export function Get(uri, callback) {
+    fetchServer(uri, callback, null, 'GET');
 }
 
 export function Post(uri, body, callback) {
-    const headers = new Headers();
-    if (hasAuthorized()) {
-        headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
-    }
-
-    headers.append("Content-Type", "application/json;charset=utf-8");
-
     const json = JSON.stringify(body);
 
-    fetch(uri, {
-        method: "POST",
-        headers: headers,
-        body: json
-    })
-        .then(result => callback(result));
+    fetchServer(uri, callback, json, 'POST');
 }
 
 export function Delete(uri, body, callback) {
-    const headers = new Headers();
-
-    if (hasAuthorized()) {
-        headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
-    }
-
-    headers.append("Content-Type", "application/json;charset=utf-8");
-
     const json = JSON.stringify(body);
 
-    fetch(uri, {
-        method: "DELETE",
-        headers: headers,
-        body: json
-    })
-        .then(result => callback(result));
+    fetchServer(uri, callback, json, 'DELETE');
 }

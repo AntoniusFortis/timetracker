@@ -47,10 +47,6 @@ export class ProjectGet extends Component {
             tasks: [],
             orderTasksFunc: (tasks) => tasks
         };
-
-        this.onClickAddTask = this.onClickAddTask.bind(this);
-        this.onClickSortTasks = this.onClickSortTasks.bind(this);
-        this.onClickSortDefTasks = this.onClickSortDefTasks.bind(this);
     }
 
     componentDidMount() {
@@ -106,15 +102,15 @@ export class ProjectGet extends Component {
         window.location.href = "/project/update/" + this.state.project.Id;
     }
 
-    onClickAddTask(e) {
+    onClickAddTask = (event) => {
         window.location.href = "/task/add/" + this.state.project.Id;
     }
 
-    onClickSortTasks(e) {
+    onClickSortTasks = (event) => {
         this.setState({ orderTasksFunc: (tasks) => tasks.sort((a, b) => a.StateId >= b.StateId ? 1 : -1) });
     }
 
-    onClickSortDefTasks(e) {
+    onClickSortDefTasks = (event) => {
         this.setState({ orderTasksFunc: (tasks) => tasks });
     }
 

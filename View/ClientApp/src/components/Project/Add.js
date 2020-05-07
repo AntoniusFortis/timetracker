@@ -19,29 +19,22 @@ export class ProjectAdd extends Component {
             users: [],
             user_input: ""
         };
-
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onTitleChange = this.onTitleChange.bind(this);
-        this.onDescriptionChange = this.onDescriptionChange.bind(this);
-        this.onAddingUser = this.onAddingUser.bind(this);
-        this.onRemoveUser = this.onRemoveUser.bind(this);
     }
 
-    onTitleChange(e) {
-        this.setState({ title: e.target.value.trim() });
+    onTitleChange = (event) => {
+        this.setState({ title: event.target.value });
     }
 
-    onDescriptionChange(e) {
-        this.setState({ description: e.target.value.trim()  });
+    onDescriptionChange = (event) => {
+        this.setState({ description: event.target.value });
     }
 
-    onUserInputChange(e) {
-        this.setState({ user_input: e.target.value.trim()  });
+    onUserInputChange = (event) => {
+        this.setState({ user_input: event.target.value });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
 
         const { title, description, users } = this.state;
 
@@ -50,7 +43,7 @@ export class ProjectAdd extends Component {
         }
 
         Post("api/project/add",
-            { Project: { Title: title, Description: description }, Users: users },
+            { Project: { Title: title.trim(), Description: description }, Users: users },
             (response) => {
                 if (response.status === 200) {
                     window.location.href = "/project/all";
@@ -58,17 +51,17 @@ export class ProjectAdd extends Component {
             });
     }
 
-    onRemoveUser(data) {
+    onRemoveUser = (event) => {
         const users = this.state.users;
-        const idx = users.indexOf(data.Name);
+        const idx = users.indexOf(event.Name);
 
         this.state.users.splice(idx);
 
         this.setState({ users: this.state.users });
     }
 
-    onAddingUser(e) {
-        e.preventDefault();
+    onAddingUser = (event) => {
+        event.preventDefault();
 
         const name = this.state.user_input;
         this.setState(prevState => {
@@ -82,14 +75,14 @@ export class ProjectAdd extends Component {
         return (
             <form onSubmit={this.onSubmit}>
                 <p>
-                    <input type="text" placeholder="Title" value={this.state.title} onChange={this.onTitleChange} />
+                    <input type="text" placeholder="Название" value={this.state.title} onChange={this.onTitleChange} />
                 </p>
                 <p>
-                    <input type="text" placeholder="Description" value={this.state.description} onChange={x => this.onDescriptionChange(x)} />
+                    <input type="text" placeholder="Описание" value={this.state.description} onChange={this.onDescriptionChange} />
                 </p>
-                <input type="submit" value="Add" />
+                <input type="submit" value="Создать проект" />
 
-                <input type="text" placeholder="user name" onChange={x => this.onUserInputChange(x)} />
+                <input type="text" placeholder="user name" onChange={this.onUserInputChange} />
                 <button onClick={this.onAddingUser}>Добавить пользователя</button>
 
                 <div>

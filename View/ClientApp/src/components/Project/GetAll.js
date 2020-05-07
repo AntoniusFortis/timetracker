@@ -18,7 +18,6 @@ export class ProjectGetAll extends Component {
     }
 
     async getProjectsData() {
-        debugger; 
         Get('api/project/getall', (response) => {
             response.json()
                 .then(result => {
@@ -32,8 +31,8 @@ export class ProjectGetAll extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Description</th>
+                        <th>Название</th>
+                        <th>Описание</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,7 +67,7 @@ export class ProjectGetAll extends Component {
         return (
             <div>
                 <h1 id="tabelLabel">Проекты</h1>
-                <p>Projects</p>
+                <p>Проекты</p>
                 {signedProjects}
                 <p>Проекты в которые вы были приглашены</p>
                 {notSignedProjects}

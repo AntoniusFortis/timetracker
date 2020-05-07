@@ -53,7 +53,7 @@ namespace View
                                var accessToken = context.Request.Query["access_token"];
 
                                var path = context.HttpContext.Request.Path;
-                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/tracking")))
+                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/trackingHub")))
                                {
                                    context.Token = accessToken;
                                }
@@ -72,7 +72,6 @@ namespace View
         }
 
         public IConfiguration Configuration { get; }
-
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -126,7 +125,7 @@ namespace View
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<TrackingHub>("/tracking");
+                endpoints.MapHub<TrackingHub>("/trackingHub");
                 endpoints.MapControllers();
             });
 

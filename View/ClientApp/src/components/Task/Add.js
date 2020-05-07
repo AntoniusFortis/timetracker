@@ -11,28 +11,22 @@ export class TaskAdd extends Component {
             description: "",
             duration: ""
         };
-
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onTitleChange = this.onTitleChange.bind(this);
-        this.onDescriptionChange = this.onDescriptionChange.bind(this);
-        this.onDurationChange = this.onDurationChange.bind(this);
     }
 
-    onTitleChange(e) {
-        this.setState({ title: e.target.value });
+    onTitleChange = (event) => {
+        this.setState({ title: event.target.value });
     }
 
-    onDescriptionChange(e) {
-        this.setState({ description: e.target.value });
+    onDescriptionChange = (event) => {
+        this.setState({ description: event.target.value });
     }
 
-    onDurationChange(e) {
-        this.setState({ duration: e.target.value.trim() });
+    onDurationChange = (event) => {
+        this.setState({ duration: event.target.value });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
 
         const { title, description, duration } = this.state;
 
@@ -65,7 +59,7 @@ export class TaskAdd extends Component {
                     <input type="text" placeholder="Название" value={this.state.title} onChange={this.onTitleChange} />
                 </p>
                 <p>
-                    <input type="text" placeholder="Описание" value={this.state.description} onChange={x => this.onDescriptionChange(x)} />
+                    <input type="text" placeholder="Описание" value={this.state.description} onChange={this.onDescriptionChange} />
                 </p>
                 <p>
                     <input type="text" placeholder="Длительность" value={this.state.duration} onChange={this.onDurationChange} />

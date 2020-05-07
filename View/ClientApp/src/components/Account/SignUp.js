@@ -13,11 +13,11 @@ export class SignUp extends Component {
     }
 
     onNameChange = (event) => {
-        this.setState({ name: event.target.value.trim() });
+        this.setState({ name: event.target.value });
     }
 
     onPasswordChange = (event) => {
-        this.setState({ password: event.target.value.trim() });
+        this.setState({ password: event.target.value });
     }
 
     onSubmit = (event) => {

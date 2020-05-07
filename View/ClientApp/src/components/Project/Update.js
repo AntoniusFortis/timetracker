@@ -20,9 +20,6 @@ export class ProjectUpdate extends Component {
             users: [],
             user_input: ""
         };
-
-        this.onRemoveUser = this.onRemoveUser.bind(this);
-        this.onUserInputChange = this.onUserInputChange.bind(this);
     }
 
     componentDidMount() {
@@ -37,8 +34,8 @@ export class ProjectUpdate extends Component {
         this.setState({ description: event.target.value });
     }
 
-    onUserInputChange(e) {
-        this.setState({ user_input: e.target.value });
+    onUserInputChange = (event) => {
+        this.setState({ user_input: event.target.value });
     }
 
     async getProjectsData() {
@@ -68,9 +65,9 @@ export class ProjectUpdate extends Component {
             });
     }
 
-    onRemoveUser(data) {
+    onRemoveUser = (event) => {
         const users = this.state.users;
-        const idx = users.indexOf(data.Name);
+        const idx = users.indexOf(event.Name);
 
         this.state.users.splice(idx);
 
@@ -92,15 +89,15 @@ export class ProjectUpdate extends Component {
         return (
             <form onSubmit={this.onSubmit}>
                 <p>
-                    <input type="text" placeholder="Title" value={this.state.title} onChange={this.onTitleChange} />
+                    <input type="text" placeholder="Название" value={this.state.title} onChange={this.onTitleChange} />
                 </p>
                 <p>
-                    <input type="text" placeholder="Description" value={this.state.description} onChange={this.onDescriptionChange} />
+                    <input type="text" placeholder="Описание" value={this.state.description} onChange={this.onDescriptionChange} />
                 </p>
-                <input type="submit" value="Update" />
+                <input type="submit" value="Изменить проект" />
 
-                <input type="text" placeholder="user name" onChange={x => this.onUserInputChange(x)} />
-                <button onClick={x => this.onAddingUser(x)}>Add user</button>
+                <input type="text" placeholder="Имя пользователя" onChange={this.onUserInputChange} />
+                <button onClick={this.onAddingUser}>Add user</button>
 
                 <div>
                     {

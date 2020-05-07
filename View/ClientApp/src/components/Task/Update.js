@@ -12,28 +12,22 @@ export class TaskUpdate extends Component {
             description: "",
             duration: ""
         };
-
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onTitleChange = this.onTitleChange.bind(this);
-        this.onDescriptionChange = this.onDescriptionChange.bind(this);
-        this.onDurationChange = this.onDurationChange.bind(this);
     }
 
     componentDidMount() {
         this.getTaskData();
     }
 
-    onTitleChange(e) {
-        this.setState({ title: e.target.value.trim() });
+    onTitleChange = (event) => {
+        this.setState({ title: event.target.value });
     }
 
-    onDescriptionChange(e) {
-        this.setState({ description: e.target.value.trim() });
+    onDescriptionChange = (event) => {
+        this.setState({ description: event.target.value });
     }
 
-    onDurationChange(e) {
-        this.setState({ duration: e.target.value.trim() });
+    onDurationChange = (event) => {
+        this.setState({ duration: event.target.value });
     }
 
     async getTaskData() {
@@ -50,8 +44,8 @@ export class TaskUpdate extends Component {
         });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
         const { description, title, worktask, duration } = this.state;
 
         worktask.Title = title;
