@@ -14,26 +14,20 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.IO;
 using System.Reflection;
+using Timetracker.View.Hubs;
 
 namespace View
 {
-    public class Startup
+    public static class IServiceCollectionExtented
     {
-        public Startup(IConfiguration configuration)
+        public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-            Configuration = configuration;
+            services.AddDbContext<TimetrackerContext>(x =>
+                x.UseSqlServer(configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Scoped);
         }
 
-        public IConfiguration Configuration { get; }
-
-
-        public void ConfigureServices(IServiceCollection services)
+        public static void AddAuth(this IServiceCollection services)
         {
-            services.AddMemoryCache();
-            services.AddDbContext<TimetrackerContext>(x => 
-                x.UseSqlServer(Configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Scoped);
-
-            services.AddControllers();
             services.AddAuthorization();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                    .AddJwtBearer(options =>
@@ -52,10 +46,40 @@ namespace View
                            IssuerSigningKey = TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(),
                            ValidateIssuerSigningKey = true,
                        };
+                       options.Events = new JwtBearerEvents
+                       {
+                           OnMessageReceived = context =>
+                           {
+                               var accessToken = context.Request.Query["access_token"];
+
+                               var path = context.HttpContext.Request.Path;
+                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/trackingHub")))
+                               {
+                                   context.Token = accessToken;
+                               }
+                               return System.Threading.Tasks.Task.CompletedTask;
+                           }
+                       };
                    });
+        }
+    }
 
-            //services.AddMvc();
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
 
+        public IConfiguration Configuration { get; }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMemoryCache();
+            services.AddDatabase(Configuration);
+            services.AddControllers();
+            services.AddAuth();
+            services.AddSignalR();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -64,7 +88,6 @@ namespace View
                     Title = "Timetracker API"
                 });
 
-                // Set the comments path for the Swagger JSON and UI.
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
@@ -102,6 +125,7 @@ namespace View
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHub<TrackingHub>("/trackingHub");
                 endpoints.MapControllers();
             });
 

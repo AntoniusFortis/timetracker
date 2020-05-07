@@ -20,30 +20,22 @@ export class ProjectUpdate extends Component {
             users: [],
             user_input: ""
         };
-
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onTitleChange = this.onTitleChange.bind(this);
-        this.onDescriptionChange = this.onDescriptionChange.bind(this);
-        this.onAddingUser = this.onAddingUser.bind(this);
-        this.onRemoveUser = this.onRemoveUser.bind(this);
-        this.onUserInputChange = this.onUserInputChange.bind(this);
     }
 
     componentDidMount() {
         this.getProjectsData();
     }
 
-    onTitleChange(e) {
-        this.setState({ title: e.target.value.trim() });
+    onTitleChange = (event) => {
+        this.setState({ title: event.target.value });
     }
 
-    onDescriptionChange(e) {
-        this.setState({ description: e.target.value.trim() });
+    onDescriptionChange = (event) => {
+        this.setState({ description: event.target.value });
     }
 
-    onUserInputChange(e) {
-        this.setState({ user_input: e.target.value });
+    onUserInputChange = (event) => {
+        this.setState({ user_input: event.target.value });
     }
 
     async getProjectsData() {
@@ -60,12 +52,12 @@ export class ProjectUpdate extends Component {
         });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
         const { description, title, project, users } = this.state;
 
         Post("api/project/update",
-            { Project: { Id: project.Id, Title: title, Description: description }, Users: users },
+            { Project: { Id: project.Id, Title: title.trim(), Description: description.trim() }, Users: users },
             (response) => {
                 if (response.status === 200) {
                     window.location.href = "/projects/get/" + this.props.match.params.projectId;
@@ -73,17 +65,17 @@ export class ProjectUpdate extends Component {
             });
     }
 
-    onRemoveUser(data) {
+    onRemoveUser = (event) => {
         const users = this.state.users;
-        const idx = users.indexOf(data.Name);
+        const idx = users.indexOf(event.Name);
 
         this.state.users.splice(idx);
 
         this.setState({ users: this.state.users });
     }
 
-    onAddingUser(e) {
-        e.preventDefault();
+    onAddingUser = (event) => {
+        event.preventDefault();
 
         const name = this.state.user_input;
         this.setState(prevState => {
@@ -97,15 +89,15 @@ export class ProjectUpdate extends Component {
         return (
             <form onSubmit={this.onSubmit}>
                 <p>
-                    <input type="text" placeholder="Title" value={this.state.title} onChange={this.onTitleChange} />
+                    <input type="text" placeholder="Название" value={this.state.title} onChange={this.onTitleChange} />
                 </p>
                 <p>
-                    <input type="text" placeholder="Description" value={this.state.description} onChange={this.onDescriptionChange} />
+                    <input type="text" placeholder="Описание" value={this.state.description} onChange={this.onDescriptionChange} />
                 </p>
-                <input type="submit" value="Update" />
+                <input type="submit" value="Изменить проект" />
 
-                <input type="text" placeholder="user name" onChange={x => this.onUserInputChange(x)} />
-                <button onClick={x => this.onAddingUser(x)}>Add user</button>
+                <input type="text" placeholder="Имя пользователя" onChange={this.onUserInputChange} />
+                <button onClick={this.onAddingUser}>Add user</button>
 
                 <div>
                     {

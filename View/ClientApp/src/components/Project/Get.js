@@ -47,12 +47,6 @@ export class ProjectGet extends Component {
             tasks: [],
             orderTasksFunc: (tasks) => tasks
         };
-
-        this.onRemoveProject = this.onRemoveProject.bind(this);
-        this.onClickEditProject = this.onClickEditProject.bind(this);
-        this.onClickAddTask = this.onClickAddTask.bind(this);
-        this.onClickSortTasks = this.onClickSortTasks.bind(this);
-        this.onClickSortDefTasks = this.onClickSortDefTasks.bind(this);
     }
 
     componentDidMount() {
@@ -71,25 +65,6 @@ export class ProjectGet extends Component {
                     });
                 });
         });
-    }
-
-    renderProjectsTable(project) {
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Описание</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr key={project.Id}>
-                        <td>{project.Title}</td>
-                        <td>{project.Description}</td>
-                    </tr>
-                </tbody>
-            </table>
-        );
     }
 
     renderUsersTable(users) {
@@ -111,8 +86,8 @@ export class ProjectGet extends Component {
         );
     }
 
-    onRemoveProject(e) {
-        e.preventDefault();
+    onRemoveProject = (event) => {
+        event.preventDefault();
 
         Delete("api/project/delete?Id=" + this.state.project.Id,
             { },
@@ -123,39 +98,36 @@ export class ProjectGet extends Component {
             });
     }
 
-    onClickEditProject(e) {
+    onClickEditProject = (event) => {
         window.location.href = "/project/update/" + this.state.project.Id;
     }
 
-    onClickAddTask(e) {
+    onClickAddTask = (event) => {
         window.location.href = "/task/add/" + this.state.project.Id;
     }
 
-    onClickSortTasks(e) {
+    onClickSortTasks = (event) => {
         this.setState({ orderTasksFunc: (tasks) => tasks.sort((a, b) => a.StateId >= b.StateId ? 1 : -1) });
     }
 
-    onClickSortDefTasks(e) {
+    onClickSortDefTasks = (event) => {
         this.setState({ orderTasksFunc: (tasks) => tasks });
     }
 
     render() {
-        const project = this.state.loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderProjectsTable(this.state.project);
-
         const users = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users);
         
         return (
             <div>
-                <h4>Проект</h4>
+                <div style={{ display: "inline-block", paddingRight: "10px" }}>
+                    <h4>Проект: {this.state.project.Title}</h4>
+                </div>
                 <button onClick={this.onClickEditProject}>Редактировать проект</button>
                 <form onSubmit={this.onRemoveProject}>
                     <button>Удалить проект</button>
                 </form>
-                {project}
                 <h6>Пользователи</h6>
                 {users}
                 <button onClick={this.onClickAddTask}>Добавить задачу</button>

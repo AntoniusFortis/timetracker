@@ -10,23 +10,18 @@ export class SignUp extends Component {
             name: "",
             password: ""
         };
-
-        this.onSubmit = this.onSubmit.bind(this);
-
-        this.onNameChange = this.onNameChange.bind(this);
-        this.onPasswordChange = this.onPasswordChange.bind(this);
     }
 
-    onNameChange(e) {
-        this.setState({ name: e.target.value.trim() });
+    onNameChange = (event) => {
+        this.setState({ name: event.target.value });
     }
 
-    onPasswordChange(e) {
-        this.setState({ password: e.target.value.trim() });
+    onPasswordChange = (event) => {
+        this.setState({ password: event.target.value });
     }
 
-    onSubmit(e) {
-        e.preventDefault();
+    onSubmit = (event) => {
+        event.preventDefault();
 
         const { name, password } = this.state;
 

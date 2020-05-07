@@ -198,7 +198,9 @@ namespace View.Controllers
             var authorizedUsers = _dbContext.AuthorizedUsers
                 .Where(x => x.ProjectId == view.Project.Id);
 
-            _dbContext.Update(view.Project);
+            var project = _dbContext.Projects.FirstOrDefault(x => x.Id == view.Project.Id);
+            project.Title = view.Project.Title;
+            project.Description = view.Project.Description;
 
             if (users.Length == 0)
             {
@@ -241,7 +243,7 @@ namespace View.Controllers
 
                     _dbContext.Add(new AuthorizedUser {
                         IsSigned = false,
-                        Project = view.Project,
+                        ProjectId = view.Project.Id,
                         RightId = 1,
                         UserId = userInviting.Id
                     });

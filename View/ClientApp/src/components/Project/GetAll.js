@@ -31,8 +31,8 @@ export class ProjectGetAll extends Component {
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Description</th>
+                        <th>Название</th>
+                        <th>Описание</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,19 +57,19 @@ export class ProjectGetAll extends Component {
         const { loading, projectView } = this.state;
 
         const signedProjects = loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderTable(projectView.SignedProjects);
 
         const notSignedProjects = loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em>Загрузка...</em></p>
             : this.renderTable(projectView.NotSignedProjects);
 
         return (
             <div>
-                <h1 id="tabelLabel">My projects</h1>
-                <p>Projects</p>
+                <h1 id="tabelLabel">Проекты</h1>
+                <p>Проекты</p>
                 {signedProjects}
-                <p>You were invited to Projects</p>
+                <p>Проекты в которые вы были приглашены</p>
                 {notSignedProjects}
             </div>
         );

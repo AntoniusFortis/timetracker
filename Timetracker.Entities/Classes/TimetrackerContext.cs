@@ -15,24 +15,27 @@ namespace Timetracker.Entities.Classes
         public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
         public DbSet<WorkTask> Tasks { get; set; }
         public DbSet<State> States { get; set; }
+        public DbSet<Worktrack> Worktracks { get; set; }
 
         private readonly IMemoryCache _cache;
+        private readonly MemoryCacheEntryOptions cacheOptions;
 
         public TimetrackerContext(DbContextOptions options, IMemoryCache cache) : base(options)
         {
             _cache = cache;
+            cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1));
 
             Users.Load();
             Projects.Load();
             AuthorizedUsers.Load();
             Tasks.Load();
             States.Load();
+            Worktracks.Load();
         }
 
-        public bool UserExist(string name)
+        public bool UserExists(string name)
         {
             var exist = Users.AsNoTracking().Any(p => p.Login.Contains(name));
-
             return exist;
         }
 
@@ -40,10 +43,12 @@ namespace Timetracker.Entities.Classes
         {
             if (!_cache.TryGetValue(name, out User user))
             {
-                user = await Users.AsNoTracking().FirstOrDefaultAsync(p => p.Login == name);
+                user = await Users.AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Login == name);
+
                 if (user != null)
                 {
-                    _cache.Set(user.Login, user, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1)));
+                    _cache.Set(user.Login, user, cacheOptions);
                 }
             }
 
@@ -52,8 +57,17 @@ namespace Timetracker.Entities.Classes
 
         public bool CheckAccessForProject(int projectId, User user)
         {
-            var hasAU = AuthorizedUsers.AsNoTracking()
-                .Any(x => x.ProjectId == projectId && x.User.Id == user.Id);
+            var key = $"{projectId}{user.Id}";
+            if (!_cache.TryGetValue(key, out bool hasAU))
+            {
+                hasAU = AuthorizedUsers.AsNoTracking()
+                    .Any(x => x.ProjectId == projectId && x.User.Id == user.Id);
+
+                if (hasAU)
+                {
+                    _cache.Set(key, hasAU, cacheOptions);
+                }
+            }
 
             return hasAU;
         }
