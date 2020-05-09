@@ -15,6 +15,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using Timetracker.View.Hubs;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Http;
 
 namespace View
 {
@@ -24,6 +26,22 @@ namespace View
         {
             services.AddDbContext<TimetrackerContext>(x =>
                 x.UseSqlServer(configuration.GetConnectionString("Timetracker")), contextLifetime: ServiceLifetime.Scoped);
+        }
+
+        public static void AddSwagger(this IServiceCollection services)
+        {
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "Timetracker API"
+                });
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+            });
         }
 
         public static void AddAuth(this IServiceCollection services)
@@ -80,18 +98,7 @@ namespace View
             services.AddControllers();
             services.AddAuth();
             services.AddSignalR();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Version = "v1",
-                    Title = "Timetracker API"
-                });
-
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
-            });
+            services.AddSwagger();
 
             services.AddSpaStaticFiles(configuration =>
             {
@@ -102,7 +109,6 @@ namespace View
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseStaticFiles();
-
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {

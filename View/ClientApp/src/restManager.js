@@ -1,14 +1,10 @@
 ﻿import { hasAuthorized } from './components/Account'
 
-function fetchServer(uri, callback, body, method) {
+function fetchServer(uri, callback, body, method, contentType) {
     const headers = new Headers();
 
     if (hasAuthorized()) {
         headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
-    }
-
-    if (body) {
-        headers.append("Content-Type", "application/json;charset=utf-8");
     }
 
     fetch(uri, {
@@ -20,17 +16,25 @@ function fetchServer(uri, callback, body, method) {
 }
 
 export function Get(uri, callback) {
-    fetchServer(uri, callback, null, 'GET');
+    fetchServer(uri, callback, null, 'GET', null);
 }
 
-export function Post(uri, body, callback) {
-    const json = JSON.stringify(body);
+export function Post(uri, body, callback, contentType = 'Json') {
+    if (contentType === 'Json') {
+        const json = JSON.stringify(body);
+        fetchServer(uri, callback, json, 'POST', contentType);
+        return;
+    }
 
-    fetchServer(uri, callback, json, 'POST');
+    fetchServer(uri, callback, body, 'POST', contentType);
 }
 
-export function Delete(uri, body, callback) {
-    const json = JSON.stringify(body);
+export function Delete(uri, body, callback, contentType = 'Json') {
+    if (contentType === 'Json') {
+        const json = JSON.stringify(body);
+        fetchServer(uri, callback, json, 'DELETE', contentType);
+        return;
+    }
 
-    fetchServer(uri, callback, json, 'DELETE');
+    fetchServer(uri, callback, body, 'DELETE', contentType);
 }
