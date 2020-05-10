@@ -76,22 +76,6 @@ namespace View.Controllers
             return new JsonResult(response);
         }
 
-        private string GetAvatar(IFormFile avatar, string login)
-        {
-            if (avatar == null)
-            {
-                return null;
-            }
-
-            string path = "/Resources/" + login + avatar.FileName;
-            using (var fileStream = new FileStream(_appEnvironment.WebRootPath + path, FileMode.Create))
-            {
-                avatar.CopyTo(fileStream);
-            }
-
-            return path;
-        }
-
         [HttpPost, DisableRequestSizeLimit]
         public async Task<IActionResult> SignUp([FromForm] AccountResponse view)
         {
@@ -120,7 +104,6 @@ namespace View.Controllers
                 MiddleName = view.MiddleName,
                 City = view.City,
                 BirthDate = isDateParsed ? birthDate : (DateTime?)null,
-                AvatarPath = GetAvatar(view.Avatar, view.Login),
                 Email = view.Email
             };
 
@@ -134,6 +117,22 @@ namespace View.Controllers
             };
 
             return new JsonResult(response);
+        }
+
+        private string GetAvatar(IFormFile avatar, string login)
+        {
+            if (avatar == null)
+            {
+                return null;
+            }
+
+            string path = "/Resources/" + login + avatar.FileName;
+            using (var fileStream = new FileStream(_appEnvironment.WebRootPath + path, FileMode.Create))
+            {
+                avatar.CopyTo(fileStream);
+            }
+
+            return path;
         }
     }
 }
