@@ -18,6 +18,8 @@ namespace Timetracker.Entities.Responses
 
         public string BirthDate { get; set; }
 
+        public string Email { get; set; }
+
         public IFormFile Avatar { get; set; }
     }
 }

@@ -120,7 +120,8 @@ namespace View.Controllers
                 MiddleName = view.MiddleName,
                 City = view.City,
                 BirthDate = isDateParsed ? birthDate : (DateTime?)null,
-                AvatarPath = GetAvatar(view.Avatar, view.Login)
+                AvatarPath = GetAvatar(view.Avatar, view.Login),
+                Email = view.Email
             };
 
             await _dbContext.AddAsync(user);

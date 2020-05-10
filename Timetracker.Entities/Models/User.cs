@@ -46,5 +46,9 @@ namespace Timetracker.Entities.Models
 
         [NotMapped]
         public Bitmap Avatar { get; set; }
+
+        [StringLength(255)]
+        [Required]
+        public string Email { get; set; }
     }
 }

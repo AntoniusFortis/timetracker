@@ -16,7 +16,7 @@ export class SignUp extends Component {
             middleName: undefined,
             city: undefined,
             birthDate: undefined,
-            avatar: undefined
+            email: ""
         };
     }
 
@@ -52,9 +52,8 @@ export class SignUp extends Component {
         this.setState({ birthDate: event.target.value });
     }
 
-    onAvatarChange = (files) => {
-        const file = files[0];
-        this.setState({ avatar: file })
+    onEmailChange = (event) => {
+        this.setState({ birthDate: event.target.value });
     }
 
     onSubmit = (event) => {
@@ -69,7 +68,7 @@ export class SignUp extends Component {
             middleName,
             city,
             birthDate,
-            avatar
+            email
         } = this.state;
 
         if (!name) {
@@ -90,7 +89,7 @@ export class SignUp extends Component {
         body.append('MiddleName', middleName);
         body.append('City', city);
         body.append('BirthDate', birthDate);
-        body.append('Avatar', avatar);
+        body.append('Email', email);
 
         Post("api/account/signup", body, this.onSuccessSignedUp, 'FormData');
     }
@@ -123,14 +122,13 @@ export class SignUp extends Component {
                     <input type="text" minLength="2" maxLength="30" placeholder="Отчество" value={this.state.middleName} onChange={this.onMiddleNameChange} />
                 </p>
                 <p>
+                    <input type="email" required placeholder="E-mail" value={this.state.email} onChange={this.onEmailChange} />
+                </p>
+                <p>
                     <input type="text" minLength="3" maxLength="50"  placeholder="Город" value={this.state.city} onChange={this.onCityChange} />
                 </p>
                 <p>
                     <input type="date" placeholder="Дата рождения" value={this.state.birthDate} onChange={this.onBirthDateChange} />
-                </p>
-                <p>
-                    <label></label>
-                    <Previews multiple="false" onChange={this.onAvatarChange} />
                 </p>
                 <br />
                 <input type="submit" value="Зарегистрироваться" />
