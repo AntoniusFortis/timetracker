@@ -1,6 +1,5 @@
 ﻿import React, { Component } from 'react';
 import { Post } from '../../restManager';
-import { Previews } from "../../Previews";
 
 export class SignUp extends Component {
 
@@ -125,7 +124,7 @@ export class SignUp extends Component {
                     <input type="email" required placeholder="E-mail" value={this.state.email} onChange={this.onEmailChange} />
                 </p>
                 <p>
-                    <input type="text" minLength="3" maxLength="50"  placeholder="Город" value={this.state.city} onChange={this.onCityChange} />
+                    <input type="text" minLength="3" maxLength="50" placeholder="Город" value={this.state.city} onChange={this.onCityChange} />
                 </p>
                 <p>
                     <input type="date" placeholder="Дата рождения" value={this.state.birthDate} onChange={this.onBirthDateChange} />
