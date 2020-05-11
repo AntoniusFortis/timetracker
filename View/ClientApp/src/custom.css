@@ -12,3 +12,48 @@ code {
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
+
+.tabs {
+    margin: 40px;
+    font-family: 'Open Sans', sans-serif;
+    color: #333;
+}
+
+.tabs__tablist {
+    padding: 0;
+    margin: 0 0 -1px 0;
+}
+
+    .tabs__tablist ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+    }
+
+.tabs__content {
+    border: 1px solid #ededed;
+    padding: 16px;
+}
+
+.tabs__tablist__link {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+    display: block;
+    line-height: 30px;
+    padding: 0 24px;
+    border: 1px solid #ededed;
+    position: relative;
+    top: 2px;
+    margin-left: 8px;
+    background: #f0f0f0;
+    border-top: 1px solid #eee;
+}
+
+.tabs__tablist__link--selected {
+    top: 0;
+    background: #fff;
+    border-top: 3px solid lightblue;
+    border-bottom: 1px solid #fff;
+}

@@ -4,7 +4,11 @@ function fetchServer(uri, callback, body, method, contentType) {
     const headers = new Headers();
 
     if (hasAuthorized()) {
-        headers.append("Authorization", "Bearer " + localStorage.getItem('tokenKey'));
+        headers.append('Authorization', 'Bearer ' + localStorage.getItem('tokenKey'));
+    }
+
+    if (contentType === 'Json') {
+        headers.append('Content-Type', 'application/json')
     }
 
     fetch(uri, {

@@ -33,14 +33,16 @@ export class SignIn extends Component {
             return;
         }
 
-        Post("api/account/signin", { Login: name, Pass: password }, (response) => {
+        const body = { Login: name, Pass: password };
+
+        Post("api/account/signin", body, (response) => {
             response.json().then(result => {
                 if (result.status === 200) {
                     localStorage.setItem('tokenKey', result.access_token);
                     window.location.href = "/";
                 }
             });
-        });
+        }, 'Json');
     }
 
     render() {

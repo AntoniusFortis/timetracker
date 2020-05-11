@@ -52,7 +52,7 @@ export class SignUp extends Component {
     }
 
     onEmailChange = (event) => {
-        this.setState({ birthDate: event.target.value });
+        this.setState({ email: event.target.value });
     }
 
     onSubmit = (event) => {
