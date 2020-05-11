@@ -3,41 +3,39 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
+using Timetracker.Entities.Responses;
 using Timetracker.View;
 
 namespace View.Controllers
 {
-    public class UserView
-    {
-        public string Login { get; set; }
-
-        public string Pass { get; set; }
-    }
-
-    [Produces("application/json")]
+    [Produces("application/json", new[] { "multipart/form-data" })]
     [ApiController]
     [AllowAnonymous]
     [Route("api/[controller]/[action]")]
     public class AccountController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
+        private readonly IWebHostEnvironment _appEnvironment;
 
-        public AccountController(TimetrackerContext dbContext)
+        public AccountController(TimetrackerContext dbContext, IWebHostEnvironment appEnvironment)
         {
             _dbContext = dbContext;
+            _appEnvironment = appEnvironment;
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignIn(UserView view)
+        public async Task<IActionResult> SignIn(AccountResponse view)
         {
             var dbUser = await _dbContext.GetUserAsync(view.Login);
             if (dbUser == null)
@@ -78,8 +76,8 @@ namespace View.Controllers
             return new JsonResult(response);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> SignUp(UserView view)
+        [HttpPost, DisableRequestSizeLimit]
+        public async Task<IActionResult> SignUp([FromForm] AccountResponse view)
         {
             var userExist = _dbContext.UserExists(view.Login);
 
@@ -94,13 +92,21 @@ namespace View.Controllers
             var salt = PasswordHelpers.GenerateSalt(16);
             var hash = PasswordHelpers.EncryptPassword(view.Pass, salt, 1024);
 
+            var isDateParsed = DateTime.TryParse(view.BirthDate, out var birthDate);
+
             var user = new User
             {
                 Login = view.Login,
                 Pass = hash,
-                Salt = salt
+                Salt = salt,
+                FirstName = view.FirstName,
+                Surname = view.Surname,
+                MiddleName = view.MiddleName,
+                City = view.City,
+                BirthDate = isDateParsed ? birthDate : (DateTime?)null,
+                Email = view.Email
             };
-  
+
             await _dbContext.AddAsync(user);
             await _dbContext.SaveChangesAsync();
 
@@ -111,6 +117,22 @@ namespace View.Controllers
             };
 
             return new JsonResult(response);
+        }
+
+        private string GetAvatar(IFormFile avatar, string login)
+        {
+            if (avatar == null)
+            {
+                return null;
+            }
+
+            string path = "/Resources/" + login + avatar.FileName;
+            using (var fileStream = new FileStream(_appEnvironment.WebRootPath + path, FileMode.Create))
+            {
+                avatar.CopyTo(fileStream);
+            }
+
+            return path;
         }
     }
 }
