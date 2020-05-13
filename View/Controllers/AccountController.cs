@@ -27,17 +27,20 @@ namespace View.Controllers
     {
         private readonly TimetrackerContext _dbContext;
         private readonly IWebHostEnvironment _appEnvironment;
+        private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler;
 
         public AccountController(TimetrackerContext dbContext, IWebHostEnvironment appEnvironment)
         {
             _dbContext = dbContext;
             _appEnvironment = appEnvironment;
+
+            _jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
         }
 
         [HttpPost]
         public async Task<IActionResult> SignIn(AccountResponse view)
         {
-            var dbUser = await _dbContext.GetUserAsync(view.Login);
+            var dbUser = await _dbContext.GetUserAsync(view.Login).ConfigureAwait(false);
             if (dbUser == null)
             {
                 return Unauthorized();
@@ -56,7 +59,7 @@ namespace View.Controllers
 
             var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var jwt = new JwtSecurityToken(
                     issuer: TimetrackerAuthorizationOptions.ISSUER,
                     audience: TimetrackerAuthorizationOptions.AUDIENCE,
@@ -65,7 +68,7 @@ namespace View.Controllers
                     expires: now.Add(TimeSpan.FromDays(TimetrackerAuthorizationOptions.LIFETIME)),
                     signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
 
-            var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
+            var encodedJwt = _jwtSecurityTokenHandler.WriteToken(jwt);
 
             var response = new
             {
@@ -76,7 +79,7 @@ namespace View.Controllers
             return new JsonResult(response);
         }
 
-        [HttpPost, DisableRequestSizeLimit]
+        [HttpPost]
         public async Task<IActionResult> SignUp([FromForm] AccountResponse view)
         {
             var userExist = _dbContext.UserExists(view.Login);
@@ -107,8 +110,8 @@ namespace View.Controllers
                 Email = view.Email
             };
 
-            await _dbContext.AddAsync(user);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.AddAsync(user).ConfigureAwait(false);
+            await _dbContext.SaveChangesAsync().ConfigureAwait(false);
 
             var response = new
             {
@@ -119,7 +122,7 @@ namespace View.Controllers
             return new JsonResult(response);
         }
 
-        private string GetAvatar(IFormFile avatar, string login)
+        private async Task<string> GetAvatar(IFormFile avatar, string login)
         {
             if (avatar == null)
             {
@@ -129,7 +132,7 @@ namespace View.Controllers
             string path = "/Resources/" + login + avatar.FileName;
             using (var fileStream = new FileStream(_appEnvironment.WebRootPath + path, FileMode.Create))
             {
-                avatar.CopyTo(fileStream);
+                await avatar.CopyToAsync(fileStream).ConfigureAwait(false);
             }
 
             return path;

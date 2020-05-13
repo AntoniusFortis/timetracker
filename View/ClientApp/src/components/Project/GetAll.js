@@ -2,14 +2,14 @@
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 import { Get } from '../../restManager';
+import { Tabs, Tab } from '../../Tabs';
 
 export class ProjectGetAll extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            projectView: [],
-            loading: true,
+            projectView: { SignedProjects: [], NotSignedProjects: [] },
             selectedTab: 0
         };
     }
@@ -22,7 +22,7 @@ export class ProjectGetAll extends Component {
         Get('api/project/getall', (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ projectView: result, loading: false });
+                    this.setState({ projectView: result });
                 });
         });
     }
@@ -55,15 +55,10 @@ export class ProjectGetAll extends Component {
     }
 
     render() {
-        const { loading, projectView } = this.state;
+        const { projectView } = this.state;
 
-        const signedProjects = loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderTable(projectView.SignedProjects);
-
-        const notSignedProjects = loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderTable(projectView.NotSignedProjects);
+        const signedProjects = this.renderTable(projectView.SignedProjects);
+        const notSignedProjects = this.renderTable(projectView.NotSignedProjects);
 
         return (
             <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
@@ -76,68 +71,4 @@ export class ProjectGetAll extends Component {
             </Tabs>
         );
     }
-}
-
-
-function Tabs({ children, selectedTab, onChangeTab }) {
-    let tabProps = []
-    const content = React.Children.map(children, (child) => {
-        if (child.type === Tab) {
-            const { title, name } = child.props
-            tabProps.push({ title, name })
-            // By default show first tab if there is none selected
-            if (selectedTab ? (selectedTab !== child.props.name) : (tabProps.length !== 1)) {
-                return null
-            }
-        }
-        return child
-    })
-
-    const finalSelectedTab = selectedTab ||
-        (tabProps.length > 0 && tabProps[0].name)
-
-    return (
-        <div className="tabs">
-            <Tablist
-                selectedTab={finalSelectedTab}
-                onChangeTab={onChangeTab}
-                tabs={tabProps}
-            />
-            <div className="tabs__content">
-                {content}
-            </div>
-        </div>
-    )
-}
-
-function Tablist({ tabs, selectedTab, onChangeTab }) {
-    const linkClass = selected => {
-        const c = 'tabs__tablist__link'
-        return selected ? `${c} ${c}--selected` : c
-    }
-
-    return (
-        <menu className="tabs__tablist">
-            <ul>
-                {tabs.map(({ name, title }) =>
-                    <li aria-selected={name === selectedTab} role="tab" key={name}>
-                        <a
-                            className={linkClass(name === selectedTab)}
-                            onClick={() => onChangeTab(name)}
-                        >
-                            {title}
-                        </a>
-                    </li>
-                )}
-            </ul>
-        </menu>
-    )
-}
-
-function Tab({ name, children }) {
-    return (
-        <div id={`tab-${name}`} className="tabs__tab">
-            {children}
-        </div>
-    )
 }
