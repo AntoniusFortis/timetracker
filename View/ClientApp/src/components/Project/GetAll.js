@@ -1,15 +1,72 @@
-﻿import React, { Component } from 'react';
+﻿import React, { PureComponent } from 'react';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
-import { Get } from '../../restManager';
+import { Get, Post } from '../../restManager';
+import { Tabs, Tab } from '../../Tabs';
 
-export class ProjectGetAll extends Component {
+const ProjectGetAllTable = (props) => {
+    return (
+        <table className='table table-striped' aria-labelledby="tabelLabel">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody>
+                {
+                    props.projects.map(project =>
+                        (
+                            <tr key={project.Id}>
+                                <td>
+                                    <NavLink tag={Link} className="text-dark" to={"/project/get/" + project.Id}>{project.Title}</NavLink>
+                                </td>
+                                <td>{project.Description}</td>
+                            </tr>
+                        )
+                    )
+                }
+            </tbody>
+        </table>);
+}
+
+
+const ProjectGetAllInvitesTable = (props) => {
+    return (
+        <table className='table table-striped' aria-labelledby="tabelLabel">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody>
+                {
+                    props.projects.map(project =>
+                        (
+                            <tr key={project.Id}>
+                                <td>
+                                    <NavLink tag={Link} className="text-dark" to={"/project/get/" + project.Id}>{project.Title}</NavLink>
+                                </td>
+                                <td>{project.Description}</td>
+                                <td>
+                                    <button onClick={(e) => props.acceptInvite(project.Id)}>Принять</button>
+                                </td>
+                            </tr>
+                        )
+                    )
+                }
+            </tbody>
+        </table>);
+}
+
+export class ProjectGetAll extends PureComponent {
     constructor(props) {
         super(props);
 
         this.state = {
-            projectView: [],
-            loading: true
+            projectView: { SignedProjects: [], NotSignedProjects: [] },
+            selectedTab: 0
         };
     }
 
@@ -21,57 +78,30 @@ export class ProjectGetAll extends Component {
         Get('api/project/getall', (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ projectView: result, loading: false });
+                    this.setState({ projectView: result });
                 });
         });
     }
 
-    renderTable(projects) {
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Описание</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        projects.map(project => 
-                            (
-                                <tr key={project.Id}>
-                                    <td>
-                                        <NavLink tag={Link} className="text-dark" to={"/project/get/" + project.Id}>{project.Title}</NavLink>
-                                    </td>
-                                    <td>{project.Description}</td>
-                                </tr>
-                            )
-                        )
-                    }
-                </tbody>
-            </table>
-        );
+    acceptInvite = (projectId) => {
+        Post('api/project/accept', { ProjectId: projectId }, (response) => {
+            response.json().then(result => {
+                this.getProjectsData();
+            });
+        });
     }
 
     render() {
-        const { loading, projectView } = this.state;
-
-        const signedProjects = loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderTable(projectView.SignedProjects);
-
-        const notSignedProjects = loading
-            ? <p><em>Загрузка...</em></p>
-            : this.renderTable(projectView.NotSignedProjects);
-
+        const { projectView } = this.state;
         return (
-            <div>
-                <h1 id="tabelLabel">Проекты</h1>
-                <p>Проекты</p>
-                {signedProjects}
-                <p>Проекты в которые вы были приглашены</p>
-                {notSignedProjects}
-            </div>
+            <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
+                <Tab name="first" title="Проекты">
+                    <ProjectGetAllTable projects={projectView.SignedProjects} />
+                </Tab>
+                <Tab name="second" title="Проекты в которые вы были приглашены">
+                    <ProjectGetAllInvitesTable projects={projectView.NotSignedProjects} acceptInvite={this.acceptInvite} />
+                </Tab>
+            </Tabs>
         );
     }
 }

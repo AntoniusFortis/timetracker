@@ -39,7 +39,8 @@ namespace Timetracker.View.Controllers
         public async Task<IActionResult> Add(TaskView view)
         {
             var worktask = view.worktask;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name).
+                ConfigureAwait(false);
 
             if (!_dbContext.CheckAccessForProject(worktask.ProjectId, user))
             {
@@ -65,9 +66,11 @@ namespace Timetracker.View.Controllers
         {
             var id = Id.Value;
 
-            var worktask = await _dbContext.Tasks.SingleAsync(x => x.Id == id);
+            var worktask = await _dbContext.Tasks.SingleAsync(x => x.Id == id)
+                .ConfigureAwait(false);
 
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
 
             // Проверяем, что есть доступ
             if (!_dbContext.CheckAccessForProject(worktask.ProjectId, user))

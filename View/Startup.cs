@@ -48,37 +48,37 @@ namespace View
         {
             services.AddAuthorization();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                   .AddJwtBearer(options =>
+               .AddJwtBearer(options =>
+               {
+                   options.RequireHttpsMetadata = false;
+                   options.TokenValidationParameters = new TokenValidationParameters
                    {
-                       options.RequireHttpsMetadata = false;
-                       options.TokenValidationParameters = new TokenValidationParameters
+                       ValidateIssuer = true,
+                       ValidIssuer = TimetrackerAuthorizationOptions.ISSUER,
+
+                       ValidateAudience = true,
+                       ValidAudience = TimetrackerAuthorizationOptions.AUDIENCE,
+
+                       ValidateLifetime = true,
+
+                       IssuerSigningKey = TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(),
+                       ValidateIssuerSigningKey = true,
+                   };
+                   options.Events = new JwtBearerEvents
+                   {
+                       OnMessageReceived = context =>
                        {
-                           ValidateIssuer = true,
-                           ValidIssuer = TimetrackerAuthorizationOptions.ISSUER,
+                           var accessToken = context.Request.Query["access_token"];
 
-                           ValidateAudience = true,
-                           ValidAudience = TimetrackerAuthorizationOptions.AUDIENCE,
-
-                           ValidateLifetime = true,
-
-                           IssuerSigningKey = TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(),
-                           ValidateIssuerSigningKey = true,
-                       };
-                       options.Events = new JwtBearerEvents
-                       {
-                           OnMessageReceived = context =>
+                           var path = context.HttpContext.Request.Path;
+                           if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/trackingHub")))
                            {
-                               var accessToken = context.Request.Query["access_token"];
-
-                               var path = context.HttpContext.Request.Path;
-                               if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/trackingHub")))
-                               {
-                                   context.Token = accessToken;
-                               }
-                               return System.Threading.Tasks.Task.CompletedTask;
+                               context.Token = accessToken;
                            }
-                       };
-                   });
+                           return System.Threading.Tasks.Task.CompletedTask;
+                       }
+                   };
+               });
         }
     }
 
@@ -99,7 +99,6 @@ namespace View
             services.AddAuth();
             services.AddSignalR();
             services.AddSwagger();
-
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "ClientApp/build";

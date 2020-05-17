@@ -1,59 +1,35 @@
-﻿import React, { Component } from 'react';
+﻿import React, { useState } from 'react';
 import { Post } from '../../restManager';
 
-export class SignIn extends Component {
+export const SignIn = () => {
+    const [name, setName] = useState('');
+    const [password, setPassword] = useState('');
 
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            name: "",
-            password: ""
-        };
+    const onSuccessSignedIn = (response) => {
+        if (response.status === 200) {
+            localStorage.setItem('tokenKey', response.access_token);
+            window.location.href = "/";
+        }
     }
 
-    onNameChange = (event) => {
-        this.setState({ name: event.target.value });
-    }
-
-    onPasswordChange = (event) => {
-        this.setState({ password: event.target.value });
-    }
-
-    onSubmit = (event) => {
+    const trySignIn = (event) => {
         event.preventDefault();
 
-        const { name, password } = this.state;
+        const body = { Login: name, Pass: password };
 
-        if (!name) {
-            return;
-        }
-
-        if (!password) {
-            return;
-        }
-
-        Post("api/account/signin", { Login: name, Pass: password }, (response) => {
-            response.json().then(result => {
-                if (result.status === 200) {
-                    localStorage.setItem('tokenKey', result.access_token);
-                    window.location.href = "/";
-                }
-            });
+        Post("api/account/signin", body, (response) => {
+            response.json().then(onSuccessSignedIn);
         });
     }
 
-    render() {
-        return (
-            <form onSubmit={this.onSubmit}>
-                <p>
-                    <input type="text" placeholder="Логин" value={this.state.name} onChange={this.onNameChange} />
-                </p>
-                <p>
-                    <input type="password" placeholder="Пароль" value={this.state.password} onChange={this.onPasswordChange} />
-                </p>
-                <input type="submit" value="Авторизоваться" />
-            </form>
-        );
-    }
+    return (
+        <form onSubmit={trySignIn}>
+            <p>
+                <input required type="text" placeholder="Логин" value={name} onChange={(e) => setName(e.target.value)} />
+            </p>
+            <p>
+                <input required type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </p>
+            <input type="submit" value="Авторизоваться" />
+        </form>);
 }

@@ -10,6 +10,7 @@ import { ProjectGetAll } from './components/Project/GetAll';
 import { ProjectGet } from './components/Project/Get';
 import { ProjectAdd } from './components/Project/Add';
 import { ProjectUpdate } from './components/Project/Update';
+import { ProjectInvite } from './components/Project/Invite';
 
 import { TaskGet } from './components/Task/Get';
 import { TaskUpdate } from './components/Task/Update';
@@ -32,6 +33,7 @@ export default class App extends Component {
             <Route exact path='/project/get/:projectId' component={ProjectGet} />
             <Route exact path='/project/add' component={ProjectAdd} />
             <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
+            <Route exact path='/project/invite/:projectId' component={ProjectInvite} />
 
             <Route exact path='/task/get/:taskId' component={TaskGet} />
             <Route exact path='/task/update/:taskId' component={TaskUpdate} />

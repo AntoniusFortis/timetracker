@@ -1,42 +1,56 @@
-﻿import React, { Component } from 'react';
+﻿import React, { PureComponent } from 'react';
 import { Get, Delete } from '../../restManager';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
+import { Tabs, Tab } from '../../Tabs';
 
-export class TaskList extends Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render() {
-        const orderedtasks = this.props.orderFunc(this.props.tasks.slice());
-
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Состояние</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        !!orderedtasks && orderedtasks.map(task => (
-                            <tr>
-                                <td>
-                                    <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
-                                </td>
-                                <td>{task.State.Title}</td>
-                            </tr>
-                        ))
-                    }
-                </tbody>
-            </table>
-        )
-    }
+const ProjectHeaderPanel = (props) => {
+    return <div>
+        <div style={{ display: "inline-block", paddingRight: "10px" }}>
+            <h4>Проект: {props.Title}</h4>
+        </div>
+        <button onClick={props.onClickEditProject}>Редактировать проект</button>
+        <div style={{ display: "inline-block", paddingRight: "10px" }}>
+            <form onSubmit={props.onRemoveProject}>
+                <button>Удалить проект</button>
+            </form>
+        </div>
+    </div>;
 }
 
-export class ProjectGet extends Component {
+const WorktasksPanel = (props) => {
+    return (<div>
+        <button onClick={props.onClickAddTask}>Добавить задачу</button>
+        <button onClick={props.onClickSortTasks}>Отсортировать по их состоянию</button>
+        <button onClick={props.onClickSortDefTasks}>Сортировка по умолчанию</button>
+        <TaskList tasks={props.orderFunc} />
+    </div>);
+}
+
+const TaskList = ({ tasks }) => (
+    <table className='table table-striped' aria-labelledby="tabelLabel">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Состояние</th>
+            </tr>
+        </thead>
+        <tbody>
+            {
+                !!tasks && tasks.map(task => (
+                    <tr>
+                        <td>
+                            <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
+                        </td>
+                        <td>{task.State.Title}</td>
+                    </tr>
+                ))
+            }
+        </tbody>
+    </table>
+);
+
+export class ProjectGet extends PureComponent {
     constructor(props) {
         super(props);
 
@@ -50,7 +64,8 @@ export class ProjectGet extends Component {
     }
 
     componentDidMount() {
-        this.getProjectsData();
+        this.getProjectsData()
+            .then(this.getUsersData());
     }
 
     async getProjectsData() {
@@ -60,10 +75,16 @@ export class ProjectGet extends Component {
                     this.setState({
                         project: result.project,
                         loading: false,
-                        users: result.users,
                         tasks: result.tasks
                     });
                 });
+        });
+    }
+
+    async getUsersData() {
+        Get("api/project/getusers?id=" + this.props.match.params.projectId, (response) => {
+            response.json()
+                .then(result => this.setState({ users: result.users }));
         });
     }
 
@@ -102,6 +123,10 @@ export class ProjectGet extends Component {
         window.location.href = "/project/update/" + this.state.project.Id;
     }
 
+    onClickInviteProject = (event) => {
+        window.location.href = "/project/invite/" + this.state.project.Id;
+    }
+
     onClickAddTask = (event) => {
         window.location.href = "/task/add/" + this.state.project.Id;
     }
@@ -121,22 +146,17 @@ export class ProjectGet extends Component {
         
         return (
             <div>
-                <div style={{ display: "inline-block", paddingRight: "10px" }}>
-                    <h4>Проект: {this.state.project.Title}</h4>
-                </div>
-                <button onClick={this.onClickEditProject}>Редактировать проект</button>
-                <form onSubmit={this.onRemoveProject}>
-                    <button>Удалить проект</button>
-                </form>
-                <h6>Пользователи</h6>
-                {users}
-                <button onClick={this.onClickAddTask}>Добавить задачу</button>
-                <h6>Задачи</h6>
-                <button onClick={this.onClickSortTasks}>Отсортировать по их состоянию</button>
-                <button onClick={this.onClickSortDefTasks}>Сортировка по умолчанию</button>
-
-                <TaskList tasks={this.state.tasks} orderFunc={this.state.orderTasksFunc} />
-            </div>
+                <ProjectHeaderPanel Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
+                <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
+                    <Tab name="first" title="Задачи">
+                        <WorktasksPanel onClickAddTask={this.onClickAddTask} onClickSortTasks={this.onClickSortTasks} onClickSortDefTasks={this.onClickSortDefTasks} orderFunc={this.state.orderTasksFunc(this.state.tasks.slice())} />
+                    </Tab>
+                    <Tab name="second" title="Участники">
+                        <button onClick={this.onClickInviteProject}>Изменить участников</button>
+                        {users}
+                    </Tab>
+                </Tabs>
+            </div> 
         );
     }
 }
