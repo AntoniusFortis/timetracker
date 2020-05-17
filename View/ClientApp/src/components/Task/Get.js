@@ -2,6 +2,7 @@
 import Select from 'react-select';
 import { Get, Delete, Post } from '../../restManager';
 import { TaskTracking } from '../TaskTracking'
+import { Tabs, Tab } from '../../Tabs';
 
 export class TaskGet extends Component {
     constructor(props) {
@@ -169,8 +170,15 @@ export class TaskGet extends Component {
                         <button>Удалить задачу</button>
                     </form>
                 </div>
-                {worktask}
-                {worktracks}
+
+                <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
+                    <Tab name="first" title="Описание задачи">
+                        {worktask}
+                    </Tab>
+                    <Tab name="second" title="Затраченное время">
+                        {worktracks}
+                    </Tab>
+                </Tabs>
             </div>
         );
     }

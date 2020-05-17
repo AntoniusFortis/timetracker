@@ -45,7 +45,7 @@ namespace View.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUsers(int id)
+        public async Task<JsonResult> GetUsers(int id)
         {
             var users = await _dbContext.AuthorizedUsers.Where(x => x.ProjectId == id)
                 .Select(x => x.User.Login)
@@ -62,9 +62,11 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Invite(InviteModel model)
+        public async Task<JsonResult> Invite(InviteModel model)
         {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name).ConfigureAwait(false);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
+
             var projectId = int.Parse(model.ProjectId);
 
             var authorizedUsers = _dbContext.AuthorizedUsers
@@ -96,13 +98,13 @@ namespace View.Controllers
             var toAdd = dbUsersIds.Except(dbLinkedIds);
 
             _dbContext.AuthorizedUsers.RemoveRange(dbLinkedUsers.Where(x => toRemove.Contains(x.Id)));
-            _dbContext.AuthorizedUsers.AddRange(toAdd.Select(x => new AuthorizedUser
+            await _dbContext.AuthorizedUsers.AddRangeAsync(toAdd.Select(x => new AuthorizedUser
             {
-                IsSigned = true,
+                IsSigned = false,
                 ProjectId = projectId,
                 RightId = 1,
                 UserId = x
-            }));
+            })).ConfigureAwait(false);
 
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait(false);
@@ -114,32 +116,34 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] CU_ProjectView projectView)
+        public async Task<JsonResult> Add([FromBody] CU_ProjectView projectView)
         {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
 
-            if (await _dbContext.Projects.AsNoTracking()
-                .AnyAsync(x => x.Title == projectView.Project.Title))
-            {
-                return new JsonResult(new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    text = "Проект с таким именем уже существует"
-                });
-            }
+            //if (await _dbContext.Projects.AsNoTracking()
+            //    .AnyAsync(x => x.Title == projectView.Project.Title))
+            //{
+            //    return new JsonResult(new
+            //    {
+            //        status = HttpStatusCode.BadRequest,
+            //        text = "Проект с таким именем уже существует"
+            //    });
+            //}
 
-            await _dbContext.AddAsync(projectView.Project);
-            var authorizedUsers = new AuthorizedUser
+            await _dbContext.AddAsync(projectView.Project)
+                .ConfigureAwait(false);
+
+            await _dbContext.AddAsync(new AuthorizedUser
             {
                 IsSigned = true,
                 Project = projectView.Project,
                 RightId = 1,
                 UserId = user.Id
-            };
+            }).ConfigureAwait(false);
 
-            await _dbContext.AddAsync(authorizedUsers).ConfigureAwait(false);
-
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait(false);
 
             return new JsonResult(new
             {
@@ -158,11 +162,13 @@ namespace View.Controllers
 
             var projects = await userProjects.Where(x => x.IsSigned)
                 .Select(x => x.Project)
+                .OrderBy(x => x.Title)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             var notSignedProjects = await userProjects.Where(x => !x.IsSigned)
                 .Select(x => x.Project)
+                .OrderBy(x => x.Title)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -186,11 +192,13 @@ namespace View.Controllers
                     project = (Project)null
                 });
             }
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
 
             // Проверяем, что есть доступ
             var hasAccess = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .AnyAsync(x => x.UserId == user.Id);
+                .AnyAsync(x => x.UserId == user.Id)
+                .ConfigureAwait(false);
 
             if (!hasAccess)
             {
@@ -231,7 +239,8 @@ namespace View.Controllers
                 });
             }
 
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
 
             if (!_dbContext.CheckAccessForProject(view.Project.Id, user))
             {

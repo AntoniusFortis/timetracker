@@ -31,9 +31,9 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetAll(int? worktaskId)
+        public async Task<JsonResult> GetAll(int? worktaskId)
         {
-            var worktracks = _dbContext.Worktracks
+            var worktracks = await _dbContext.Worktracks
                 .Where(x => x.TaskId == worktaskId.Value && !x.Draft )
                 .OrderByDescending( x => x.StartedTime )
                 .Select( x => new {
@@ -43,7 +43,8 @@ namespace Timetracker.View.Controllers
                     StoppedTime = x.StoppedTime.ToString("G"),
                     TotalTime = (x.StoppedTime - x.StartedTime).ToString(@"hh\:mm\:ss")
                 })
-                .ToHashSet();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return new JsonResult(worktracks, _jsonOptions);
         }

@@ -4,38 +4,28 @@ import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 import { Tabs, Tab } from '../../Tabs';
 
-export class TaskList extends Component {
-    constructor(props) {
-        super(props);
-    }
-
-    render() {
-        const orderedtasks = this.props.orderFunc(this.props.tasks.slice());
-
-        return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
+const TaskList = ({ tasks }) => (
+    <table className='table table-striped' aria-labelledby="tabelLabel">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Состояние</th>
+            </tr>
+        </thead>
+        <tbody>
+            {
+                !!tasks && tasks.map(task => (
                     <tr>
-                        <th>Название</th>
-                        <th>Состояние</th>
+                        <td>
+                            <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
+                        </td>
+                        <td>{task.State.Title}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    {
-                        !!orderedtasks && orderedtasks.map(task => (
-                            <tr>
-                                <td>
-                                    <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
-                                </td>
-                                <td>{task.State.Title}</td>
-                            </tr>
-                        ))
-                    }
-                </tbody>
-            </table>
-        )
-    }
-}
+                ))
+            }
+        </tbody>
+    </table>
+);
 
 export class ProjectGet extends Component {
     constructor(props) {
@@ -137,7 +127,6 @@ export class ProjectGet extends Component {
                     <h4>Проект: {this.state.project.Title}</h4>
                 </div>
                 <button onClick={this.onClickEditProject}>Редактировать проект</button>
-                <button onClick={this.onClickInviteProject}>Изменить участников</button>
                 <div style={{ display: "inline-block", paddingRight: "10px" }}>
                     <form onSubmit={this.onRemoveProject}>
                         <button>Удалить проект</button>
@@ -149,9 +138,10 @@ export class ProjectGet extends Component {
                         <button onClick={this.onClickAddTask}>Добавить задачу</button>
                         <button onClick={this.onClickSortTasks}>Отсортировать по их состоянию</button>
                         <button onClick={this.onClickSortDefTasks}>Сортировка по умолчанию</button>
-                        <TaskList tasks={this.state.tasks} orderFunc={this.state.orderTasksFunc} />
+                        <TaskList tasks={this.state.orderTasksFunc(this.state.tasks.slice())} />
                     </Tab>
                     <Tab name="second" title="Участники">
+                        <button onClick={this.onClickInviteProject}>Изменить участников</button>
                         {users}
                     </Tab>
                 </Tabs>

@@ -29,9 +29,11 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<JsonResult> GetAll()
         {
-            var statesArray = await _dbContext.States.AsNoTracking().ToArrayAsync();
+            var statesArray = await _dbContext.States.AsNoTracking()
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return new JsonResult(new
             {
