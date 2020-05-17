@@ -1,10 +1,10 @@
-﻿import React, { Component } from 'react';
+﻿import React, { PureComponent } from 'react';
 import Select from 'react-select';
 import { Get, Delete, Post } from '../../restManager';
 import { TaskTracking } from '../TaskTracking'
 import { Tabs, Tab } from '../../Tabs';
 
-export class TaskGet extends Component {
+export class TaskGet extends PureComponent {
     constructor(props) {
         super(props);
 
@@ -77,9 +77,6 @@ export class TaskGet extends Component {
                         <td>
                             <Select options={this.state.states} defaultValue={this.state.states[worktask.StateId - 1]} onChange={this.onStateChange} />
                         </td>
-                    </tr>
-                    <tr>
-                        <TaskTracking worktaskId={worktask.Id} />
                     </tr>
                 </tbody>
             </table>
@@ -169,6 +166,9 @@ export class TaskGet extends Component {
                     <form onSubmit={this.onRemoveProject}>
                         <button>Удалить задачу</button>
                     </form>
+                </div>
+                <div style={{ display: "inline-block" }}>
+                    <TaskTracking worktaskId={worktask.Id} />
                 </div>
 
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>

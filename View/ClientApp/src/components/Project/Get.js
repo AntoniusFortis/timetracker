@@ -1,8 +1,31 @@
-﻿import React, { Component } from 'react';
+﻿import React, { PureComponent } from 'react';
 import { Get, Delete } from '../../restManager';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 import { Tabs, Tab } from '../../Tabs';
+
+const ProjectHeaderPanel = (props) => {
+    return <div>
+        <div style={{ display: "inline-block", paddingRight: "10px" }}>
+            <h4>Проект: {props.Title}</h4>
+        </div>
+        <button onClick={props.onClickEditProject}>Редактировать проект</button>
+        <div style={{ display: "inline-block", paddingRight: "10px" }}>
+            <form onSubmit={props.onRemoveProject}>
+                <button>Удалить проект</button>
+            </form>
+        </div>
+    </div>;
+}
+
+const WorktasksPanel = (props) => {
+    return (<div>
+        <button onClick={props.onClickAddTask}>Добавить задачу</button>
+        <button onClick={props.onClickSortTasks}>Отсортировать по их состоянию</button>
+        <button onClick={props.onClickSortDefTasks}>Сортировка по умолчанию</button>
+        <TaskList tasks={props.orderFunc} />
+    </div>);
+}
 
 const TaskList = ({ tasks }) => (
     <table className='table table-striped' aria-labelledby="tabelLabel">
@@ -27,7 +50,7 @@ const TaskList = ({ tasks }) => (
     </table>
 );
 
-export class ProjectGet extends Component {
+export class ProjectGet extends PureComponent {
     constructor(props) {
         super(props);
 
@@ -123,22 +146,10 @@ export class ProjectGet extends Component {
         
         return (
             <div>
-                <div style={{ display: "inline-block", paddingRight: "10px" }}>
-                    <h4>Проект: {this.state.project.Title}</h4>
-                </div>
-                <button onClick={this.onClickEditProject}>Редактировать проект</button>
-                <div style={{ display: "inline-block", paddingRight: "10px" }}>
-                    <form onSubmit={this.onRemoveProject}>
-                        <button>Удалить проект</button>
-                    </form>
-                </div>
-
+                <ProjectHeaderPanel Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Задачи">
-                        <button onClick={this.onClickAddTask}>Добавить задачу</button>
-                        <button onClick={this.onClickSortTasks}>Отсортировать по их состоянию</button>
-                        <button onClick={this.onClickSortDefTasks}>Сортировка по умолчанию</button>
-                        <TaskList tasks={this.state.orderTasksFunc(this.state.tasks.slice())} />
+                        <WorktasksPanel onClickAddTask={this.onClickAddTask} onClickSortTasks={this.onClickSortTasks} onClickSortDefTasks={this.onClickSortDefTasks} orderFunc={this.state.orderTasksFunc(this.state.tasks.slice())} />
                     </Tab>
                     <Tab name="second" title="Участники">
                         <button onClick={this.onClickInviteProject}>Изменить участников</button>

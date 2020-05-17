@@ -26,6 +26,18 @@ namespace View.Controllers
         public string[] Users { get; set; }
     }
 
+    public class InviteAcceptModel
+    {
+        public int ProjectId { get; set; }
+    }
+
+    public class AddProjectModel
+    {
+        public string Title { get; set; }
+
+        public string Description { get; set; }
+    }
+
     [ApiController]
     [Authorize]
     [Route("api/[controller]/[action]")]
@@ -56,6 +68,32 @@ namespace View.Controllers
             {
                 status = HttpStatusCode.OK,
                 users = users,
+            };
+
+            return new JsonResult(response, _jsonOptions);
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> Accept(InviteAcceptModel model)
+        {
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
+
+            //var projectId = int.Parse(model.ProjectId);
+            var projectId = model.ProjectId;
+
+            var authorizedUsers = await _dbContext.AuthorizedUsers.SingleAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
+                .ConfigureAwait(false);
+            authorizedUsers.IsSigned = true;
+
+            _dbContext.Update(authorizedUsers);
+
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait(false);
+
+            var response = new
+            {
+                status = HttpStatusCode.OK
             };
 
             return new JsonResult(response, _jsonOptions);
@@ -116,7 +154,7 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> Add([FromBody] CU_ProjectView projectView)
+        public async Task<JsonResult> Add(AddProjectModel view)
         {
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
@@ -130,14 +168,19 @@ namespace View.Controllers
             //        text = "Проект с таким именем уже существует"
             //    });
             //}
+            var project = new Project
+            {
+                Title = view.Title,
+                Description = view.Description
+            };
 
-            await _dbContext.AddAsync(projectView.Project)
+            var t = await _dbContext.AddAsync(project)
                 .ConfigureAwait(false);
 
             await _dbContext.AddAsync(new AuthorizedUser
             {
                 IsSigned = true,
-                Project = projectView.Project,
+                Project = project,
                 RightId = 1,
                 UserId = user.Id
             }).ConfigureAwait(false);
@@ -214,6 +257,12 @@ namespace View.Controllers
                 .ConfigureAwait(false);
 
             var tasks =  await _dbContext.Tasks.Where(x => x.ProjectId == id)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Title,
+                    x.Description
+                })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -250,11 +299,14 @@ namespace View.Controllers
                 }, _jsonOptions);
             }
 
-            var project = _dbContext.Projects.FirstOrDefault(x => x.Id == view.Project.Id);
+            var project = await _dbContext.Projects.FirstOrDefaultAsync(x => x.Id == view.Project.Id)
+                .ConfigureAwait(false);
+
             project.Title = view.Project.Title;
             project.Description = view.Project.Description;
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait(false);
 
             return new JsonResult(new
             {
@@ -271,7 +323,8 @@ namespace View.Controllers
         public async Task<IActionResult> Delete(int? Id)
         {
             var id = Id.Value;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
 
             if (!_dbContext.CheckAccessForProject(id, user))
             {
@@ -281,11 +334,14 @@ namespace View.Controllers
                 }, _jsonOptions);
             }
 
-            var project = await _dbContext.Projects.SingleAsync(x => x.Id == id);
+            var project = await _dbContext.Projects
+                .SingleAsync(x => x.Id == id)
+                .ConfigureAwait(false);
 
             _dbContext.Remove(project);
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait(false);
 
             return new JsonResult(new
             {

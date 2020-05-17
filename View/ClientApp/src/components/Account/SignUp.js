@@ -26,17 +26,28 @@ export const SignUp = () => {
             return;
         }
 
-        const body = new FormData()
-        body.append('Login', name);
-        body.append('Pass', password);
-        body.append('FirstName', firstName);
-        body.append('Surname', surname);
-        body.append('MiddleName', middleName);
-        body.append('City', city);
-        body.append('BirthDate', birthDate);
-        body.append('Email', email);
+        const body = {
+            Login: name,
+            Pass: password,
+            FirstName: firstName,
+            Surname: surname,
+            MiddleName: middleName,
+            City: city,
+            BirthDate: birthDate,
+            Email: email
+        }
 
-        Post("api/account/signup", body, onSuccessSignedUp, 'FormData');
+        //const body = new FormData()
+        //body.append('Login', name);
+        //body.append('Pass', password);
+        //body.append('FirstName', firstName);
+        //body.append('Surname', surname);
+        //body.append('MiddleName', middleName);
+        //body.append('City', city);
+        //body.append('BirthDate', birthDate);
+        //body.append('Email', email);
+
+        Post("api/account/signup", body, onSuccessSignedUp);
     }
 
     return (

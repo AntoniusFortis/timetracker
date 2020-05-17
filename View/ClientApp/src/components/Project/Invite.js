@@ -1,14 +1,25 @@
-﻿import React, { Component } from 'react';
+﻿import React, { PureComponent } from 'react';
 import { Get, Post } from '../../restManager';
 
 const UserAdd = ({ userName, onRemove }) => (
     <div>
         <p><b>{userName}</b></p>
-        <p><button onClick={onRemove}>Удалить</button></p>
+        <p><button onClick={(e) => onRemove(e, userName)}>Удалить</button></p>
     </div>
 );
 
-export class ProjectInvite extends Component {
+const UsersList = (props) => {
+    return (
+        <div>
+            {
+                props.users.map(userName => (
+                    <UserAdd userName={userName} onRemove={props.onRemoveUser} />
+                ))
+            }
+        </div>);
+}
+
+export class ProjectInvite extends PureComponent {
     constructor(props) {
         super(props);
 
@@ -44,19 +55,18 @@ export class ProjectInvite extends Component {
         Post("api/project/invite", body, (response) => {
             response.json().then(result => {
                 if (result.status === 200) {
-                    window.location.href = "/projects/get/" + projectId;
+                    window.location.href = "/project/get/" + projectId;
                 }
             });
-        }, 'Json');
+        });
     }
 
-    onRemoveUser = (event) => {
+    onRemoveUser = (event, userName) => {
+        event.preventDefault();
+
         const users = this.state.users;
-        debugger;
-        const idx = users.indexOf(event.Name);
-
-        this.state.users.splice(idx);
-
+        const idx = users.findIndex((element) => { return element === userName });
+        this.state.users.splice(idx, 1);
         this.setState({ users: this.state.users });
     }
 
@@ -76,13 +86,7 @@ export class ProjectInvite extends Component {
             <form onSubmit={this.onSubmit}>
                 <input type="text" placeholder="Имя пользователя" onChange={this.onUserInputChange} />
                 <button onClick={this.onAddingUser}>Добавить</button>
-                <div>
-                    {
-                        this.state.users.map(userName => (
-                            <UserAdd userName={userName} onRemove={this.onRemoveUser} />
-                        ))
-                    }
-                </div>
+                <UsersList users={this.state.users} onRemoveUser={this.onRemoveUser} />
                 <input type="submit" value="Принять" />
             </form>
         );
