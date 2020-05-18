@@ -26,15 +26,10 @@ namespace View.Controllers
     public class AccountController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
-        private readonly IWebHostEnvironment _appEnvironment;
-        private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler;
 
-        public AccountController(TimetrackerContext dbContext, IWebHostEnvironment appEnvironment)
+        public AccountController(TimetrackerContext dbContext)
         {
             _dbContext = dbContext;
-            _appEnvironment = appEnvironment;
-
-            _jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
         }
 
         [HttpPost]
@@ -68,7 +63,7 @@ namespace View.Controllers
                     expires: now.Add(TimeSpan.FromDays(TimetrackerAuthorizationOptions.LIFETIME)),
                     signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
 
-            var encodedJwt = _jwtSecurityTokenHandler.WriteToken(jwt);
+            var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
 
             var response = new
             {
@@ -120,22 +115,6 @@ namespace View.Controllers
             };
 
             return new JsonResult(response);
-        }
-
-        private async Task<string> GetAvatar(IFormFile avatar, string login)
-        {
-            if (avatar == null)
-            {
-                return null;
-            }
-
-            string path = "/Resources/" + login + avatar.FileName;
-            using (var fileStream = new FileStream(_appEnvironment.WebRootPath + path, FileMode.Create))
-            {
-                await avatar.CopyToAsync(fileStream).ConfigureAwait(false);
-            }
-
-            return path;
         }
     }
 }
