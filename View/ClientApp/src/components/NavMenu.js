@@ -47,6 +47,9 @@ export class NavMenu extends Component {
                     <NavLink tag={Link} className="text-dark" to="/project/add">Новый проект</NavLink>
                 </NavItem>
                 <NavItem>
+                    <NavLink tag={Link} className="text-dark" to="/mypage/">Моя страница</NavLink>
+                </NavItem>
+                <NavItem>
                     <NavLink tag={Link} onClick={this.Signout} className="text-dark" to="/">Выход</NavLink>
                 </NavItem>
             </ul> )

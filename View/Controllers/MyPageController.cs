@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -21,11 +22,17 @@ namespace Timetracker.View.Controllers
     {
         private readonly TimetrackerContext _dbContext;
         private readonly IWebHostEnvironment _appEnvironment;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public MyPageController(TimetrackerContext dbContext, IWebHostEnvironment appEnvironment)
         {
             _dbContext = dbContext;
             _appEnvironment = appEnvironment;
+
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
         }
 
         [HttpGet]
@@ -40,7 +47,7 @@ namespace Timetracker.View.Controllers
                 user
             };
 
-            return new JsonResult(response);
+            return new JsonResult(response, _jsonOptions);
         }
 
         [HttpPost]
@@ -63,11 +70,11 @@ namespace Timetracker.View.Controllers
                 newUser = model
             };
 
-            return new JsonResult(response);
+            return new JsonResult(response, _jsonOptions);
         }
 
         [HttpPost, DisableRequestSizeLimit]
-        public async Task<JsonResult> UpdateAvatar(IFormFile avatar)
+        public async Task<JsonResult> UpdateAvatar([FromForm] IFormFile avatar)
         {
             var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == User.Identity.Name)
                 .ConfigureAwait(false);
@@ -83,7 +90,7 @@ namespace Timetracker.View.Controllers
                 status = HttpStatusCode.OK
             };
 
-            return new JsonResult(response);
+            return new JsonResult(response, _jsonOptions);
         }
 
         [HttpDelete]
@@ -102,7 +109,7 @@ namespace Timetracker.View.Controllers
                 status = HttpStatusCode.OK
             };
 
-            return new JsonResult(response);
+            return new JsonResult(response, _jsonOptions);
         }
 
         private async Task<string> GetAvatar(IFormFile avatar, string login)
