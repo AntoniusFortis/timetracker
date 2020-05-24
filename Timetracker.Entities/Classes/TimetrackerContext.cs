@@ -39,12 +39,13 @@ namespace Timetracker.Entities.Classes
             return exist;
         }
 
-        public async Task<User> GetUserAsync(string name)
+        public async Task<User> GetUserAsync(string name, bool invalidateCache = false)
         {
-            if (!_cache.TryGetValue(name, out User user))
+            if ( invalidateCache || !_cache.TryGetValue(name, out User user) )
             {
                 user = await Users.AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Login == name);
+                    .SingleOrDefaultAsync(p => p.Login == name)
+                    .ConfigureAwait(false);
 
                 if (user != null)
                 {

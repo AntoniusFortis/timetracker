@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent, Component } from 'react';
 import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
@@ -16,11 +16,11 @@ import { TaskGet } from './components/Task/Get';
 import { TaskUpdate } from './components/Task/Update';
 import { TaskAdd } from './components/Task/Add';
 
+import { MyPageGet } from './components/MyPage/Get';
+
 import './custom.css'
 
 export default class App extends Component {
-  static displayName = App.name;
-
   render () {
     return (
       <Layout>
@@ -38,6 +38,8 @@ export default class App extends Component {
             <Route exact path='/task/get/:taskId' component={TaskGet} />
             <Route exact path='/task/update/:taskId' component={TaskUpdate} />
             <Route exact path='/task/add/:projectId' component={TaskAdd} />
+
+            <Route exact path='/mypage/' component={MyPageGet} />
       </Layout>
     );
   }
