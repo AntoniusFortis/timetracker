@@ -7,8 +7,8 @@ export const SignUp = () => {
     const [password2, setPassword2] = useState('');
     const [firstName, setFirstName] = useState('');
     const [surname, setSurname] = useState('');
-    const [middleName, setMiddleName] = useState(undefined);
-    const [city, setCity] = useState(undefined);
+    const [middleName, setMiddleName] = useState('');
+    const [city, setCity] = useState('');
     const [birthDate, setBirthDate] = useState(undefined);
     const [email, setEmail] = useState('');
 
@@ -36,16 +36,6 @@ export const SignUp = () => {
             BirthDate: birthDate,
             Email: email
         }
-
-        //const body = new FormData()
-        //body.append('Login', name);
-        //body.append('Pass', password);
-        //body.append('FirstName', firstName);
-        //body.append('Surname', surname);
-        //body.append('MiddleName', middleName);
-        //body.append('City', city);
-        //body.append('BirthDate', birthDate);
-        //body.append('Email', email);
 
         Post("api/account/signup", body, onSuccessSignedUp);
     }

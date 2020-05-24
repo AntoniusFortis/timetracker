@@ -44,8 +44,8 @@ namespace Timetracker.Entities.Models
         [StringLength(255)]
         public string AvatarPath { get; set; }
 
-        [NotMapped]
-        public Bitmap Avatar { get; set; }
+        //[NotMapped]
+        //public Bitmap Avatar { get; set; }
 
         [StringLength(255)]
         [Required]

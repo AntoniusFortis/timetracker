@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { PureComponent, Component } from 'react';
 import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
@@ -20,7 +20,7 @@ import { MyPageGet } from './components/MyPage/Get';
 
 import './custom.css'
 
-export default class App extends PureComponent {
+export default class App extends Component {
   render () {
     return (
       <Layout>

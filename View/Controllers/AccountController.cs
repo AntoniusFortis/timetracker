@@ -33,16 +33,16 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignIn(AccountResponse view)
+        public async Task<IActionResult> SignIn( AccountResponse view )
         {
             var dbUser = await _dbContext.GetUserAsync(view.Login).ConfigureAwait(false);
-            if (dbUser == null)
+            if ( dbUser == null )
             {
                 return Unauthorized();
             }
 
             var password = PasswordHelpers.EncryptPassword(view.Pass, dbUser.Salt, 1024);
-            if (!PasswordHelpers.SlowEquals(password, dbUser.Pass))
+            if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass ) )
             {
                 return Unauthorized();
             }
@@ -71,20 +71,20 @@ namespace View.Controllers
                 access_token = encodedJwt
             };
 
-            return new JsonResult(response);
+            return new JsonResult( response );
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignUp([FromForm] AccountResponse view)
+        public async Task<IActionResult> SignUp( AccountResponse view )
         {
             var userExist = _dbContext.UserExists(view.Login);
 
-            if (userExist)
+            if ( userExist )
             {
-                return BadRequest(new
+                return BadRequest( new
                 {
                     text = "Пользователь с таким именем уже существует."
-                });
+                } );
             }
 
             var salt = PasswordHelpers.GenerateSalt(16);
@@ -105,8 +105,8 @@ namespace View.Controllers
                 Email = view.Email
             };
 
-            await _dbContext.AddAsync(user).ConfigureAwait(false);
-            await _dbContext.SaveChangesAsync().ConfigureAwait(false);
+            await _dbContext.AddAsync( user ).ConfigureAwait( false );
+            await _dbContext.SaveChangesAsync().ConfigureAwait( false );
 
             var response = new
             {
@@ -114,7 +114,7 @@ namespace View.Controllers
                 text = "Вы успешно зарегистрировались!"
             };
 
-            return new JsonResult(response);
+            return new JsonResult( response );
         }
     }
 }
