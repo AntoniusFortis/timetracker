@@ -15,7 +15,7 @@ namespace Timetracker.View.Controllers
     [ApiController]
     [Authorize]
     [Route("api/[controller]/[action]")]
-    public class WorktrackController : Controller
+    public class WorktrackController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;

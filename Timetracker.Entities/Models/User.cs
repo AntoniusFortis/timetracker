@@ -1,7 +1,5 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Drawing;
 using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
@@ -36,16 +34,14 @@ namespace Timetracker.Entities.Models
         [StringLength(30)]
         public string MiddleName { get; set; }
 
-        public DateTime? BirthDate { get; set; }
+        [StringLength( 30 )]
+        public string BirthDate { get; set; }
 
         [StringLength(50)]
         public string City { get; set; }
 
         [StringLength(255)]
         public string AvatarPath { get; set; }
-
-        //[NotMapped]
-        //public Bitmap Avatar { get; set; }
 
         [StringLength(255)]
         [Required]

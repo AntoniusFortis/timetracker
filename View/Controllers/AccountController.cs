@@ -90,8 +90,6 @@ namespace View.Controllers
             var salt = PasswordHelpers.GenerateSalt(16);
             var hash = PasswordHelpers.EncryptPassword(view.Pass, salt, 1024);
 
-            var isDateParsed = DateTime.TryParse(view.BirthDate, out var birthDate);
-
             var user = new User
             {
                 Login = view.Login,
@@ -101,7 +99,7 @@ namespace View.Controllers
                 Surname = view.Surname,
                 MiddleName = view.MiddleName,
                 City = view.City,
-                BirthDate = isDateParsed ? birthDate : (DateTime?)null,
+                BirthDate = view.BirthDate,
                 Email = view.Email
             };
 

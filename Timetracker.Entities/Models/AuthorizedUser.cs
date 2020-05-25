@@ -6,6 +6,8 @@
 
         public byte RightId { get; set; }
 
+        public virtual Right Right { get; set; }
+
         public int UserId { get; set; }
 
         public virtual User User { get; set; }

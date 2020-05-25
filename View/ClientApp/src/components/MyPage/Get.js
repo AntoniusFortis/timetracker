@@ -10,7 +10,7 @@ export const MyPageGet = () => {
     const [surname, setSurname] = useState('');
     const [middleName, setMiddleName] = useState('');
     const [city, setCity] = useState('');
-    const [birthDate, setBirthDate] = useState(undefined);
+    const [birthDate, setBirthDate] = useState('');
     const [email, setEmail] = useState('');
     const [avatarSrc, setAvatarSrc] = useState('');
 
