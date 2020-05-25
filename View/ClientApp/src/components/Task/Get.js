@@ -13,7 +13,8 @@ export class TaskGet extends PureComponent {
             loading: true,
             states: [],
             project: {},
-            worktracks: []
+            worktracks: [],
+            isAdmin: true
         };
     }
 
@@ -27,7 +28,7 @@ export class TaskGet extends PureComponent {
         Get("api/task/get?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ worktask: result.worktask, project: result.project });
+                    this.setState({ worktask: result.worktask, project: result.project, isAdmin: result.isAdmin });
                 });
         });
     }
@@ -147,12 +148,23 @@ export class TaskGet extends PureComponent {
     }
 
     render() {
+
+        if (!this.state.worktask) {
+            return <div />;
+        }
+
         const worktask = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderTaskTable(this.state.worktask);
         const worktracks = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderWorktracksTable(this.state.worktracks);
+
+        const removebutton = this.state.isAdmin ? <div style={{ display: "inline-block" }}>
+            <form onSubmit={this.onRemoveProject}>
+                <button>Удалить задачу</button>
+            </form>
+        </div> : (<div />);
 
         return (
             <div>
@@ -162,11 +174,7 @@ export class TaskGet extends PureComponent {
                 <div style={{ display: "inline-block" }}>
                     <button onClick={this.onClickEditProject}>Редактировать задачу</button>
                 </div>
-                <div style={{ display: "inline-block"}}>
-                    <form onSubmit={this.onRemoveProject}>
-                        <button>Удалить задачу</button>
-                    </form>
-                </div>
+                {removebutton}
                 <div style={{ display: "inline-block" }}>
                     <TaskTracking worktaskId={worktask.Id} />
                 </div>

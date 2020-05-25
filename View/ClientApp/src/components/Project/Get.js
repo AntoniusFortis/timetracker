@@ -1,20 +1,24 @@
 ﻿import React, { PureComponent } from 'react';
-import { Get, Delete } from '../../restManager';
+import { Get, Delete, Post } from '../../restManager';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 import { Tabs, Tab } from '../../Tabs';
+import Select from 'react-select';
 
 const ProjectHeaderPanel = (props) => {
     return <div>
         <div style={{ display: "inline-block", paddingRight: "10px" }}>
             <h4>Проект: {props.Title}</h4>
         </div>
-        <button onClick={props.onClickEditProject}>Редактировать проект</button>
-        <div style={{ display: "inline-block", paddingRight: "10px" }}>
-            <form onSubmit={props.onRemoveProject}>
-                <button>Удалить проект</button>
-            </form>
-        </div>
+        {
+            props.isAdmin && (<div> <button onClick={props.onClickEditProject}>Редактировать проект</button>
+            <div style={{ display: "inline-block", paddingRight: "10px" }}>
+                <form onSubmit={props.onRemoveProject}>
+                    <button>Удалить проект</button>
+                </form>
+                </div>
+            </div>)
+        }
     </div>;
 }
 
@@ -59,9 +63,15 @@ export class ProjectGet extends PureComponent {
             loading: true,
             users: [],
             tasks: [],
+            isAdmin: true,
             orderTasksFunc: (tasks) => tasks
         };
     }
+
+    options = [
+        { value: '1', label: 'Администратор' },
+        { value: '2', label: 'Пользователь' }
+    ]
 
     componentDidMount() {
         this.getProjectsData()
@@ -72,10 +82,16 @@ export class ProjectGet extends PureComponent {
         Get("api/project/get?id=" + this.props.match.params.projectId, (response) => {
             response.json()
                 .then(result => {
+                    if (result.status == 401) {
+                        window.location.href = "/error401";
+                        return;
+                    }
+
                     this.setState({
                         project: result.project,
                         loading: false,
-                        tasks: result.tasks
+                        tasks: result.tasks,
+                        isAdmin: result.isAdmin
                     });
                 });
         });
@@ -88,18 +104,34 @@ export class ProjectGet extends PureComponent {
         });
     }
 
-    renderUsersTable(users) {
+    onStateChange = (event, login) => {
+        Post("api/project/UpdateUser",
+            { userLogin: login, rightId: event.value, projectId: this.props.match.params.projectId },
+            (response) => {
+            });
+    }
+
+    renderUsersTable(users, isadmin) {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
                     <tr>
                         <th>Имя пользователя</th>
+                        <th>Роль</th>
                     </tr>
                 </thead>
                 <tbody>
                     {
-                        users.map(userName => (
-                            <tr><td>{userName}</td></tr>
+                        users.map(user => (
+                            <tr>
+                                <td>{user.login}</td>
+                                <td>
+                                    {isadmin && <Select options={this.options} defaultValue={this.options[user.right.Id - 1]} onChange={(event) => this.onStateChange(event, user.login)} /> }
+                                    {!isadmin && user.right.Name}
+
+                                </td>
+
+                            </tr>
                         ))
                     }
                 </tbody>
@@ -142,17 +174,19 @@ export class ProjectGet extends PureComponent {
     render() {
         const users = this.state.loading
             ? <p><em>Загрузка...</em></p>
-            : this.renderUsersTable(this.state.users);
-        
+            : this.renderUsersTable(this.state.users, this.state.isAdmin);
+
+        const adminRightes = this.state.isAdmin ? <button onClick={this.onClickInviteProject}>Изменить участников</button>: (<div />);
+
         return (
             <div>
-                <ProjectHeaderPanel Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
+                <ProjectHeaderPanel isAdmin={this.state.isAdmin} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Задачи">
                         <WorktasksPanel onClickAddTask={this.onClickAddTask} onClickSortTasks={this.onClickSortTasks} onClickSortDefTasks={this.onClickSortDefTasks} orderFunc={this.state.orderTasksFunc(this.state.tasks.slice())} />
                     </Tab>
                     <Tab name="second" title="Участники">
-                        <button onClick={this.onClickInviteProject}>Изменить участников</button>
+                        {adminRightes}
                         {users}
                     </Tab>
                 </Tabs>

@@ -74,13 +74,7 @@ namespace Timetracker.View.Controllers
             user.MiddleName = model.MiddleName;
             user.City = model.City;
             user.Email = model.Email;
-
-            var isDateParsed = DateTime.TryParse(model.BirthDate, out var birthDate);
-
-            if (isDateParsed)
-            {
-                user.BirthDate = birthDate;
-            }
+            user.BirthDate = model.BirthDate;
 
             _dbContext.Update(user);
 

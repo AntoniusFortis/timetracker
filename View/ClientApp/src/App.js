@@ -18,6 +18,8 @@ import { TaskAdd } from './components/Task/Add';
 
 import { MyPageGet } from './components/MyPage/Get';
 
+import { ErrorPageUnauthorized } from './components/Other/ErrorPage';
+
 import './custom.css'
 
 export default class App extends Component {
@@ -25,6 +27,8 @@ export default class App extends Component {
     return (
       <Layout>
             <Route exact path='/' component={Home} />
+
+            <Route exact path='/error401' component={ErrorPageUnauthorized} />
 
             <Route exact path='/account/signin' component={SignIn} />
             <Route exact path='/account/signup' component={SignUp} />

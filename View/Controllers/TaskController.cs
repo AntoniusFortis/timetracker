@@ -72,8 +72,11 @@ namespace Timetracker.View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            // Проверяем, что есть доступ
-            if (!_dbContext.CheckAccessForProject(worktask.ProjectId, user))
+            var au = await _dbContext.AuthorizedUsers.AsNoTracking()
+                .SingleOrDefaultAsync( x => x.ProjectId == id && x.User.Id == user.Id )
+                .ConfigureAwait(false);
+
+            if ( au == null )
             {
                 return new JsonResult(new
                 {
@@ -87,7 +90,8 @@ namespace Timetracker.View.Controllers
             {
                 status = HttpStatusCode.OK,
                 project = worktask.Project,
-                worktask = worktask
+                worktask = worktask,
+                isAdmin = au.RightId
             }, _jsonOptions);
         }
 
@@ -127,11 +131,14 @@ namespace Timetracker.View.Controllers
         public async Task<IActionResult> Delete(int? Id)
         {
             var id = Id.Value;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
 
-            var dbWorkTask = await _dbContext.Tasks.SingleAsync(x => x.Id == id);
+            var au = await _dbContext.AuthorizedUsers.AsNoTracking()
+                .SingleOrDefaultAsync( x => x.ProjectId == id && x.User.Id == user.Id )
+                .ConfigureAwait(false);
 
-            if (!_dbContext.CheckAccessForProject(dbWorkTask.ProjectId, user))
+            if ( au == null || au.RightId != 1 )
             {
                 return new JsonResult(new
                 {
@@ -139,9 +146,13 @@ namespace Timetracker.View.Controllers
                 }, _jsonOptions);
             }
 
+            var dbWorkTask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
+                .ConfigureAwait(false);
+
             _dbContext.Remove(dbWorkTask);
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait(false);
 
             return new JsonResult(new
             {
