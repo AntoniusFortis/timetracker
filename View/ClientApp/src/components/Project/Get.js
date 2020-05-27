@@ -180,7 +180,7 @@ export class ProjectGet extends PureComponent {
 
         return (
             <div>
-                <ProjectHeaderPanel isAdmin={this.state.isAdmin} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
+                <ProjectHeaderPanel isAdmin={this.state.isAdmin} Id={this.state.project.Id} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Задачи">
                         <WorktasksPanel onClickAddTask={this.onClickAddTask} onClickSortTasks={this.onClickSortTasks} onClickSortDefTasks={this.onClickSortDefTasks} orderFunc={this.state.orderTasksFunc(this.state.tasks.slice())} />

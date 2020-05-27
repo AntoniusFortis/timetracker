@@ -73,7 +73,7 @@ namespace Timetracker.View.Controllers
                 .ConfigureAwait(false);
 
             var au = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .SingleOrDefaultAsync( x => x.ProjectId == id && x.User.Id == user.Id )
+                .SingleOrDefaultAsync( x => x.ProjectId == worktask.ProjectId && x.User.Id == user.Id )
                 .ConfigureAwait(false);
 
             if ( au == null )
