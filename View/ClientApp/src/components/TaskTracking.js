@@ -30,9 +30,9 @@ export class TaskTracking extends Component {
             this.state.hubConnection.start()
                 .catch(err => console.log(err));
 
-            this.state.hubConnection.on('startTracking', (receivedMessage, status) => {
+            this.state.hubConnection.on('startTracking', (message, status) => {
                 this.setState({ buttonToggle: false });
-                this.showMessage(receivedMessage);
+                this.showMessage(message);
             });
 
             this.state.hubConnection.on('stopTracking', (receivedMessage, status) => {
@@ -43,6 +43,8 @@ export class TaskTracking extends Component {
             this.state.hubConnection.on('getActiveTracking', (istracking) => {
                 this.setState({ buttonToggle: !istracking });
             });
+
+            //this.getActiveTracking();
         });
 
     }
@@ -65,12 +67,17 @@ export class TaskTracking extends Component {
             });
     }
 
-    getActiveTracking = () => {
-        this.invokeFunction('GetActiveTracking');
-    }
+    //getActiveTracking = () => {
+    //    this.invokeFunction('GetActiveTracking');
+    //}
 
-    startTracking = () => {
-        this.invokeFunctionArg('StartTracking', this.props.worktaskId);
+    startTracking = (event) => {
+        this.state.hubConnection
+            .invoke('StartTracking', this.props.worktaskId)
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
     };
 
     stopTracking = () => {

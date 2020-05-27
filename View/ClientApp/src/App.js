@@ -20,31 +20,35 @@ import { MyPageGet } from './components/MyPage/Get';
 
 import { ErrorPageUnauthorized } from './components/Other/ErrorPage';
 
+import { Today } from './components/WorktrackStat/Get';
+
 import './custom.css'
 
 export default class App extends Component {
-  render () {
-    return (
-      <Layout>
-            <Route exact path='/' component={Home} />
+    render() {
+        return (
+            <Layout>
+                <Route exact path='/' component={Home} />
 
-            <Route exact path='/error401' component={ErrorPageUnauthorized} />
+                <Route exact path='/error401' component={ErrorPageUnauthorized} />
 
-            <Route exact path='/account/signin' component={SignIn} />
-            <Route exact path='/account/signup' component={SignUp} />
+                <Route exact path='/account/signin' component={SignIn} />
+                <Route exact path='/account/signup' component={SignUp} />
 
-            <Route exact path='/project/all' component={ProjectGetAll} />
-            <Route exact path='/project/get/:projectId' component={ProjectGet} />
-            <Route exact path='/project/add' component={ProjectAdd} />
-            <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
-            <Route exact path='/project/invite/:projectId' component={ProjectInvite} />
+                <Route exact path='/project/all' component={ProjectGetAll} />
+                <Route exact path='/project/get/:projectId' component={ProjectGet} />
+                <Route exact path='/project/add' component={ProjectAdd} />
+                <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
+                <Route exact path='/project/invite/:projectId' component={ProjectInvite} />
 
-            <Route exact path='/task/get/:taskId' component={TaskGet} />
-            <Route exact path='/task/update/:taskId' component={TaskUpdate} />
-            <Route exact path='/task/add/:projectId' component={TaskAdd} />
+                <Route exact path='/task/get/:taskId' component={TaskGet} />
+                <Route exact path='/task/update/:taskId' component={TaskUpdate} />
+                <Route exact path='/task/add/:projectId' component={TaskAdd} />
 
-            <Route exact path='/mypage/' component={MyPageGet} />
-      </Layout>
-    );
-  }
+                <Route exact path='/mypage/' component={MyPageGet} />
+
+                <Route exact path='/stat/' component={Today} />
+            </Layout>
+        );
+    }
 }

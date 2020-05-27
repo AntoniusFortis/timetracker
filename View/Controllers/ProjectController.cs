@@ -69,7 +69,8 @@ namespace View.Controllers
         public async Task<JsonResult> GetUsers(int id)
         {
             var users = await _dbContext.AuthorizedUsers.Where(x => x.ProjectId == id)
-                .Select(x => new { 
+                .Select(x => new {
+                    Id = x.UserId,
                     login = x.User.Login, 
                     right = x.Right 
                 } )

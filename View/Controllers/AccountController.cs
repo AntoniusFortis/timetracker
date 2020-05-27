@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -26,10 +27,16 @@ namespace View.Controllers
     public class AccountController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public AccountController(TimetrackerContext dbContext)
         {
             _dbContext = dbContext;
+
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
         }
 
         [HttpPost]
@@ -72,6 +79,22 @@ namespace View.Controllers
             };
 
             return new JsonResult( response );
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<JsonResult> GetCurrentUser()
+        {
+            var currentUser = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait(false);
+
+            var response = new
+            {
+                status = HttpStatusCode.OK,
+                user = currentUser
+            };
+
+            return new JsonResult( response, _jsonOptions );
         }
 
         [HttpPost]

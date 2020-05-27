@@ -16,7 +16,7 @@ namespace Timetracker.View.Hubs
     {
         private readonly TimetrackerContext _dbContext;
 
-        public TrackingHub(TimetrackerContext dbContext)
+        public TrackingHub( TimetrackerContext dbContext )
         {
             _dbContext = dbContext;
         }
@@ -34,56 +34,74 @@ namespace Timetracker.View.Hubs
             await this.Clients.Caller.SendAsync("getActiveTracking", dbWorktrack);
         }
 
-        public async Task StartTracking(int taskId)
+        public async Task StartTracking( int taskId )
         {
             var userName = Context.User.Identity.Name;
 
-            var dbUser = await _dbContext.GetUserAsync(userName);
+            var dbUser = await _dbContext.GetUserAsync(userName)
+                .ConfigureAwait(false);
 
-            if (await _dbContext.Worktracks.AnyAsync(x => x.UserId == dbUser.Id && x.Draft))
+            var anyActiveWorktrack = await _dbContext.Worktracks.AsNoTracking()
+                .AnyAsync( x => x.UserId == dbUser.Id && x.Draft )
+                .ConfigureAwait(false);
+
+            if ( anyActiveWorktrack )
             {
-                await this.Clients.Caller.SendAsync("startTracking", "У вас уже есть задача, которая отслеживается.", HttpStatusCode.InternalServerError);
+                await this.Clients.Caller.SendAsync( "startTracking", "У вас уже есть задача, которая отслеживается.", HttpStatusCode.InternalServerError )
+                    .ConfigureAwait( false );
+
                 return;
             }
 
-            var dbWorktask = await _dbContext.Tasks.SingleAsync(x => x.Id == taskId);
-            if (!_dbContext.CheckAccessForProject(dbWorktask.ProjectId, dbUser))
+            var dbWorktask = await _dbContext.Tasks.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == taskId)
+                .ConfigureAwait(false);
+
+            if ( !_dbContext.CheckAccessForProject( dbWorktask.ProjectId, dbUser ) )
             {
-                await this.Clients.Caller.SendAsync("startTracking", "У вас недостаточно прав, чтобы отслеживать эту задачу.", HttpStatusCode.Unauthorized);
+                await this.Clients.Caller.SendAsync( "startTracking", "У вас недостаточно прав, чтобы отслеживать эту задачу.", HttpStatusCode.Unauthorized )
+                    .ConfigureAwait( false );
+
                 return;
             }
 
-            _dbContext.Add(new Worktrack {
+            await _dbContext.AddAsync( new Worktrack
+            {
                 UserId = dbUser.Id,
-                StartedTime = DateTime.UtcNow,
-                StoppedTime = DateTime.UtcNow,
+                StartedTime = DateTime.Now,
+                StoppedTime = DateTime.Now,
                 TaskId = dbWorktask.Id,
                 Draft = true
-            });
+            } )
+                .ConfigureAwait( false );
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait( false );
 
-            await this.Clients.Caller.SendAsync("startTracking", String.Empty, HttpStatusCode.OK);
+            await this.Clients.Caller.SendAsync( "startTracking", string.Empty, HttpStatusCode.OK )
+                .ConfigureAwait( false );
         }
 
         public async Task StopTracking()
         {
             var userName = Context.User.Identity.Name;
 
-            var dbUser = await _dbContext.GetUserAsync(userName);
+            var dbUser = await _dbContext.GetUserAsync(userName)
+                .ConfigureAwait(false);
 
             var dbWorktrack = await _dbContext.Worktracks
                 .Where(x => x.UserId == dbUser.Id)
-                .SingleAsync(x => x.Draft);
+                .SingleAsync(x => x.Draft)
+                .ConfigureAwait(false);
 
             dbWorktrack.Draft = false;
-            dbWorktrack.StoppedTime = DateTime.UtcNow;
+            dbWorktrack.StoppedTime = DateTime.Now;
 
             await _dbContext.SaveChangesAsync();
 
             var trackedTime = dbWorktrack.StoppedTime - dbWorktrack.StartedTime;
-            var formatTime = trackedTime.ToString("G");
-            await this.Clients.Caller.SendAsync("stopTracking", "Вы перестали отслеживать задачу. С момента начало прошло: " + formatTime, HttpStatusCode.OK);
+            var formatTime = trackedTime.ToString(@"hh\:mm\:ss");
+            await this.Clients.Caller.SendAsync( "stopTracking", "Вы перестали отслеживать задачу. С момента начало прошло: " + formatTime, HttpStatusCode.OK );
         }
 
         public override Task OnConnectedAsync()
@@ -94,7 +112,7 @@ namespace Timetracker.View.Hubs
             var dbUser = _dbContext.GetUserAsync(userName).Result;
             var dbWorktrack = _dbContext.Worktracks.Any(x => x.UserId == dbUser.Id && x.Draft);
 
-            this.Clients.Caller.SendAsync("getActiveTracking", dbWorktrack).Wait();
+            this.Clients.Caller.SendAsync( "getActiveTracking", dbWorktrack ).Wait();
 
             return Task.CompletedTask;
         }

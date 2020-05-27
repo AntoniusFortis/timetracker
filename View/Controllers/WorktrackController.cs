@@ -31,13 +31,24 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpGet]
-        public async Task<JsonResult> GetAll(int? worktaskId)
+        public async Task<JsonResult> GetAll( int? id )
         {
-            var worktracks = await _dbContext.Worktracks
-                .Where(x => x.TaskId == worktaskId.Value && !x.Draft )
+            if ( !id.HasValue )
+            {
+                var response = new
+                {
+                    status = HttpStatusCode.OK,
+                    message = "Вы не предоставили поле id"
+                };
+
+                return new JsonResult( response, _jsonOptions );
+            }
+
+            var worktracks = await _dbContext.Worktracks.AsNoTracking()
+                .Where(x => x.TaskId == id.Value && !x.Draft )
                 .OrderByDescending( x => x.StartedTime )
                 .Select( x => new {
-                    Id = x.Id,
+                    x.Id,
                     User = x.User.Login,
                     StartedTime = x.StartedTime.ToString("G"),
                     StoppedTime = x.StoppedTime.ToString("G"),
@@ -46,7 +57,41 @@ namespace Timetracker.View.Controllers
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return new JsonResult(worktracks, _jsonOptions);
+            return new JsonResult( worktracks, _jsonOptions );
+        }
+
+        [HttpPost]
+        public async Task<JsonResult> GetStat( WorkTrackStatModel model )
+        {
+            var startedDate = DateTime.Parse( model.startDate );
+            var endDate = DateTime.Parse( model.endDate ).AddDays(1);
+
+            var worktracksQuery =  _dbContext.Worktracks.AsNoTracking()
+                .Where( x => x.Task.ProjectId == model.projectId && x.StartedTime >= startedDate && x.StoppedTime <= endDate );
+
+            if ( model.userId.HasValue && model.userId != 0 )
+            {
+                worktracksQuery = worktracksQuery.Where( x => x.UserId == model.userId.Value );
+            }
+
+            if ( model.taskId.HasValue && model.taskId != 0 )
+            {
+                worktracksQuery = worktracksQuery.Where( x => x.TaskId == model.taskId.Value );
+            }
+
+            var worktracks = await worktracksQuery.Select( x => new
+            {
+                x.Id,
+                User = x.User.Login,
+                Task = x.Task.Title,
+                StartedTime = x.StartedTime.ToString("G"),
+                StoppedTime = x.StoppedTime.ToString("G"),
+                TotalTime = (x.StoppedTime - x.StartedTime).ToString(@"hh\:mm\:ss")
+            })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return new JsonResult( worktracks, _jsonOptions );
         }
     }
 }

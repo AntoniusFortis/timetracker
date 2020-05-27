@@ -34,7 +34,7 @@ export class TaskGet extends PureComponent {
     }
 
     async getWorktacksData() {
-        Get("api/worktrack/getall?worktaskId=" + this.props.match.params.taskId, (response) => {
+        Get("api/worktrack/getall?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
                     this.setState({ worktracks: result });
@@ -148,11 +148,6 @@ export class TaskGet extends PureComponent {
     }
 
     render() {
-
-        if (!this.state.worktask) {
-            return <div />;
-        }
-
         const worktask = this.state.loading
             ? <p><em>Загрузка...</em></p>
             : this.renderTaskTable(this.state.worktask);
@@ -168,16 +163,16 @@ export class TaskGet extends PureComponent {
 
         return (
             <div>
+                <div style={{ display: "inline-block" }}>
+                    <TaskTracking worktaskId={this.state.worktask.Id} />
+                </div>
                 <div style={{ display: "inline-block", paddingRight: "10px" }}>
-                    <h4>Задача {this.state.worktask.Id}: { this.state.worktask.Title }</h4>
+                    <h4>Задача: { this.state.worktask.Title }</h4>
                 </div>
                 <div style={{ display: "inline-block" }}>
                     <button onClick={this.onClickEditProject}>Редактировать задачу</button>
                 </div>
                 {removebutton}
-                <div style={{ display: "inline-block" }}>
-                    <TaskTracking worktaskId={worktask.Id} />
-                </div>
 
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Описание задачи">
