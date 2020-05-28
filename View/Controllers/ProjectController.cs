@@ -269,7 +269,7 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> Add(AddProjectModel view)
+        public async Task<JsonResult> Add( AddProjectModel view )
         {
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
@@ -293,21 +293,24 @@ namespace View.Controllers
             var t = await _dbContext.AddAsync(project)
                 .ConfigureAwait(false);
 
-            await _dbContext.AddAsync(new AuthorizedUser
+            await _dbContext.AddAsync( new AuthorizedUser
             {
                 IsSigned = true,
                 Project = project,
                 RightId = 1,
                 UserId = user.Id
-            }).ConfigureAwait(false);
+            } ).ConfigureAwait( false );
+
+            string keyAuthorized = $"{user.Id}:ProjectsAuthorized";
+            _cache.Remove( keyAuthorized );
 
             await _dbContext.SaveChangesAsync()
-                .ConfigureAwait(false);
+                           .ConfigureAwait( false );
 
-            return new JsonResult(new
+            return new JsonResult( new
             {
                 status = HttpStatusCode.OK
-            });
+            } );
         }
 
         [HttpGet]
