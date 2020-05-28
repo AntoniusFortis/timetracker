@@ -111,6 +111,19 @@ export class ProjectGet extends PureComponent {
             });
     }
 
+    onRemoveUser = (userName, userId) => {
+        const users = this.state.users;
+        const idx = users.findIndex((element) => { return element.login === userName });
+        const newarr = users.splice(idx, 1);
+        this.setState({ users: newarr }, () => {
+            const body = {
+                ProjectId: this.props.match.params.projectId,
+                UserId: userId
+            };
+            Post("api/project/RemoveUserFromProject", body, (r) => { });
+        });
+    }
+
     renderUsersTable(users, isadmin) {
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
@@ -118,6 +131,7 @@ export class ProjectGet extends PureComponent {
                     <tr>
                         <th>Имя пользователя</th>
                         <th>Роль</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,9 +142,11 @@ export class ProjectGet extends PureComponent {
                                 <td>
                                     {isadmin && <Select options={this.options} defaultValue={this.options[user.right.Id - 1]} onChange={(event) => this.onStateChange(event, user.login)} /> }
                                     {!isadmin && user.right.Name}
-
                                 </td>
-
+                                <td>
+                                    {isadmin && <button onClick={(e) => this.onRemoveUser(user.login, user.Id)}>Удалить</button>}
+                                    {!isadmin && (<div />)}
+                                </td>
                             </tr>
                         ))
                     }
@@ -176,7 +192,7 @@ export class ProjectGet extends PureComponent {
             ? <p><em>Загрузка...</em></p>
             : this.renderUsersTable(this.state.users, this.state.isAdmin);
 
-        const adminRightes = this.state.isAdmin ? <button onClick={this.onClickInviteProject}>Изменить участников</button>: (<div />);
+        const adminRightes = this.state.isAdmin ? <button onClick={this.onClickInviteProject}>Добавить участников</button>: (<div />);
 
         return (
             <div>
