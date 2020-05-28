@@ -40,7 +40,7 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignIn( AccountResponse view )
+        public async Task<IActionResult> SignIn( SignInModel view )
         {
             var dbUser = await _dbContext.GetUserAsync(view.Login).ConfigureAwait(false);
             if ( dbUser == null )
@@ -72,10 +72,23 @@ namespace View.Controllers
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
 
+            var user = new
+            {
+                dbUser.Id,
+                dbUser.Login,
+                dbUser.FirstName,
+                dbUser.MiddleName,
+                dbUser.Surname,
+                dbUser.Email,
+                dbUser.BirthDate,
+                dbUser.City
+            };
+
             var response = new
             {
                 status = HttpStatusCode.OK,
-                access_token = encodedJwt
+                access_token = encodedJwt,
+                user =  user
             };
 
             return new JsonResult( response );

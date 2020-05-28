@@ -2,6 +2,13 @@
 
 namespace Timetracker.Entities.Responses
 {
+    public class SignInModel
+    {
+        public string Login { get; set; }
+
+        public string Pass { get; set; }
+    }
+
     public class AccountResponse
     {
         public string Login { get; set; }
