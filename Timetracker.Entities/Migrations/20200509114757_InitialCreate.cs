@@ -25,7 +25,8 @@ namespace Timetracker.Entities.Migrations
                 name: "Rights",
                 columns: table => new
                 {
-                    Id = table.Column<byte>(nullable: false),
+                    Id = table.Column<byte>(nullable: false)
+                    .Annotation( "SqlServer:Identity", "1, 1" ),
                     Name = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -37,7 +38,8 @@ namespace Timetracker.Entities.Migrations
                 name: "States",
                 columns: table => new
                 {
-                    Id = table.Column<byte>(nullable: false),
+                    Id = table.Column<byte>(nullable: false)
+                    .Annotation( "SqlServer:Identity", "1, 1" ),
                     Title = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
