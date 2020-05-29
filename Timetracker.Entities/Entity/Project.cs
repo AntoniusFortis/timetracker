@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
 {
@@ -12,5 +14,8 @@ namespace Timetracker.Entities.Models
         public string Title { get; set; }
 
         public string Description { get; set; }
+
+        [JsonIgnore]
+        public virtual List<WorkTask> Tasks { get; set; }
     }
 }

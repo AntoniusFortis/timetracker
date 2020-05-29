@@ -23,10 +23,11 @@ export class ProjectInvite extends PureComponent {
         const body = { ProjectId: projectId, UserName: user_input };
 
         Post("api/project/addUserToProject", body, (response) => {
+            if (response.status != 200) {
+                console.log(response.statusText);
+            }
             response.json().then(result => {
-                if (result.status === 200) {
                     window.location.href = "/project/get/" + projectId;
-                }
             });
         });
     }

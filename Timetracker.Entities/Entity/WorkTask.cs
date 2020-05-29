@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
 {
@@ -21,5 +23,8 @@ namespace Timetracker.Entities.Models
         public byte StateId { get; set; }
 
         public State State { get; set; }
+
+        [JsonIgnore]
+        public List<Worktrack> WorkTracks { get; set; }
     }
 }

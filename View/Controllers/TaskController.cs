@@ -17,6 +17,13 @@ namespace Timetracker.View.Controllers
         public WorkTask worktask { get; set; }
     }
 
+    public class UpdateStateModel
+    {
+        public string taskId { get; set; }
+
+        public string stateId { get; set; }
+    }
+
     [ApiController]
     [Authorize]
     [Route("api/[controller]/[action]")]
@@ -36,7 +43,7 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add(TaskView view)
+        public async Task<JsonResult> Add(TaskView view)
         {
             var worktask = view.worktask;
             var user = await _dbContext.GetUserAsync(User.Identity.Name).
@@ -50,14 +57,13 @@ namespace Timetracker.View.Controllers
                 }, _jsonOptions);
             }
 
-            await _dbContext.AddAsync(worktask);
+            var addedTask = await _dbContext.AddAsync(worktask);
 
             await _dbContext.SaveChangesAsync();
 
             return new JsonResult(new
             {
-                status = HttpStatusCode.OK,
-                worktask = worktask
+                status = HttpStatusCode.OK
             }, _jsonOptions);
         }
 
@@ -66,7 +72,7 @@ namespace Timetracker.View.Controllers
         {
             var id = Id.Value;
 
-            var worktask = await _dbContext.Tasks.SingleAsync(x => x.Id == id)
+            var worktask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
                 .ConfigureAwait(false);
 
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
@@ -86,13 +92,45 @@ namespace Timetracker.View.Controllers
                 });
             }
 
+            var task = new
+            {
+                worktask.Id,
+                worktask.ProjectId,
+                worktask.StateId,
+                worktask.Title,
+                worktask.Description,
+                worktask.Duration,
+                Project = new { worktask.Project.Id, worktask.Project.Title },
+                CreatedDate = worktask.CreatedDate.ToString("G")
+            };
+
             return new JsonResult(new
             {
                 status = HttpStatusCode.OK,
                 project = worktask.Project,
-                worktask = worktask,
+                worktask = task,
                 isAdmin = au.RightId
             }, _jsonOptions);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateState( UpdateStateModel model )
+        {
+            var taskId = int.Parse(model.taskId);
+            var stateId = byte.Parse(model.stateId);
+
+            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == taskId );
+            dbWorkTask.StateId = stateId;
+
+            _dbContext.Update( dbWorkTask );
+
+            await _dbContext.SaveChangesAsync();
+
+            return new JsonResult( new
+            {
+                status = HttpStatusCode.OK
+            }, _jsonOptions );
         }
 
         [HttpPost]
@@ -114,7 +152,6 @@ namespace Timetracker.View.Controllers
             dbWorkTask.Description = view.worktask.Description;
             dbWorkTask.Duration = view.worktask.Duration;
             dbWorkTask.StateId = view.worktask.State.Id;
-            dbWorkTask.State = view.worktask.State;
 
             _dbContext.Update(dbWorkTask);
             
@@ -134,8 +171,11 @@ namespace Timetracker.View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
+            var dbWorkTask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
+                .ConfigureAwait(false);
+
             var au = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .SingleOrDefaultAsync( x => x.ProjectId == id && x.User.Id == user.Id )
+                .SingleOrDefaultAsync( x => x.ProjectId == dbWorkTask.ProjectId && x.User.Id == user.Id )
                 .ConfigureAwait(false);
 
             if ( au == null || au.RightId != 1 )
@@ -145,9 +185,6 @@ namespace Timetracker.View.Controllers
                     status = HttpStatusCode.Unauthorized
                 }, _jsonOptions);
             }
-
-            var dbWorkTask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
-                .ConfigureAwait(false);
 
             _dbContext.Remove(dbWorkTask);
 

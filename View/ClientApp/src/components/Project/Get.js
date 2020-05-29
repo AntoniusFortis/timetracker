@@ -1,4 +1,4 @@
-﻿import React, { PureComponent } from 'react';
+﻿import React, { PureComponent, Component } from 'react';
 import { Get, Delete, Post } from '../../restManager';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
@@ -24,7 +24,7 @@ const ProjectHeaderPanel = (props) => {
 
 const WorktasksPanel = (props) => {
     return (<div>
-        <button onClick={props.onClickAddTask}>Добавить задачу</button>
+        <NavLink style={{ width: '250px', display: 'inline' }} tag={Link} to={"/task/add/" + props.projectId}>Добавить задачу</NavLink>
         <button onClick={props.onClickSortTasks}>Отсортировать по их состоянию</button>
         <button onClick={props.onClickSortDefTasks}>Сортировка по умолчанию</button>
         <TaskList tasks={props.orderFunc} />
@@ -54,7 +54,7 @@ const TaskList = ({ tasks }) => (
     </table>
 );
 
-export class ProjectGet extends PureComponent {
+export class ProjectGet extends Component {
     constructor(props) {
         super(props);
 
@@ -74,8 +74,7 @@ export class ProjectGet extends PureComponent {
     ]
 
     componentDidMount() {
-        this.getProjectsData()
-            .then(this.getUsersData());
+        this.getProjectsData();
     }
 
     async getProjectsData() {
@@ -91,18 +90,13 @@ export class ProjectGet extends PureComponent {
                         project: result.project,
                         loading: false,
                         tasks: result.tasks,
-                        isAdmin: result.isAdmin
+                        isAdmin: result.isAdmin,
+                        users: result.users
                     });
                 });
         });
     }
 
-    async getUsersData() {
-        Get("api/project/getusers?id=" + this.props.match.params.projectId, (response) => {
-            response.json()
-                .then(result => this.setState({ users: result.users }));
-        });
-    }
 
     onStateChange = (event, login) => {
         Post("api/project/UpdateUser",
@@ -111,11 +105,11 @@ export class ProjectGet extends PureComponent {
             });
     }
 
-    onRemoveUser = (userName, userId) => {
-        const users = this.state.users;
-        const idx = users.findIndex((element) => { return element.login === userName });
-        const newarr = users.splice(idx, 1);
-        this.setState({ users: newarr }, () => {
+    onRemoveUser = (userId) => {
+        let users = this.state.users;
+        const idx = users.findIndex((element) => { return element.Id === userId });
+        users.splice(idx, 1);
+        this.setState({ users: users }, () => {
             const body = {
                 ProjectId: this.props.match.params.projectId,
                 UserId: userId
@@ -144,7 +138,7 @@ export class ProjectGet extends PureComponent {
                                     {!isadmin && user.right.Name}
                                 </td>
                                 <td>
-                                    {isadmin && <button onClick={(e) => this.onRemoveUser(user.login, user.Id)}>Удалить</button>}
+                                    {isadmin && <button onClick={(e) => this.onRemoveUser(user.Id)}>Удалить</button>}
                                     {!isadmin && (<div />)}
                                 </td>
                             </tr>
@@ -158,7 +152,7 @@ export class ProjectGet extends PureComponent {
     onRemoveProject = (event) => {
         event.preventDefault();
 
-        Delete("api/project/delete?Id=" + this.state.project.Id,
+        Delete("api/project/delete?Id=" + this.props.match.params.projectId,
             { },
             (response) => {
                 if (response.status === 200) {
@@ -168,15 +162,11 @@ export class ProjectGet extends PureComponent {
     }
 
     onClickEditProject = (event) => {
-        window.location.href = "/project/update/" + this.state.project.Id;
+        window.location.href = "/project/update/" + this.props.match.params.projectId;
     }
 
     onClickInviteProject = (event) => {
-        window.location.href = "/project/invite/" + this.state.project.Id;
-    }
-
-    onClickAddTask = (event) => {
-        window.location.href = "/task/add/" + this.state.project.Id;
+        window.location.href = "/project/invite/" + this.props.match.params.projectId;
     }
 
     onClickSortTasks = (event) => {
@@ -199,7 +189,7 @@ export class ProjectGet extends PureComponent {
                 <ProjectHeaderPanel isAdmin={this.state.isAdmin} Id={this.state.project.Id} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Задачи">
-                        <WorktasksPanel onClickAddTask={this.onClickAddTask} onClickSortTasks={this.onClickSortTasks} onClickSortDefTasks={this.onClickSortDefTasks} orderFunc={this.state.orderTasksFunc(this.state.tasks.slice())} />
+                        <WorktasksPanel projectId={this.props.match.params.projectId} onClickSortTasks={this.onClickSortTasks} onClickSortDefTasks={this.onClickSortDefTasks} orderFunc={this.state.orderTasksFunc(this.state.tasks.slice())} />
                     </Tab>
                     <Tab name="second" title="Участники">
                         {adminRightes}

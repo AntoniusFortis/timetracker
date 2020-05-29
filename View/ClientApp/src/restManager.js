@@ -11,12 +11,17 @@ function fetchServer(uri, callback, body, method, contentType) {
         headers.append('Content-Type', 'application/json')
     }
 
-    fetch(uri, {
-        method: method,
-        headers: headers,
-        body: body
-    })
-        .then(result => callback(result));
+    const request = async () => {
+        const response = await fetch(uri, {
+            method: method,
+            headers: headers,
+            body: body
+        });
+
+        callback(response);
+    }
+
+    request();
 }
 
 export function Get(uri, callback) {

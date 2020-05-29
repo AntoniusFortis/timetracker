@@ -44,8 +44,7 @@ namespace Timetracker.View.Controllers
                 return new JsonResult( response, _jsonOptions );
             }
 
-            var worktracks = await _dbContext.Worktracks.AsNoTracking()
-                .Where(x => x.TaskId == id.Value && !x.Draft )
+            var worktracks = await _dbContext.Worktracks.Where(x => x.TaskId == id.Value && !x.Draft )
                 .OrderByDescending( x => x.StartedTime )
                 .Select( x => new {
                     x.Id,
@@ -66,8 +65,7 @@ namespace Timetracker.View.Controllers
             var startedDate = DateTime.Parse( model.startDate );
             var endDate = DateTime.Parse( model.endDate ).AddDays(1);
 
-            var worktracksQuery =  _dbContext.Worktracks.AsNoTracking()
-                .Where( x => x.Task.ProjectId == model.projectId && x.StartedTime >= startedDate && x.StoppedTime <= endDate );
+            var worktracksQuery =  _dbContext.Worktracks.Where( x => x.Task.ProjectId == model.projectId && x.StartedTime >= startedDate && x.StoppedTime <= endDate );
 
             if ( model.userId.HasValue && model.userId != 0 )
             {
