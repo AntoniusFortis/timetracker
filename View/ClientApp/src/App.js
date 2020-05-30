@@ -41,8 +41,8 @@ export default class App extends Component {
                 <Route exact path='/project/update/:projectId' component={ProjectUpdate} />
                 <Route exact path='/project/invite/:projectId' component={ProjectInvite} />
 
-                <Route exact path='/task/get/:taskId' component={TaskGet} />
-                <Route exact path='/task/update/:taskId' component={TaskUpdate} />
+                <Route exact path='/project/:projectId/task/get/:taskId' component={TaskGet} />
+                <Route exact path='/project/:projectId/task/update/:taskId' component={TaskUpdate} />
                 <Route exact path='/task/add/:projectId' component={TaskAdd} />
 
                 <Route exact path='/mypage/' component={MyPageGet} />

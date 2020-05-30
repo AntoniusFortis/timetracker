@@ -1,9 +1,10 @@
-﻿import React, { PureComponent, Component } from 'react';
+﻿import React, { Component } from 'react';
 import { Get, Delete, Post } from '../../restManager';
 import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 import { Tabs, Tab } from '../../Tabs';
 import Select from 'react-select';
+import { HeaderMenuTracking } from '../NavMenu';
 
 const ProjectHeaderPanel = (props) => {
     return <div>
@@ -27,11 +28,11 @@ const WorktasksPanel = (props) => {
         <NavLink style={{ width: '250px', display: 'inline' }} tag={Link} to={"/task/add/" + props.projectId}>Добавить задачу</NavLink>
         <button onClick={props.onClickSortTasks}>Отсортировать по их состоянию</button>
         <button onClick={props.onClickSortDefTasks}>Сортировка по умолчанию</button>
-        <TaskList tasks={props.orderFunc} />
+        <TaskList tasks={props.orderFunc} projectId={props.projectId} />
     </div>);
 }
 
-const TaskList = ({ tasks }) => (
+const TaskList = ({ tasks, projectId }) => (
     <table className='table table-striped' aria-labelledby="tabelLabel">
         <thead>
             <tr>
@@ -44,7 +45,7 @@ const TaskList = ({ tasks }) => (
                 !!tasks && tasks.map(task => (
                     <tr>
                         <td>
-                            <NavLink tag={Link} className="text-dark" to={"/task/get/" + task.Id}>{task.Title}</NavLink>
+                            <NavLink tag={Link} className="text-dark" to={"/project/" + projectId + "/task/get/" + task.Id}>{task.Title}</NavLink>
                         </td>
                         <td>{task.State.Title}</td>
                     </tr>
@@ -186,6 +187,7 @@ export class ProjectGet extends Component {
 
         return (
             <div>
+               <HeaderMenuTracking projectId={this.props.match.params.projectId} />
                 <ProjectHeaderPanel isAdmin={this.state.isAdmin} Id={this.state.project.Id} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Задачи">

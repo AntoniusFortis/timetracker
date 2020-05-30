@@ -1,5 +1,6 @@
 ﻿import React, { Component } from 'react';
 import { Get, Post } from '../../restManager';
+import { HeaderMenuTracking } from '../NavMenu';
 
 export class TaskUpdate extends Component {
 
@@ -63,6 +64,9 @@ export class TaskUpdate extends Component {
 
     render() {
         return (
+            <div>
+                {this.props.match && <HeaderMenuTracking projectId={this.props.match.params.projectId} />}
+
             <form onSubmit={this.onSubmit}>
                 <p>
                     <input type="text" placeholder="Название" value={this.state.title} onChange={this.onTitleChange} />
@@ -74,7 +78,8 @@ export class TaskUpdate extends Component {
                     <input type="text" placeholder="Длительность" value={this.state.duration} onChange={this.onDurationChange} />
                 </p>
                 <input type="submit" value="Изменить" />
-            </form>
+                </form>
+            </div>
         );
     }
 }

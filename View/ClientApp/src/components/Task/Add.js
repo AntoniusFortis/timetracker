@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { Post } from '../../restManager';
+import { HeaderMenuTracking } from '../NavMenu';
 
 export const TaskAdd = (props) => {
     const [title, setTitle] = useState('');
@@ -28,6 +29,9 @@ export const TaskAdd = (props) => {
     }
 
     return (
+        <div>
+            <HeaderMenuTracking projectId={props.match.params.projectId} />
+
         <form onSubmit={tryAddTask}>
             <p>
                 <input required type="text" placeholder="Название" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -39,6 +43,7 @@ export const TaskAdd = (props) => {
                 <input required type="text" placeholder="Длительность" value={duration} onChange={(e) => setDuration(e.target.value)} />
             </p>
             <input type="submit" value="Добавить" />
-        </form>
+            </form>
+        </div>
     );
 }
