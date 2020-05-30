@@ -1,4 +1,6 @@
-﻿namespace Timetracker.Entities.Models
+﻿using System.Text.Json.Serialization;
+
+namespace Timetracker.Entities.Models
 {
     public class AuthorizedUser
     {
@@ -14,6 +16,7 @@
 
         public int ProjectId { get; set; }
 
+        [JsonIgnore]
         public virtual Project Project { get; set; }
 
         public bool IsSigned { get; set; }

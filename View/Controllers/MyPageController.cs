@@ -23,14 +23,12 @@ namespace Timetracker.View.Controllers
     public class MyPageController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
-        private readonly IWebHostEnvironment _appEnvironment;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly IMemoryCache _cache;
 
-        public MyPageController(TimetrackerContext dbContext, IWebHostEnvironment appEnvironment, IMemoryCache cache)
+        public MyPageController( TimetrackerContext dbContext, IMemoryCache cache )
         {
             _dbContext = dbContext;
-            _appEnvironment = appEnvironment;
             _cache = cache;
 
             _jsonOptions = new JsonSerializerOptions
@@ -57,7 +55,8 @@ namespace Timetracker.View.Controllers
         [HttpPost]
         public async Task<JsonResult> Update(AccountResponse model)
         {
-            var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == model.Login)
+            var login = User.Identity.Name;
+            var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == login)
                 .ConfigureAwait(false);
 
             if ( !string.IsNullOrEmpty(model.Pass) )
@@ -68,7 +67,6 @@ namespace Timetracker.View.Controllers
                 user.Salt = salt;
             }
 
-            user.Login = model.Login;
             user.FirstName = model.FirstName;
             user.Surname = model.Surname;
             user.MiddleName = model.MiddleName;
@@ -90,80 +88,23 @@ namespace Timetracker.View.Controllers
             return new JsonResult(response, _jsonOptions);
         }
 
-        [HttpGet]
-        public async Task<FileStreamResult> GetAvatar()
-        {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
+        //[HttpDelete]
+        //public async Task<JsonResult> Delete()
+        //{
+        //    var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == User.Identity.Name)
+        //        .ConfigureAwait(false);
 
-            string path = "/Resources/" + user.Id.ToString() + user.AvatarPath;
+        //    _dbContext.Remove(user);
 
-            var image = System.IO.File.OpenRead(path);
-            return File( image, "image/jpeg" );
+        //    await _dbContext.SaveChangesAsync()
+        //        .ConfigureAwait(false);
 
-            //return File( path, "application/octet-stream", "hello.txt" );
-        }
+        //    var response = new
+        //    {
+        //        status = HttpStatusCode.OK
+        //    };
 
-        [HttpPost, DisableRequestSizeLimit]
-        public async Task<JsonResult> UpdateAvatar([FromForm] IFormFile avatar)
-        {
-            var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == User.Identity.Name)
-                .ConfigureAwait(false);
-
-            if ( !string.IsNullOrEmpty( user.AvatarPath ) && System.IO.File.Exists( _appEnvironment.WebRootPath + user.AvatarPath ) )
-            {
-                System.IO.File.Delete( _appEnvironment.WebRootPath + user.AvatarPath );
-            }
-
-            user.AvatarPath = await GetAvatar(avatar, user.Id.ToString())
-                .ConfigureAwait(false);
-
-            await _dbContext.SaveChangesAsync()
-                .ConfigureAwait(false);
-
-            var response = new
-            {
-                status = HttpStatusCode.OK,
-                path = user.AvatarPath
-            };
-
-            return new JsonResult(response, _jsonOptions);
-        }
-
-        [HttpDelete]
-        public async Task<JsonResult> Delete()
-        {
-            var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == User.Identity.Name)
-                .ConfigureAwait(false);
-
-            _dbContext.Remove(user);
-
-            await _dbContext.SaveChangesAsync()
-                .ConfigureAwait(false);
-
-            var response = new
-            {
-                status = HttpStatusCode.OK
-            };
-
-            return new JsonResult(response, _jsonOptions);
-        }
-
-        private async Task<string> GetAvatar(IFormFile avatar, string login)
-        {
-            if (avatar == null)
-            {
-                return null;
-            }
-
-            string path = "/Resources/" + login + avatar.FileName;
-            using (var fileStream = new FileStream(_appEnvironment.WebRootPath + path, FileMode.Create))
-            {
-                await avatar.CopyToAsync(fileStream)
-                    .ConfigureAwait(false);
-            }
-
-            return path;
-        }
+        //    return new JsonResult(response, _jsonOptions);
+        //}
     }
 }

@@ -35,9 +35,22 @@ namespace Timetracker.Entities.Classes
             Worktracks.Load();
         }
 
-        public bool UserExists(string name)
+        protected override void OnModelCreating( ModelBuilder modelBuilder )
         {
-            var exist = Users.AsNoTracking().Any(p => p.Login.Contains(name));
+            modelBuilder.Entity<Worktrack>()
+            .HasOne( p => p.Task )
+            .WithMany( t => t.WorkTracks )
+            .OnDelete( DeleteBehavior.Cascade );
+
+            modelBuilder.Entity<WorkTask>()
+                .HasOne( p => p.Project )
+                .WithMany( t => t.Tasks )
+                .OnDelete( DeleteBehavior.Cascade );
+        }
+
+        public bool UserExists( string name )
+        {
+            var exist = Users.AsNoTracking().Any(p => p.Login == name);
             return exist;
         }
 

@@ -114,16 +114,13 @@ export class TaskGet extends PureComponent {
     }
 
     onStateChange = (event) => {
-        const { worktask } = this.state;
 
-        worktask.State = {
-            Id: event.value,
-            Title: event.label
+        const body = {
+            taskId: this.state.worktask.Id.toString(),
+            stateId: event.value.toString()
         }
-        worktask.StateId = event.Id;
 
-        Post("api/task/update",
-            { worktask: worktask },
+        Post("api/task/UpdateState", body,
             (response) => {
                 //if (response.status === 200) {
                 //    window.location.href = "/task/get/" + this.props.match.params.taskId;
@@ -144,7 +141,7 @@ export class TaskGet extends PureComponent {
     }
 
     onClickEditProject = (event) => {
-        window.location.href = "/task/update/" + this.state.worktask.Id;
+        window.location.href = '/task/update/' + this.state.worktask.Id;
     }
 
     render() {
