@@ -3,17 +3,47 @@ import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLi
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
 import { hasAuthorized } from './Account';
-
+import moment from 'moment'
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 
-export class TaskTracking2 extends Component {
+class TrackingTimer extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            elapsed: 0
+        };
+    }
+
+    componentDidMount() {
+        this.timer = setInterval(this.tick, 1000);
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.timer);
+    }
+
+    tick = () => {
+        this.setState({ elapsed: moment().utc() - this.props.start });
+    }
+
+    render() {
+        const displayTime = moment(this.state.elapsed).utc();
+
+        return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
+    }
+}
+
+class HeaderMenuTracking extends Component {
+    timerId = 0;
+
     constructor(props) {
         super(props);
 
         this.state = {
             hubConnection: null,
             worktask: {},
-            time: '',
+            time: undefined,
             isTracked: false
         };
     }
@@ -39,27 +69,27 @@ export class TaskTracking2 extends Component {
             });
 
             this.state.hubConnection.on('stopTracking', (receivedMessage, status) => {
-                this.setState({ isTracked: false, worktask: {} });
+                this.setState({ isTracked: false, worktask: {}, time: {} });
             });
 
             this.state.hubConnection.on('getActiveTracking', (istracking, obj, time) => {
+                const offset = moment().utcOffset();
+                const start = moment(obj.startedTime).add(offset, 'm');
+
                 this.setState({
                     isTracked: istracking,
                     worktask: obj,
-                    time: time
+                    time: start
                 });
             });
-
-            this.state.hubConnection.start()
-                .catch(err => console.log(err));
+            this.state.hubConnection.start().catch(err => console.log(err));
         });
-
     }
 
     render() {
         return (
             <div>
-                {this.state.isTracked && <div>Идёт отслеживание: <b>{this.state.worktask.task.title}</b> ({this.state.time})</div>}
+                {this.state.isTracked && <div>Идёт отслеживание: <b>{this.state.worktask.task.title}</b> (<TrackingTimer start={this.state.time} />)</div>}
             </div>
         );
     }
@@ -126,7 +156,7 @@ export class NavMenu extends Component {
                     <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
                         <Container>
                             <NavbarBrand tag={Link} to="/">Timetracker</NavbarBrand>
-                            <TaskTracking2 />
+                            <HeaderMenuTracking />
                             <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                                 {menu}

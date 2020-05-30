@@ -346,35 +346,47 @@ namespace View.Controllers
             var userProjects = _dbContext.AuthorizedUsers.AsNoTracking()
                 .Where(x => x.UserId == user.Id);
 
-            string keyAuthorized = $"{user.Id}:ProjectsAuthorized";
-            if ( !_cache.TryGetValue( keyAuthorized, out var projects ) )
-            {
-                projects = await userProjects.Where( x => x.IsSigned )
+            var projects = await userProjects.Where( x => x.IsSigned )
                     .Select( x => x.Project )
                     .OrderBy( x => x.Title )
                     .ToListAsync()
                     .ConfigureAwait( false );
 
-                var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromHours(2));
-
-                _cache.Set( keyAuthorized, projects, cacheEntryOptions );
-            }
-
-            string keyInvited = $"{user.Id}:ProjectsInvited";
-            if ( !_cache.TryGetValue( keyInvited, out var notSignedProjects ) )
-            {
-                notSignedProjects = await userProjects.Where( x => !x.IsSigned )
+            var notSignedProjects = await userProjects.Where( x => !x.IsSigned )
                 .Select( x => x.Project )
                 .OrderBy( x => x.Title )
                 .ToListAsync()
                 .ConfigureAwait( false );
 
-                var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromHours(2));
+            //string keyAuthorized = $"{user.Id}:ProjectsAuthorized";
+            //if ( !_cache.TryGetValue( keyAuthorized, out var projects ) )
+            //{
+            //    projects = await userProjects.Where( x => x.IsSigned )
+            //        .Select( x => x.Project )
+            //        .OrderBy( x => x.Title )
+            //        .ToListAsync()
+            //        .ConfigureAwait( false );
 
-                _cache.Set( keyInvited, notSignedProjects, cacheEntryOptions );
-            }
+            //    var cacheEntryOptions = new MemoryCacheEntryOptions()
+            //        .SetSlidingExpiration(TimeSpan.FromHours(2));
+
+            //    _cache.Set( keyAuthorized, projects, cacheEntryOptions );
+            //}
+
+            //string keyInvited = $"{user.Id}:ProjectsInvited";
+            //if ( !_cache.TryGetValue( keyInvited, out var notSignedProjects ) )
+            //{
+            //    notSignedProjects = await userProjects.Where( x => !x.IsSigned )
+            //    .Select( x => x.Project )
+            //    .OrderBy( x => x.Title )
+            //    .ToListAsync()
+            //    .ConfigureAwait( false );
+
+            //    var cacheEntryOptions = new MemoryCacheEntryOptions()
+            //        .SetSlidingExpiration(TimeSpan.FromHours(2));
+
+            //    _cache.Set( keyInvited, notSignedProjects, cacheEntryOptions );
+            //}
 
             var projectsView = new
             {
@@ -522,15 +534,6 @@ namespace View.Controllers
 
             var project = await _dbContext.Projects.SingleOrDefaultAsync(x => x.Id == id)
                 .ConfigureAwait(false);
-
-            var users = _dbContext.AuthorizedUsers.Where( x => x.ProjectId == id ).Select( x => x.UserId ).ToHashSet();
-            foreach ( var item in users )
-            {
-                string keyAuthorized = $"{item}:ProjectsAuthorized";
-                _cache.Remove( keyAuthorized );
-                string keyInvited = $"{item}:ProjectsInvited";
-                _cache.Remove( keyInvited );
-            }
 
             var aues = _dbContext.AuthorizedUsers.Where( x => x.ProjectId == id );
             _dbContext.AuthorizedUsers.RemoveRange( aues );
