@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -17,41 +15,37 @@ namespace Timetracker.View.Hubs
     public class TrackingHub : Hub
     {
         private readonly TimetrackerContext _dbContext;
-        private readonly IMemoryCache _cache;
 
-        public TrackingHub( TimetrackerContext dbContext, IMemoryCache cache )
+        public TrackingHub( TimetrackerContext dbContext )
         {
             _dbContext = dbContext;
-            _cache = cache;
         }
 
-        //public async Task GetActiveTracking()
-        //{
-        //    var userName = Context.User.Identity.Name;
-
-        //    var dbUser = await _dbContext.GetUserAsync(userName)
-        //        .ConfigureAwait(false);
-
-        //    var dbWorktrack = await _dbContext.Worktracks
-        //        .FirstOrDefaultAsync(x => x.UserId == dbUser.Id);
-
-        //    var trackedTime = DateTime.UtcNow - dbWorktrack.StartedTime;
-        //    var formatTime = trackedTime.ToString(@"hh\:mm\:ss");
-
-        //    await this.Clients.Caller.SendAsync( "getActiveTracking", dbWorktrack != null, dbWorktrack, formatTime );
-        //}
-
-        public async Task StartTracking( int taskId )
+        public async Task GetActiveTracking()
         {
-            var rawProjectId = this.Context.GetHttpContext().Request.Query["projectId"].ToString();
-            var projectId = int.Parse( rawProjectId );
-
             var userName = Context.User.Identity.Name;
 
             var dbUser = await _dbContext.GetUserAsync(userName)
                 .ConfigureAwait(false);
 
-            var anyActiveWorktrack = await _dbContext.Worktracks.AnyAsync( x => x.UserId == dbUser.Id && x.Task.ProjectId == projectId && x.Draft )
+            var dbWorktrack = await _dbContext.Worktracks
+                .FirstOrDefaultAsync(x => x.UserId == dbUser.Id);
+
+            var trackedTime = DateTime.UtcNow - dbWorktrack.StartedTime;
+            var formatTime = trackedTime.ToString(@"hh\:mm\:ss");
+
+            await this.Clients.Caller.SendAsync( "getActiveTracking", dbWorktrack != null, dbWorktrack, formatTime );
+        }
+
+        public async Task StartTracking( int taskId )
+        {
+            var userName = Context.User.Identity.Name;
+
+            var dbUser = await _dbContext.GetUserAsync(userName)
+                .ConfigureAwait(false);
+
+            var anyActiveWorktrack = await _dbContext.Worktracks.AsNoTracking()
+                .AnyAsync( x => x.UserId == dbUser.Id && x.Draft )
                 .ConfigureAwait(false);
 
             if ( anyActiveWorktrack )
@@ -71,7 +65,7 @@ namespace Timetracker.View.Hubs
                 .SingleOrDefaultAsync(x => x.Id == taskId)
                 .ConfigureAwait(false);
 
-            if ( !_dbContext.CheckAccessForProject( dbWorktask.ProjectId, dbUser ) || projectId != dbWorktask.ProjectId )
+            if ( !_dbContext.CheckAccessForProject( dbWorktask.ProjectId, dbUser ) )
             {
                 await this.Clients.Caller.SendAsync( "startTracking", "У вас недостаточно прав, чтобы отслеживать эту задачу.", HttpStatusCode.Unauthorized, null )
                     .ConfigureAwait( false );
@@ -93,21 +87,19 @@ namespace Timetracker.View.Hubs
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
 
-            await this.Clients.Group( userName + projectId ).SendAsync( "startTracking", string.Empty, HttpStatusCode.OK, worktrack )
+            await this.Clients.Group( userName ).SendAsync( "startTracking", string.Empty, HttpStatusCode.OK, worktrack )
                 .ConfigureAwait( false );
         }
 
         public async Task StopTracking()
         {
-            var rawProjectId = this.Context.GetHttpContext().Request.Query["projectId"].ToString();
-            var projectId = int.Parse( rawProjectId );
-
             var userName = Context.User.Identity.Name;
 
             var dbUser = await _dbContext.GetUserAsync(userName)
                 .ConfigureAwait(false);
 
-            var dbWorktrack = await _dbContext.Worktracks.SingleOrDefaultAsync(x => x.UserId == dbUser.Id && x.Task.ProjectId == projectId && x.Draft)
+            var dbWorktrack = await _dbContext.Worktracks.Where(x => x.UserId == dbUser.Id)
+                .SingleAsync(x => x.Draft)
                 .ConfigureAwait(false);
 
             dbWorktrack.Draft = false;
@@ -119,38 +111,43 @@ namespace Timetracker.View.Hubs
             var trackedTime = dbWorktrack.StoppedTime - dbWorktrack.StartedTime;
             var formatTime = trackedTime.ToString(@"hh\:mm\:ss");
 
-            await Clients.Group( userName + projectId ).SendAsync( "stopTracking", "Вы перестали отслеживать задачу. С момента начало прошло: " + formatTime, HttpStatusCode.OK );
+            await Clients.Group( userName ).SendAsync( "stopTracking", "Вы перестали отслеживать задачу. С момента начало прошло: " + formatTime, HttpStatusCode.OK );
         }
 
         public override async Task OnConnectedAsync()
         {
-            await base.OnConnectedAsync().ConfigureAwait( false );
+            await base.OnConnectedAsync().ConfigureAwait(false);
 
             var userName = Context.User.Identity.Name;
 
-            var projectId = this.Context.GetHttpContext().Request.Query["projectId"].ToString();
-            var parsedProjectId = int.Parse( projectId );
-
-            await Groups.AddToGroupAsync( Context.ConnectionId, userName + projectId )
-                .ConfigureAwait( false );
+            await Groups.AddToGroupAsync( Context.ConnectionId, userName )
+                .ConfigureAwait(false);
 
             var dbUser = await _dbContext.GetUserAsync(userName)
                 .ConfigureAwait(false);
 
-            var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync(x => x.UserId == dbUser.Id && x.Task.ProjectId == parsedProjectId && x.Draft)
-                .ConfigureAwait( false );
+            var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync(x => x.UserId == dbUser.Id && x.Draft);
 
-            this.Clients.Caller.SendAsync( "getActiveTracking", dbWorktrack != null, dbWorktrack ).Wait();
+            if ( dbWorktrack != null )
+            {
+                var trackedTime = DateTime.UtcNow - dbWorktrack.StartedTime;
+                var formatTime = trackedTime.ToString(@"hh\:mm\:ss");
+
+                this.Clients.Caller.SendAsync( "getActiveTracking", true, dbWorktrack, formatTime ).Wait();
+            }
+            else
+            {
+                this.Clients.Caller.SendAsync( "getActiveTracking", false, null, null ).Wait();
+            }
         }
 
         public override async Task OnDisconnectedAsync( Exception exception )
         {
             var userName = Context.User.Identity.Name;
-            var projectId = this.Context.GetHttpContext().Request.Query["projectId"].ToString();
 
-            await Groups.RemoveFromGroupAsync( Context.ConnectionId, userName + projectId ).ConfigureAwait( false );
+            await Groups.RemoveFromGroupAsync( Context.ConnectionId, userName ).ConfigureAwait( false );
 
-            await this.Clients.Caller.SendAsync( "getActiveTracking", false, null );
+            this.Clients.Caller.SendAsync( "getActiveTracking", false, null, null ).Wait();
 
             await base.OnDisconnectedAsync( exception );
         }

@@ -3,7 +3,6 @@ import Select from 'react-select';
 import { Get, Delete, Post } from '../../restManager';
 import { TaskTracking } from '../TaskTracking'
 import { Tabs, Tab } from '../../Tabs';
-import { HeaderMenuTracking } from '../NavMenu';
 
 export class TaskGet extends PureComponent {
     constructor(props) {
@@ -121,7 +120,12 @@ export class TaskGet extends PureComponent {
             stateId: event.value.toString()
         }
 
-        Post("api/task/UpdateState", body, (response) => { });
+        Post("api/task/UpdateState", body,
+            (response) => {
+                //if (response.status === 200) {
+                //    window.location.href = "/task/get/" + this.props.match.params.taskId;
+                //}
+            });
     }
 
     onRemoveProject = (event) => {
@@ -137,7 +141,7 @@ export class TaskGet extends PureComponent {
     }
 
     onClickEditProject = (event) => {
-        window.location.href = '/project/' + this.props.match.params.projectId + '/task/update/' + this.state.worktask.Id;
+        window.location.href = '/task/update/' + this.state.worktask.Id;
     }
 
     render() {
@@ -156,10 +160,8 @@ export class TaskGet extends PureComponent {
 
         return (
             <div>
-                {this.props.match && <HeaderMenuTracking projectId={this.props.match.params.projectId} />}
-
                 <div style={{ display: "inline-block" }}>
-                    <TaskTracking projectId={this.props.match.params.projectId} worktaskId={this.state.worktask.Id} />
+                    <TaskTracking worktaskId={this.state.worktask.Id} />
                 </div>
                 <div style={{ display: "inline-block", paddingRight: "10px" }}>
                     <h4>Задача: { this.state.worktask.Title }</h4>

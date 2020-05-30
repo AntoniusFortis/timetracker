@@ -34,7 +34,7 @@ class TrackingTimer extends Component {
     }
 }
 
-export class HeaderMenuTracking extends Component {
+class HeaderMenuTracking extends Component {
     timerId = 0;
 
     constructor(props) {
@@ -58,7 +58,7 @@ export class HeaderMenuTracking extends Component {
         const token = localStorage.getItem('tokenKey');
 
         const hubConnection = new HubConnectionBuilder()
-            .withUrl("/trackingHub?projectId=" + this.props.projectId, { accessTokenFactory: () => token })
+            .withUrl("/trackingHub", { accessTokenFactory: () => token })
             .withAutomaticReconnect()
             .configureLogging(LogLevel.Information)
             .build();
@@ -72,18 +72,16 @@ export class HeaderMenuTracking extends Component {
                 this.setState({ isTracked: false, worktask: {}, time: {} });
             });
 
-            this.state.hubConnection.on('getActiveTracking', (istracking, obj) => {
+            this.state.hubConnection.on('getActiveTracking', (istracking, obj, time) => {
                 const offset = moment().utcOffset();
                 const start = moment(obj.startedTime).add(offset, 'm');
 
                 this.setState({
-                    time: start,
                     isTracked: istracking,
-                    worktask: obj
+                    worktask: obj,
+                    time: start
                 });
             });
-
-
             this.state.hubConnection.start().catch(err => console.log(err));
         });
     }
@@ -125,6 +123,7 @@ export class NavMenu extends Component {
 
     render() {
         const auth = this.state.auth;
+
         let menu = auth ? (
             <ul className="navbar-nav flex-grow">
                 <NavItem>
@@ -157,6 +156,7 @@ export class NavMenu extends Component {
                     <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
                         <Container>
                             <NavbarBrand tag={Link} to="/">Timetracker</NavbarBrand>
+                            <HeaderMenuTracking />
                             <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                                 {menu}

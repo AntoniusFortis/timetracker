@@ -1,6 +1,5 @@
 ﻿import React, { PureComponent } from 'react';
 import { Post } from '../../restManager';
-import { HeaderMenuTracking } from '../NavMenu';
 
 export class ProjectInvite extends PureComponent {
     constructor(props) {
@@ -35,13 +34,10 @@ export class ProjectInvite extends PureComponent {
 
     render() {
         return (
-            <div>
-                {this.props.match && <HeaderMenuTracking projectId={this.props.match.params.projectId} />}
-                <form onSubmit={this.onSubmit}>
-                    <input type="text" placeholder="Имя пользователя" onChange={this.onUserInputChange} />
-                    <input type="submit" value="Принять" />
-                </form>
-            </div>
+            <form onSubmit={this.onSubmit}>
+                <input type="text" placeholder="Имя пользователя" onChange={this.onUserInputChange} />
+                <input type="submit" value="Принять" />
+            </form>
         );
     }
 }

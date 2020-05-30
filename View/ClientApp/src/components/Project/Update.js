@@ -1,6 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Get, Post } from '../../restManager';
-import { HeaderMenuTracking } from '../NavMenu';
 
 export const ProjectUpdate = (props) => {
     const [title, setTitle] = useState('');
@@ -31,8 +30,6 @@ export const ProjectUpdate = (props) => {
     }
 
     return (
-        <div>
-            {this.props.match && <HeaderMenuTracking projectId={this.props.match.params.projectId} />}
         <form onSubmit={tryUpdateProject}>
             <p>
                 <input required type="text" placeholder="Название" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -41,7 +38,6 @@ export const ProjectUpdate = (props) => {
                 <input type="text" placeholder="Описание" value={descr} onChange={(e) => setDescr(e.target.value)} />
             </p>
             <input type="submit" value="Изменить проект" />
-            </form>
-        </div>
+        </form>
     );
 }

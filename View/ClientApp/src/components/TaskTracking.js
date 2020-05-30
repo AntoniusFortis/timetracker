@@ -19,8 +19,9 @@ export class TaskTracking extends Component {
 
     componentDidMount() {
         const token = localStorage.getItem('tokenKey');
+
         const hubConnection = new HubConnectionBuilder()
-            .withUrl("/trackingHub?projectId=" + this.props.projectId, { accessTokenFactory: () => token })
+            .withUrl("/trackingHub", { accessTokenFactory: () => token })
             .withAutomaticReconnect()
             .configureLogging(LogLevel.Information)
             .build();
@@ -39,11 +40,29 @@ export class TaskTracking extends Component {
                 this.showMessage(receivedMessage);
             });
 
-            this.state.hubConnection.on('getActiveTracking', (istracking, worktask) => {
+            this.state.hubConnection.on('getActiveTracking', (istracking, worktask, time) => {
                 this.setState({ buttonToggle: !istracking });
             });
         });
 
+    }
+
+    invokeFunction = (name) => {
+        this.state.hubConnection
+            .invoke(name)
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
+    }
+
+    invokeFunctionArg = (name, arg) => {
+        this.state.hubConnection
+            .invoke(name, arg)
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
     }
 
     startTracking = (event) => {
@@ -55,12 +74,8 @@ export class TaskTracking extends Component {
             });
     };
 
-    stopTracking = (event) => {
-        this.state.hubConnection.invoke('StopTracking')
-            .catch(err => {
-                console.error(err);
-                this.setState({ buttonToggle: false });
-            });
+    stopTracking = () => {
+        this.invokeFunction('StopTracking');
     };
 
     render() {
