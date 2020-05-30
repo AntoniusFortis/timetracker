@@ -45,9 +45,7 @@ const ProjectGetAllInvitesTable = (props) => {
                     props.projects.map(project =>
                         (
                             <tr key={project.Id}>
-                                <td>
-                                    <NavLink tag={Link} className="text-dark" to={"/project/get/" + project.Id}>{project.Title}</NavLink>
-                                </td>
+                                <td>{project.Title}</td>
                                 <td>{project.Description}</td>
                                 <td>
                                     <button onClick={(e) => props.acceptInvite(project.Id)}>Принять</button>
