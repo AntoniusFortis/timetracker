@@ -49,8 +49,8 @@ namespace Timetracker.View.Controllers
                 .Select( x => new {
                     x.Id,
                     User = x.User.Login,
-                    StartedTime = x.StartedTime.ToString("G"),
-                    StoppedTime = x.StoppedTime.ToString("G"),
+                    StartedTime = x.StartedTime,
+                    StoppedTime = x.StoppedTime,
                     TotalTime = (x.StoppedTime - x.StartedTime).ToString(@"hh\:mm\:ss")
                 })
                 .ToListAsync()

@@ -3,6 +3,7 @@ import Select from 'react-select';
 import { Get, Delete, Post } from '../../restManager';
 import { TaskTracking } from '../TaskTracking'
 import { Tabs, Tab } from '../../Tabs';
+import moment from 'moment'
 
 export class TaskGet extends PureComponent {
     constructor(props) {
@@ -62,15 +63,18 @@ export class TaskGet extends PureComponent {
     }
 
     renderTaskTable = (worktask) => {
+        const offset = moment().utcOffset();
+        const createdDate = moment(worktask.CreatedDate).add(offset, 'm').format('L');
+
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <tbody>
                     <tr key={worktask.Id}>
-                        <td>Описание: {worktask.Description}</td>
                         <td>Проект: {this.state.project.Title}</td>
+                        <td>Описание: {worktask.Description}</td>
                     </tr>
                     <tr key={worktask.Id}>
-                        <td>Дата создания: {worktask.CreatedDate}</td>
+                        <td>Дата создания: {createdDate}</td>
                         <td>Часов: {worktask.Duration}</td>
                     </tr>
                     <tr key={worktask.Id}>
@@ -85,6 +89,8 @@ export class TaskGet extends PureComponent {
     }
 
     renderWorktracksTable(worktracks) {
+        const offset = moment().utcOffset();
+
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
@@ -97,16 +103,18 @@ export class TaskGet extends PureComponent {
                 </thead>
                 <tbody>
                     {
-                        worktracks.map(worktrack =>
-                            (
+                        worktracks.map(worktrack => {
+                            const start = moment(worktrack.StartedTime).add(offset, 'm').format('HH:mm:ss');
+                            const stop = moment(worktrack.StoppedTime).add(offset, 'm').format('HH:mm:ss');
+                            return (
                                 <tr key={worktrack.Id}>
                                     <td>{worktrack.User}</td>
-                                    <td>{worktrack.StartedTime}</td>
-                                    <td>{worktrack.StoppedTime}</td>
+                                    <td>{start}</td>
+                                    <td>{stop}</td>
                                     <td>{worktrack.TotalTime}</td>
                                 </tr>
                             )
-                        )
+                         } )
                     }
                 </tbody>
             </table>
