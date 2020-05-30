@@ -57,6 +57,8 @@ namespace Timetracker.View.Controllers
                 }, _jsonOptions);
             }
 
+            worktask.CreatedDate = DateTime.UtcNow;
+
             var addedTask = await _dbContext.AddAsync(worktask);
 
             await _dbContext.SaveChangesAsync();
@@ -101,7 +103,7 @@ namespace Timetracker.View.Controllers
                 worktask.Description,
                 worktask.Duration,
                 Project = new { worktask.Project.Id, worktask.Project.Title },
-                CreatedDate = worktask.CreatedDate.ToString("G")
+                worktask.CreatedDate
             };
 
             return new JsonResult(new
