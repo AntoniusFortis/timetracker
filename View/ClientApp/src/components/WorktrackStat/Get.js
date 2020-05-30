@@ -133,6 +133,8 @@ export class Today extends PureComponent {
     }
 
     renderWorktracksTable(worktracks) {
+        const offset = moment().utcOffset();
+
         return (
             <table className='table table-striped' aria-labelledby="tabelLabel">
                 <thead>
@@ -146,16 +148,20 @@ export class Today extends PureComponent {
                 </thead>
                 <tbody>
                     {
-                        worktracks.map(worktrack =>
-                            (
+                        worktracks.map(worktrack => {
+                            const start = moment(worktrack.StartedTime).add(offset, 'm').format('HH:mm:ss');
+                            const stop = moment(worktrack.StoppedTime).add(offset, 'm').format('HH:mm:ss');
+
+                            return  (
                                 <tr key={worktrack.Id}>
                                     <td>{worktrack.User}</td>
                                     <td>{worktrack.Task}</td>
-                                    <td>{worktrack.StartedTime}</td>
-                                    <td>{worktrack.StoppedTime}</td>
+                                    <td>{start}</td>
+                                    <td>{stop}</td>
                                     <td>{worktrack.TotalTime}</td>
                                 </tr>
                             )
+                        }
                         )
                     }
                 </tbody>
