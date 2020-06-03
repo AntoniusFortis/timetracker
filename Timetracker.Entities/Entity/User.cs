@@ -41,9 +41,6 @@ namespace Timetracker.Entities.Models
         public string City { get; set; }
 
         [StringLength(255)]
-        public string AvatarPath { get; set; }
-
-        [StringLength(255)]
         [Required]
         public string Email { get; set; }
     }

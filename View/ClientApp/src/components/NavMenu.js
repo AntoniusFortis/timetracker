@@ -1,12 +1,12 @@
-﻿import React, { Component } from 'react';
+﻿import React, { Component, PureComponent } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
 import { hasAuthorized } from './Account';
 import moment from 'moment'
-import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { SignalR_Provider } from '../signalr/SignalR_Provider';
 
-class TrackingTimer extends Component {
+class TrackingTimer extends PureComponent {
     constructor(props) {
         super(props);
 
@@ -44,7 +44,8 @@ class HeaderMenuTracking extends Component {
             hubConnection: null,
             worktask: {},
             time: undefined,
-            isTracked: false
+            isTracked: false,
+            offset: moment().utcOffset()
         };
     }
 
@@ -54,35 +55,63 @@ class HeaderMenuTracking extends Component {
         }
     }
 
+    async start() {
+        const { hubConnection } = this.state;
+
+        try {
+            await hubConnection.start();
+        } catch (err) {
+            console.log(err);
+            setTimeout(() => this.start(), 5000);
+        }
+    };
+
+    onClose = async (error) => {
+        await this.start();
+    }
+
+    componentWillUnmount() {
+        this.state.hubConnection.off('getActiveTracking');
+    }
+
+    onActiveTrackingReceive = (istracking, worktask, started, message) => {
+        if (!istracking) {
+            this.setState({
+                isTracked: false,
+                worktask: {},
+                time: {}
+            });
+            return;
+        }
+
+        let startTime;
+        if (started) {
+            startTime = moment(worktask.startedTime).utcOffset(this.state.offset);
+        }
+        else {
+            startTime = moment(worktask.startedTime).add(this.state.offset, 'm');
+        }
+
+        this.setState({
+            isTracked: istracking,
+            worktask: worktask,
+            time: startTime
+        });
+    }
+
     componentDidMount() {
         const token = localStorage.getItem('tokenKey');
 
-        const hubConnection = new HubConnectionBuilder()
-            .withUrl("/trackingHub", { accessTokenFactory: () => token })
-            .withAutomaticReconnect()
-            .configureLogging(LogLevel.Information)
-            .build();
+        const connectionData = {
+            token: token,
+            onClose: this.onClose,
+            onActiveTrackingReceive: this.onActiveTrackingReceive
+        };
+
+        const hubConnection = SignalR_Provider.getConnection(connectionData);
 
         this.setState({ hubConnection }, () => {
-            this.state.hubConnection.on('startTracking', (message, status, obj) => {
-                this.setState({ isTracked: true, worktask: obj });
-            });
-
-            this.state.hubConnection.on('stopTracking', (receivedMessage, status) => {
-                this.setState({ isTracked: false, worktask: {}, time: {} });
-            });
-
-            this.state.hubConnection.on('getActiveTracking', (istracking, obj, time) => {
-                const offset = moment().utcOffset();
-                const start = moment(obj.startedTime).add(offset, 'm');
-
-                this.setState({
-                    isTracked: istracking,
-                    worktask: obj,
-                    time: start
-                });
-            });
-            this.state.hubConnection.start().catch(err => console.log(err));
+            this.start();
         });
     }
 
@@ -100,13 +129,8 @@ export class NavMenu extends Component {
         super(props);
 
         this.state = {
-            auth: false,
             collapsed: true,
         };
-    }
-
-    componentDidMount() {
-        this.setState({ auth: hasAuthorized() });
     }
 
 
@@ -118,14 +142,17 @@ export class NavMenu extends Component {
 
     Signout = (event) => {
         localStorage.removeItem('tokenKey');
-        this.setState({ collapsed: false, auth: false });
+        this.setState({ collapsed: false });
     }
 
     render() {
-        const auth = this.state.auth;
+        const auth = hasAuthorized();
 
         let menu = auth ? (
             <ul className="navbar-nav flex-grow">
+                <NavItem>
+                    <NavLink className="text-dark" href="/swagger">Time Tracker API</NavLink>
+                </NavItem>
                 <NavItem>
                     <NavLink tag={Link} className="text-dark" to="/stat/">Статистика</NavLink>
                 </NavItem>
@@ -155,7 +182,7 @@ export class NavMenu extends Component {
                 <header>
                     <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
                         <Container>
-                            <NavbarBrand tag={Link} to="/">Timetracker</NavbarBrand>
+                            <NavbarBrand tag={Link} to="/">Time Tracker</NavbarBrand>
                             <HeaderMenuTracking />
                             <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>

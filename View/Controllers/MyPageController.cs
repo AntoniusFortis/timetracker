@@ -53,14 +53,26 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> Update(AccountResponse model)
+        public async Task<JsonResult> Update( MyPageModel model )
         {
             var login = User.Identity.Name;
             var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == login)
                 .ConfigureAwait(false);
 
-            if ( !string.IsNullOrEmpty(model.Pass) )
+            var passwordChanged = !string.IsNullOrEmpty(model.Pass);
+            if ( passwordChanged )
             {
+                var password = PasswordHelpers.EncryptPassword(model.CurrentPass, user.Salt, 1024);
+                if ( !PasswordHelpers.SlowEquals( password, user.Pass ) )
+                {
+                    var responseUnauthorized = new
+                    {
+                        status = HttpStatusCode.Unauthorized
+                    };
+
+                    return new JsonResult( responseUnauthorized, _jsonOptions );
+                }
+
                 var salt = PasswordHelpers.GenerateSalt(16);
                 var hash = PasswordHelpers.EncryptPassword(model.Pass, salt, 1024);
                 user.Pass = hash;
@@ -79,10 +91,23 @@ namespace Timetracker.View.Controllers
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait(false);
 
+            var resultUser = new
+            {
+                user.Login,
+                user.FirstName,
+                user.Surname,
+                user.MiddleName,
+                user.City,
+                user.Email,
+                user.BirthDate
+            };
+            await _dbContext.GetUserAsync( User.Identity.Name, true );
+
             var response = new
             {
                 status = HttpStatusCode.OK,
-                newUser = model
+                newUser = resultUser,
+                passwordChanged = passwordChanged
             };
 
             return new JsonResult(response, _jsonOptions);

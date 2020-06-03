@@ -4,25 +4,26 @@ import { Get, Delete, Post } from '../../restManager';
 import { TaskTracking } from '../TaskTracking'
 import { Tabs, Tab } from '../../Tabs';
 import moment from 'moment'
+import { Redirect } from 'react-router';
 
 export class TaskGet extends PureComponent {
+    states = {}
+
     constructor(props) {
         super(props);
 
         this.state = {
             worktask: {},
             loading: true,
-            states: [],
             project: {},
             worktracks: [],
-            isAdmin: true
+            isAdmin: true,
+            referrer: null
         };
     }
 
     componentDidMount() {
-        this.getTaskData()
-            .then(this.getStatesData())
-            .then(this.getWorktacksData());
+        this.getStatesData().then(this.getTaskData()).then(this.getWorktacksData());
     }
 
     async getTaskData() {
@@ -38,7 +39,7 @@ export class TaskGet extends PureComponent {
         Get("api/worktrack/getall?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ worktracks: result });
+                    this.setState({ worktracks: result, loading: false });
                 });
         });
     }
@@ -54,10 +55,7 @@ export class TaskGet extends PureComponent {
                         }
                     });
 
-                    this.setState({
-                        states: states,
-                        loading: false
-                    });
+                    this.states = states;
                 });
         });
     }
@@ -65,22 +63,23 @@ export class TaskGet extends PureComponent {
     renderTaskTable = (worktask) => {
         const offset = moment().utcOffset();
         const createdDate = moment(worktask.CreatedDate).add(offset, 'm').format('L');
+        const val = this.states[worktask.StateId - 1];
 
         return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
+            <table className='table' aria-labelledby="tabelLabel">
                 <tbody>
                     <tr key={worktask.Id}>
                         <td>Проект: {this.state.project.Title}</td>
                         <td>Описание: {worktask.Description}</td>
                     </tr>
-                    <tr key={worktask.Id}>
+                    <tr>
                         <td>Дата создания: {createdDate}</td>
                         <td>Часов: {worktask.Duration}</td>
                     </tr>
-                    <tr key={worktask.Id}>
+                    <tr>
                         <td>Состояние:</td>
                         <td>
-                            <Select options={this.state.states} defaultValue={this.state.states[worktask.StateId - 1]} onChange={this.onStateChange} />
+                            <Select options={this.states} defaultValue={val} onChange={this.onStateChange} />
                         </td>
                     </tr>
                 </tbody>
@@ -122,18 +121,12 @@ export class TaskGet extends PureComponent {
     }
 
     onStateChange = (event) => {
-
         const body = {
-            taskId: this.state.worktask.Id.toString(),
-            stateId: event.value.toString()
+            taskId: this.state.worktask.Id,
+            stateId: event.value
         }
 
-        Post("api/task/UpdateState", body,
-            (response) => {
-                //if (response.status === 200) {
-                //    window.location.href = "/task/get/" + this.props.match.params.taskId;
-                //}
-            });
+        Post("api/task/UpdateState", body);
     }
 
     onRemoveProject = (event) => {
@@ -149,16 +142,18 @@ export class TaskGet extends PureComponent {
     }
 
     onClickEditProject = (event) => {
-        window.location.href = '/task/update/' + this.state.worktask.Id;
+        this.setState({ referrer: '/task/update/' + this.state.worktask.Id });
     }
 
     render() {
-        const worktask = this.state.loading
+        const { loading, worktask, worktracks } = this.state;
+
+        const worktaskInfo = loading
             ? <p><em>Загрузка...</em></p>
-            : this.renderTaskTable(this.state.worktask);
-        const worktracks = this.state.loading
+            : this.renderTaskTable(worktask);
+        const worktracksInfo = loading
             ? <p><em>Загрузка...</em></p>
-            : this.renderWorktracksTable(this.state.worktracks);
+            : this.renderWorktracksTable(worktracks);
 
         const removebutton = this.state.isAdmin ? <div style={{ display: "inline-block" }}>
             <form onSubmit={this.onRemoveProject}>
@@ -168,6 +163,7 @@ export class TaskGet extends PureComponent {
 
         return (
             <div>
+                {this.state.referrer && <Redirect to={this.state.referrer} />}
                 <div style={{ display: "inline-block" }}>
                     <TaskTracking worktaskId={this.state.worktask.Id} />
                 </div>
@@ -181,10 +177,10 @@ export class TaskGet extends PureComponent {
 
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Описание задачи">
-                        {worktask}
+                        {worktaskInfo}
                     </Tab>
                     <Tab name="second" title="Затраченное время">
-                        {worktracks}
+                        {worktracksInfo}
                     </Tab>
                 </Tabs>
             </div>

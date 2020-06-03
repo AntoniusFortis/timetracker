@@ -8,6 +8,8 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -39,8 +41,14 @@ namespace View.Controllers
             };
         }
 
+        //public async Task<IActionResult> Logout()
+        //{
+        //    await HttpContext.SignOutAsync( JwtBearerDefaults.AuthenticationScheme );
+        //    return new JsonResult(null);
+        //}
+
         [HttpPost]
-        public async Task<IActionResult> SignIn( SignInModel view )
+        public async Task<IActionResult> SignIn( [FromBody] SignInModel view )
         {
             var dbUser = await _dbContext.GetUserAsync(view.Login).ConfigureAwait(false);
             if ( dbUser == null )
@@ -60,7 +68,7 @@ namespace View.Controllers
                 };
 
             var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-
+            
             var now = DateTime.Now;
             var jwt = new JwtSecurityToken(
                     issuer: TimetrackerAuthorizationOptions.ISSUER,
@@ -111,7 +119,7 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignUp( AccountResponse view )
+        public async Task<IActionResult> SignUp( AccountModel view )
         {
             var userExist = _dbContext.UserExists(view.Login);
 
