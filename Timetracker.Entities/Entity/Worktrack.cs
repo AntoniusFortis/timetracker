@@ -1,9 +1,11 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Timetracker.Entities.Models
 {
     public class Worktrack
     {
+        [Key]
         public int Id { get; set; }
 
         public int UserId { get; set; }

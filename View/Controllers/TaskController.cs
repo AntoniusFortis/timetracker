@@ -19,9 +19,9 @@ namespace Timetracker.View.Controllers
 
     public class UpdateStateModel
     {
-        public string taskId { get; set; }
+        public int TaskId { get; set; }
 
-        public string stateId { get; set; }
+        public int StateId { get; set; }
     }
 
     [ApiController]
@@ -119,11 +119,8 @@ namespace Timetracker.View.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateState( UpdateStateModel model )
         {
-            var taskId = int.Parse(model.taskId);
-            var stateId = byte.Parse(model.stateId);
-
-            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == taskId );
-            dbWorkTask.StateId = stateId;
+            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == model.TaskId );
+            dbWorkTask.StateId = (byte)model.StateId;
 
             _dbContext.Update( dbWorkTask );
 
@@ -153,7 +150,7 @@ namespace Timetracker.View.Controllers
             dbWorkTask.Title = view.worktask.Title;
             dbWorkTask.Description = view.worktask.Description;
             dbWorkTask.Duration = view.worktask.Duration;
-            dbWorkTask.StateId = view.worktask.State.Id;
+            dbWorkTask.StateId = view.worktask.StateId;
 
             _dbContext.Update(dbWorkTask);
             

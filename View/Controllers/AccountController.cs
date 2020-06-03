@@ -40,7 +40,7 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignIn( SignInModel view )
+        public async Task<IActionResult> SignIn( [FromBody] SignInModel view )
         {
             var dbUser = await _dbContext.GetUserAsync(view.Login).ConfigureAwait(false);
             if ( dbUser == null )
@@ -60,7 +60,7 @@ namespace View.Controllers
                 };
 
             var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-
+            
             var now = DateTime.Now;
             var jwt = new JwtSecurityToken(
                     issuer: TimetrackerAuthorizationOptions.ISSUER,
@@ -111,7 +111,7 @@ namespace View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignUp( AccountResponse view )
+        public async Task<IActionResult> SignUp( AccountModel view )
         {
             var userExist = _dbContext.UserExists(view.Login);
 

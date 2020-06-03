@@ -1,7 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Get, Post } from '../../restManager';
+import { Redirect } from 'react-router';
 
 export const MyPageGet = () => {
+    const [currentPwd, setCurrentPwd] = useState('');
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
     const [firstName, setFirstName] = useState('');
@@ -10,6 +12,7 @@ export const MyPageGet = () => {
     const [city, setCity] = useState('');
     const [birthDate, setBirthDate] = useState('');
     const [email, setEmail] = useState('');
+    const [referrer, setReferrer] = useState(null);
 
     const getInfo = () => {
         Get('api/mypage/get', (response) => {
@@ -24,12 +27,26 @@ export const MyPageGet = () => {
         });
     }
 
+
     useEffect(() => getInfo(), []);
+
+    const onChangedInformation = (response) => {
+        if (response.passwordChanged) {
+            localStorage.removeItem('tokenKey');
+            setReferrer('/account/signin');
+        }
+    }
 
     const updateInfo = (event) => {
         event.preventDefault();
 
+        if (password != password2) {
+            alert('Ваши пароли не совпадают');
+            return;
+        }
+
         const body = {
+            CurrentPass: currentPwd,
             Pass: password,
             FirstName: firstName,
             Surname: surname,
@@ -40,15 +57,17 @@ export const MyPageGet = () => {
         }
 
         Post('api/mypage/update', body, (response) => {
-            response.json().then(result => {
-                window.location.href = '/mypage/';
-            });
+            response.json().then(onChangedInformation);
         });
     }
 
     return (
         <div>
-        <form onSubmit={updateInfo}>
+            {referrer && <Redirect to={referrer} />}
+            <form onSubmit={updateInfo}>
+                <p>
+                    <input type="password" minLength="4" maxLength="20" placeholder="Введите нынешний пароль" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} />
+                </p>
             <p>
                 <input type="password" minLength="4" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
             </p>

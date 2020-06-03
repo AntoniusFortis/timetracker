@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { Post } from '../../restManager';
+import { Redirect } from 'react-router';
 
 export const SignUp = () => {
     const [name, setName] = useState('');
@@ -11,10 +12,11 @@ export const SignUp = () => {
     const [city, setCity] = useState('');
     const [birthDate, setBirthDate] = useState(undefined);
     const [email, setEmail] = useState('');
+    const [referrer, setReferrer] = useState(null);
 
     const onSuccessSignedUp = (response) => {
         if (response.status === 200) {
-            window.location.href = "/account/signin";
+            setReferrer('/account/signin');
         }
     }
 
@@ -22,7 +24,7 @@ export const SignUp = () => {
         event.preventDefault();
 
         if (password !== password2) {
-            alert("Пароли не совпадают");
+            alert('Пароли не совпадают');
             return;
         }
 
@@ -37,19 +39,21 @@ export const SignUp = () => {
             Email: email
         }
 
-        Post("api/account/signup", body, onSuccessSignedUp);
+        Post('api/account/signup', body, onSuccessSignedUp);
     }
 
     return (
+        <div>
+            {referrer && <Redirect to={referrer} />}
         <form onSubmit={trySignUp}>
             <p>
                 <input type="text" required minLength="4" maxLength="20" placeholder="Логин" value={name} onChange={(e) => setName(e.target.value)} />
             </p>
             <p>
-                <input type="password" required minLength="4" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <input type="password" required minLength="5" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
             </p>
             <p>
-                <input type="password" required minLength="4" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
+                <input type="password" required minLength="5" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
             </p>
             <p>
                 <input type="text" required minLength="2" maxLength="30" placeholder="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
@@ -71,5 +75,6 @@ export const SignUp = () => {
             </p>
             <br />
             <input type="submit" value="Зарегистрироваться" />
-        </form>);
+            </form>
+        </div>);
 }

@@ -1,5 +1,5 @@
 ﻿import React, { Component } from 'react';
-import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { SignalR_Provider } from '../signalr/SignalR_Provider';
 
 export class TaskTracking extends Component {
     constructor(props) {
@@ -17,52 +17,45 @@ export class TaskTracking extends Component {
         }
     }
 
+    async start() {
+        const { hubConnection } = this.state;
+
+        try {
+            await hubConnection.start();
+        } catch (err) {
+            console.log(err);
+            setTimeout(() => this.start(), 5000);
+        }
+    };
+
+    onActiveTrackingReceive = (istracking, worktask, started, message) => {
+        this.setState({ buttonToggle: !istracking });
+        this.showMessage(message);
+    }
+
+    onClose = async (error) => {
+        this.setState({ buttonToggle: false });
+        await this.start();
+    }
+
+    componentWillUnmount() {
+        this.state.hubConnection.off('getActiveTracking');
+    }
+
     componentDidMount() {
         const token = localStorage.getItem('tokenKey');
 
-        const hubConnection = new HubConnectionBuilder()
-            .withUrl("/trackingHub", { accessTokenFactory: () => token })
-            .withAutomaticReconnect()
-            .configureLogging(LogLevel.Information)
-            .build();
+        const connectionData = {
+            token: token,
+            onClose: this.onClose,
+            onActiveTrackingReceive: this.onActiveTrackingReceive
+        };
+
+        const hubConnection = SignalR_Provider.getConnection(connectionData);
 
         this.setState({ hubConnection }, () => {
-            this.state.hubConnection.start()
-                .catch(err => console.log(err));
-
-            this.state.hubConnection.on('startTracking', (message, status, obj) => {
-                this.setState({ buttonToggle: false });
-                this.showMessage(message);
-            });
-
-            this.state.hubConnection.on('stopTracking', (receivedMessage, status) => {
-                this.setState({ buttonToggle: true });
-                this.showMessage(receivedMessage);
-            });
-
-            this.state.hubConnection.on('getActiveTracking', (istracking, worktask, time) => {
-                this.setState({ buttonToggle: !istracking });
-            });
+            this.start();
         });
-
-    }
-
-    invokeFunction = (name) => {
-        this.state.hubConnection
-            .invoke(name)
-            .catch(err => {
-                console.error(err);
-                this.setState({ buttonToggle: true });
-            });
-    }
-
-    invokeFunctionArg = (name, arg) => {
-        this.state.hubConnection
-            .invoke(name, arg)
-            .catch(err => {
-                console.error(err);
-                this.setState({ buttonToggle: true });
-            });
     }
 
     startTracking = (event) => {
@@ -70,12 +63,17 @@ export class TaskTracking extends Component {
             .invoke('StartTracking', this.props.worktaskId)
             .catch(err => {
                 console.error(err);
-                this.setState({ buttonToggle: true });
+                this.setState({ buttonToggle: false });
             });
     };
 
-    stopTracking = () => {
-        this.invokeFunction('StopTracking');
+    stopTracking = (event) => {
+        this.state.hubConnection
+            .invoke('StopTracking')
+            .catch(err => {
+                console.error(err);
+                this.setState({ buttonToggle: true });
+            });
     };
 
     render() {
