@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
@@ -48,9 +49,78 @@ namespace View.Controllers
         //}
 
         [HttpPost]
+        public async Task<JsonResult> Token( [FromBody] TokenModel model )
+        {
+            if ( !string.IsNullOrEmpty( model.AccessToken ) )
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var token = handler.ReadJwtToken( model.AccessToken );
+                var now = DateTime.UtcNow;
+
+                if ( now >= token.ValidTo )
+                {
+                    var login = token.Claims.FirstOrDefault().Value;
+                    var dbUser = await _dbContext.GetUserAsync(login, true);
+
+                    if ( dbUser.RefreshToken == model.RefreshToken )
+                    {
+                        GenerateToken( login, dbUser );
+
+                        var responseToken = new
+                        {
+                            status = HttpStatusCode.OK,
+                            access_token = dbUser.AccessToken,
+                            refresh_token = dbUser.RefreshToken,
+                            expired_in = (dbUser.TokenExpiredDate - now).Value.TotalSeconds
+                        };
+
+                        return new JsonResult( responseToken );
+                    }
+                }
+            }
+
+            var response = new
+            {
+                status = HttpStatusCode.InternalServerError
+            };
+
+            return new JsonResult( response );
+        }
+
+        private void GenerateToken(string login, User user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimsIdentity.DefaultNameClaimType, login)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+            var tokenLifetime = TimeSpan.FromMinutes( 1 );
+            var now = DateTime.UtcNow;
+            var expiredIn = now.Add( tokenLifetime );
+            var jwt = new JwtSecurityToken(
+                    issuer: TimetrackerAuthorizationOptions.ISSUER,
+                    audience: TimetrackerAuthorizationOptions.AUDIENCE,
+                    notBefore: now,
+                    claims: claimsIdentity.Claims,
+                    expires: expiredIn,
+                    signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+
+            var access_token = new JwtSecurityTokenHandler().WriteToken(jwt);
+            var refresh_token = Guid.NewGuid().ToString().Replace("-", "");
+
+            user.AccessToken = access_token;
+            user.RefreshToken = refresh_token;
+            user.TokenExpiredDate = expiredIn;
+
+            _dbContext.SaveChanges();
+        }
+        [HttpPost]
         public async Task<IActionResult> SignIn( [FromBody] SignInModel view )
         {
-            var dbUser = await _dbContext.GetUserAsync(view.Login).ConfigureAwait(false);
+            var dbUser = await _dbContext.GetUserAsync(view.Login, true)
+                .ConfigureAwait(false);
+
             if ( dbUser == null )
             {
                 return Unauthorized();
@@ -62,23 +132,7 @@ namespace View.Controllers
                 return Unauthorized();
             }
 
-            var claims = new List<Claim>
-                {
-                    new Claim(ClaimsIdentity.DefaultNameClaimType, dbUser.Login)
-                };
-
-            var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            
-            var now = DateTime.Now;
-            var jwt = new JwtSecurityToken(
-                    issuer: TimetrackerAuthorizationOptions.ISSUER,
-                    audience: TimetrackerAuthorizationOptions.AUDIENCE,
-                    notBefore: now,
-                    claims: claimsIdentity.Claims,
-                    expires: now.Add(TimeSpan.FromDays(TimetrackerAuthorizationOptions.LIFETIME)),
-                    signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-
-            var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
+            var now = DateTime.UtcNow;
 
             var user = new
             {
@@ -92,14 +146,32 @@ namespace View.Controllers
                 dbUser.City
             };
 
-            var response = new
+            if ( dbUser.TokenExpiredDate >= now )
+            {
+                var responseUser = new
+                {
+                    status = HttpStatusCode.OK,
+                    access_token = dbUser.AccessToken,
+                    refresh_token = dbUser.RefreshToken,
+                    expired_in = (dbUser.TokenExpiredDate - now).Value.TotalSeconds,
+                    user = user
+                };
+
+                return new JsonResult( responseUser );
+            }
+
+            GenerateToken( dbUser.Login, dbUser );
+
+            var responseWithToken = new
             {
                 status = HttpStatusCode.OK,
-                access_token = encodedJwt,
-                user =  user
+                access_token = dbUser.AccessToken,
+                refresh_token = dbUser.RefreshToken,
+                expired_in =  (dbUser.TokenExpiredDate - now).Value.TotalSeconds,
+                user = user
             };
 
-            return new JsonResult( response );
+            return new JsonResult( responseWithToken );
         }
 
         [HttpGet]

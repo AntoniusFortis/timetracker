@@ -1,4 +1,5 @@
 ﻿import React, { Component } from 'react';
+import { getToken } from './Account'
 import { SignalR_Provider } from '../signalr/SignalR_Provider';
 
 export class TaskTracking extends Component {
@@ -43,10 +44,8 @@ export class TaskTracking extends Component {
     }
 
     componentDidMount() {
-        const token = localStorage.getItem('tokenKey');
-
         const connectionData = {
-            token: token,
+            token: getToken(),
             onClose: this.onClose,
             onActiveTrackingReceive: this.onActiveTrackingReceive
         };

@@ -58,7 +58,7 @@ namespace Timetracker.Entities.Classes
         {
             if ( invalidateCache || !_cache.TryGetValue(name, out User user) )
             {
-                user = await Users.AsNoTracking()
+                user = await Users
                     .SingleOrDefaultAsync(p => p.Login == name)
                     .ConfigureAwait(false);
 

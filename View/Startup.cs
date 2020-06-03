@@ -23,7 +23,14 @@ namespace View
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors();
+            //services.AddCors( x => {
+            //    x.AddDefaultPolicy( policy =>
+            //    {
+            //        policy.AllowAnyOrigin()
+            //        .AllowAnyHeader()
+            //        .AllowAnyMethod();
+            //    } );
+            //} );
             services.AddMemoryCache();
             services.AddDatabase(Configuration);
             services.AddControllers();
@@ -54,11 +61,11 @@ namespace View
 
             app.UseHttpsRedirection();
             app.UseSpaStaticFiles();
+            app.UseRouting();
 
             app.UseAuthentication();
-            app.UseRouting();
             app.UseAuthorization();
-
+            //app.UseCors();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

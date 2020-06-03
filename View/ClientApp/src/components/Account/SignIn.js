@@ -10,7 +10,8 @@ export const SignIn = () => {
     const onSuccessSignedIn = (response) => {
         if (response.status === 200) {
             localStorage.setItem('tokenKey', response.access_token);
-            setReferrer('/');
+            localStorage.setItem('refresh_token', response.refresh_token);
+            setReferrer('/project/all');
         }
     }
 
