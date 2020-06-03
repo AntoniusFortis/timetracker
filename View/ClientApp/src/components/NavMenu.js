@@ -151,6 +151,9 @@ export class NavMenu extends Component {
         let menu = auth ? (
             <ul className="navbar-nav flex-grow">
                 <NavItem>
+                    <NavLink className="text-dark" href="/swagger">Time Tracker API</NavLink>
+                </NavItem>
+                <NavItem>
                     <NavLink tag={Link} className="text-dark" to="/stat/">Статистика</NavLink>
                 </NavItem>
                 <NavItem>

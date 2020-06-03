@@ -23,6 +23,7 @@ namespace View
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
             services.AddMemoryCache();
             services.AddDatabase(Configuration);
             services.AddControllers();

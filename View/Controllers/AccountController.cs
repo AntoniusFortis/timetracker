@@ -8,6 +8,8 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -38,6 +40,12 @@ namespace View.Controllers
                 PropertyNameCaseInsensitive = true
             };
         }
+
+        //public async Task<IActionResult> Logout()
+        //{
+        //    await HttpContext.SignOutAsync( JwtBearerDefaults.AuthenticationScheme );
+        //    return new JsonResult(null);
+        //}
 
         [HttpPost]
         public async Task<IActionResult> SignIn( [FromBody] SignInModel view )

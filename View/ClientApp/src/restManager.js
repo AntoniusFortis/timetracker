@@ -18,7 +18,9 @@ function fetchServer(uri, callback, body, method, contentType) {
             body: body
         });
 
-        callback(response);
+        if (callback) {
+            callback(response);
+        }
     }
 
     request();
