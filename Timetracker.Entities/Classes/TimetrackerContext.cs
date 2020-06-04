@@ -25,8 +25,6 @@ namespace Timetracker.Entities.Classes
             _cache = cache;
             cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1));
 
-            Database.Migrate();
-
             Users.Load();
             Projects.Load();
             AuthorizedUsers.Load();
@@ -58,7 +56,7 @@ namespace Timetracker.Entities.Classes
         {
             if ( invalidateCache || !_cache.TryGetValue(name, out User user) )
             {
-                user = await Users.AsNoTracking()
+                user = await Users
                     .SingleOrDefaultAsync(p => p.Login == name)
                     .ConfigureAwait(false);
 

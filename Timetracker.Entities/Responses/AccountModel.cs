@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-
+﻿
 namespace Timetracker.Entities.Responses
 {
     public class SignInModel

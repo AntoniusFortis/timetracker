@@ -12,7 +12,7 @@ using Timetracker.Entities.Models;
 
 namespace Timetracker.View.Controllers
 {
-    public class TaskView
+    public class TaskUpdateModel
     {
         public WorkTask worktask { get; set; }
     }
@@ -43,7 +43,7 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> Add(TaskView view)
+        public async Task<JsonResult> Add(TaskUpdateModel view)
         {
             var worktask = view.worktask;
             var user = await _dbContext.GetUserAsync(User.Identity.Name).
@@ -133,7 +133,7 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Update(TaskView view)
+        public async Task<IActionResult> Update(TaskUpdateModel view)
         {
             var worktask = view.worktask;
             var user = await _dbContext.GetUserAsync(User.Identity.Name);

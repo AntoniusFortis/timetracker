@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -43,5 +44,13 @@ namespace Timetracker.Entities.Models
         [StringLength(255)]
         [Required]
         public string Email { get; set; }
+
+        [StringLength( 50 )]
+        public string RefreshToken { get; set; }
+
+        [StringLength( 300 )]
+        public string AccessToken { get; set; }
+
+        public DateTime? TokenExpiredDate { get; set; }
     }
 }

@@ -6,9 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Timetracker.Entities.Classes;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
 using System;
-using System.IO;
+using System.Threading.Tasks;
 
 namespace Timetracker.Entities.Extensions
 {
@@ -46,29 +45,36 @@ namespace Timetracker.Entities.Extensions
                    options.RequireHttpsMetadata = false;
                    options.TokenValidationParameters = new TokenValidationParameters
                    {
-                       ValidateIssuer = true,
-                       ValidIssuer = TimetrackerAuthorizationOptions.ISSUER,
-
-                       ValidateAudience = true,
-                       ValidAudience = TimetrackerAuthorizationOptions.AUDIENCE,
-
-                       ValidateLifetime = true,
+                       ValidateIssuer = false,
+                       ValidateAudience = false,
 
                        IssuerSigningKey = TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(),
                        ValidateIssuerSigningKey = true,
+
+                       ClockSkew = TimeSpan.Zero
                    };
                    options.Events = new JwtBearerEvents
                    {
+                       OnTokenValidated = ctx =>
+                       {
+                           var now = DateTime.UtcNow;
+                           var path = ctx.HttpContext.Request.Path;
+
+                           if ( now > ctx.SecurityToken.ValidTo && !path.StartsWithSegments( "/trackingHub" ) )
+                           {
+                               ctx.Fail( "Token expired" );
+                           }
+                           return Task.CompletedTask;
+                       },
                        OnMessageReceived = context =>
                        {
                            var accessToken = context.Request.Query["access_token"];
-
                            var path = context.HttpContext.Request.Path;
-                           if ( !string.IsNullOrEmpty( accessToken ) && ( path.StartsWithSegments( "/trackingHub" ) ) )
+                           if ( !string.IsNullOrEmpty( accessToken ) && path.StartsWithSegments( "/trackingHub" ) )
                            {
                                context.Token = accessToken;
                            }
-                           return System.Threading.Tasks.Task.CompletedTask;
+                           return Task.CompletedTask;
                        }
                    };
                } );
