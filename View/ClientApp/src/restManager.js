@@ -1,4 +1,4 @@
-﻿import { hasAuthorized, getToken } from './components/Account'
+﻿import { hasAuthorized, getToken, setToken } from './components/Account'
 
 export class HttpRequestHelper {
     static Fetch(uri, callback, body, method, contentType) {
@@ -35,7 +35,7 @@ export class HttpRequestHelper {
             const json = JSON.stringify(tokenBody);
 
             const tokenRequestHeaders = new Headers();
-            newheaders.append('Content-Type', 'application/json')
+            tokenRequestHeaders.append('Content-Type', 'application/json')
 
             const tokenRequest = await fetch('/api/account/token', {
                 method: 'POST',
@@ -44,7 +44,7 @@ export class HttpRequestHelper {
             });
 
             const result = await tokenRequest.json();
-            localStorage.setItem('tokenKey', result.access_token);
+            setToken(result.access_token);
             localStorage.setItem('refresh_token', result.refresh_token);
 
             headers.set('Authorization', 'Bearer ' + result.access_token)

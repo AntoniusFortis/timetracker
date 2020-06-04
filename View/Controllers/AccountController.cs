@@ -42,12 +42,6 @@ namespace View.Controllers
             };
         }
 
-        //public async Task<IActionResult> Logout()
-        //{
-        //    await HttpContext.SignOutAsync( JwtBearerDefaults.AuthenticationScheme );
-        //    return new JsonResult(null);
-        //}
-
         [HttpPost]
         public async Task<JsonResult> Token( [FromBody] TokenModel model )
         {
@@ -95,7 +89,7 @@ namespace View.Controllers
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            var tokenLifetime = TimeSpan.FromMinutes( 1 );
+            var tokenLifetime = TimeSpan.FromMinutes( 30 );
             var now = DateTime.UtcNow;
             var expiredIn = now.Add( tokenLifetime );
             var jwt = new JwtSecurityToken(

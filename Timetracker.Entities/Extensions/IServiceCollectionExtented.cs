@@ -46,13 +46,7 @@ namespace Timetracker.Entities.Extensions
                    options.TokenValidationParameters = new TokenValidationParameters
                    {
                        ValidateIssuer = false,
-                       ValidIssuer = TimetrackerAuthorizationOptions.ISSUER,
-
-                       ValidateAudience = true,
-                       ValidAudience = TimetrackerAuthorizationOptions.AUDIENCE,
-
-                       //ValidateLifetime = true,
-                       ValidateLifetime = false,
+                       ValidateAudience = false,
 
                        IssuerSigningKey = TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(),
                        ValidateIssuerSigningKey = true,
