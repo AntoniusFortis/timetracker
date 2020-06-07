@@ -2,13 +2,13 @@
 import { Get, Post } from '../../restManager';
 import Select from 'react-select';
 import moment from 'moment'
-
-export class Today extends PureComponent {
+import { NavLink } from 'reactstrap';
+import { Link } from 'react-router-dom';
+export class Report extends PureComponent {
     constructor(props) {
         super(props);
 
         this.state = {
-            loading: true,
             projects: [],
             projectId: 0,
             users: [],
@@ -30,10 +30,10 @@ export class Today extends PureComponent {
         Get('api/project/getall', (response) => {
             response.json()
                 .then(result => {
-                    const projects = result.SignedProjects.map(proj => {
+                    const projects = result.acceptedProjects.map(project => {
                         return {
-                            value: proj.Id,
-                            label: proj.Title
+                            value: project.Id,
+                            label: project.Title
                         }
                     });
 
@@ -109,7 +109,7 @@ export class Today extends PureComponent {
                     this.setState({
                         projectId: event.value,
                         tasks: tasks,
-                        isAdmin: result.isAdmin
+                        isAdmin: result.caller.right.Id === 1
                     }, () => { this.getUsers() });
                 });
         });
@@ -137,36 +137,23 @@ export class Today extends PureComponent {
         const offset = moment().utcOffset();
 
         return (
-            <table className='table table-striped' aria-labelledby="tabelLabel">
-                <thead>
-                    <tr>
-                        <th>Пользователь</th>
-                        <th>Задача</th>
-                        <th>Время начала</th>
-                        <th>Время окончания</th>
-                        <th>Затраченное время</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
                         worktracks.map(worktrack => {
-                            const start = moment(worktrack.StartedTime).add(offset, 'm').format('HH:mm:ss');
-                            const stop = moment(worktrack.StoppedTime).add(offset, 'm').format('HH:mm:ss');
+                            const startedTime = moment(worktrack.StartedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
+                            const stop = moment(worktrack.StoppedTime).add(offset, 'm').format('YYYY-MM-DD hh:mm:ss');
 
-                            return  (
+                            return (
                                 <tr key={worktrack.Id}>
                                     <td>{worktrack.User}</td>
-                                    <td>{worktrack.Task}</td>
-                                    <td>{start}</td>
+                                    <td><NavLink style={{ width: '250px', display: 'inline' }} tag={Link} to={"/task/get/" + worktrack.TaskId}>{worktrack.Task}</NavLink>{}</td>
+                                    <td>{startedTime}</td>
                                     <td>{stop}</td>
                                     <td>{worktrack.TotalTime}</td>
                                 </tr>
                             )
                         }
                         )
-                    }
-                </tbody>
-            </table>
+                    
+
         );
     }
 
@@ -184,24 +171,40 @@ export class Today extends PureComponent {
         const htmlWorktracks = worktracks.length > 0 ? this.renderWorktracksTable(worktracks) : (<div />);
         return (
             <div>
-                <div style={{ width: '490px' }}>
+                <div>
                     <div>
-                        <Select options={this.state.projects} onChange={this.onProjectChange} />
-                        <Select isClearable={true} options={this.state.users} onChange={this.onUserChange} />
-                        <Select isClearable={true} options={this.state.tasks} onChange={this.onTaskChange} />
+                        <div style={{ width: '270px', display: 'inline-block' }}> <Select options={this.state.projects} onChange={this.onProjectChange} /> </div>
+
+                        <div style={{ width: '260px', display: 'inline-block' }}><Select isDisabled={this.state.projectId == 0} isClearable={true} options={this.state.users} onChange={this.onUserChange} /> </div>
+                        <div style={{ width: '270px', display: 'inline-block' }}><Select isDisabled={this.state.projectId == 0} isClearable={true} options={this.state.tasks} onChange={this.onTaskChange} /> </div>
+                        <div style={{ width: '170px', display: 'inline-block' }}>
+                            <span>С </span>
+                            <input type="date" onChange={this.onFromDate} />
+                        </div>
+                        <div style={{ width: '190px', display: 'inline-block' }}>
+                            <label>по </label>
+                            <input type="date" onChange={this.onEndDate} />
+                        </div>
+
                     </div>
-                    <p>
-                        <label>С </label>
-                        <input type="date" onChange={this.onFromDate} />
-                    </p>
-                    <p>
-                        <label>по </label>
-                        <input type="date" onChange={this.onEndDate} />
-                    </p>
+
                     <button disabled={!isReady} onClick={(e) => { this.getStat() }}>Запросить</button>
                 </div>
                 <div>
-                    {htmlWorktracks}
+                    <table className='table table-striped' aria-labelledby="tabelLabel">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Задача</th>
+                                <th>Время начала</th>
+                                <th>Время окончания</th>
+                                <th>Затраченное время</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {htmlWorktracks}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         );

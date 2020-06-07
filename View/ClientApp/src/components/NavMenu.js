@@ -2,11 +2,11 @@
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
-import { hasAuthorized } from './Account';
+import { hasAuthorized, getToken } from './Account';
 import moment from 'moment'
 import { SignalR_Provider } from '../signalr/SignalR_Provider';
 
-class TrackingTimer extends PureComponent {
+class TrackingTimer extends Component {
     constructor(props) {
         super(props);
 
@@ -49,12 +49,6 @@ class HeaderMenuTracking extends Component {
         };
     }
 
-    showMessage(text) {
-        if (text.trim() !== '') {
-            alert(text);
-        }
-    }
-
     async start() {
         const { hubConnection } = this.state;
 
@@ -66,15 +60,15 @@ class HeaderMenuTracking extends Component {
         }
     };
 
-    onClose = async (error) => {
-        await this.start();
-    }
-
-    componentWillUnmount() {
-        this.state.hubConnection.off('getActiveTracking');
+    showMessage = (text) => {
+        if (text.trim() !== '') {
+            alert(text);
+        }
     }
 
     onActiveTrackingReceive = (istracking, worktask, started, message) => {
+        this.showMessage(message);
+
         if (!istracking) {
             this.setState({
                 isTracked: false,
@@ -100,15 +94,9 @@ class HeaderMenuTracking extends Component {
     }
 
     componentDidMount() {
-        const token = localStorage.getItem('tokenKey');
+        SignalR_Provider.callbacks.push(this.onActiveTrackingReceive);
 
-        const connectionData = {
-            token: token,
-            onClose: this.onClose,
-            onActiveTrackingReceive: this.onActiveTrackingReceive
-        };
-
-        const hubConnection = SignalR_Provider.getConnection(connectionData);
+        const hubConnection = SignalR_Provider.getConnection(getToken());
 
         this.setState({ hubConnection }, () => {
             this.start();
@@ -118,18 +106,20 @@ class HeaderMenuTracking extends Component {
     render() {
         return (
             <div>
-                {this.state.isTracked && <div>Идёт отслеживание: <b>{this.state.worktask.task.title}</b> (<TrackingTimer start={this.state.time} />)</div>}
+                {this.state.isTracked && <div>Отслеживается: <b>{this.state.worktask.worktask.title}</b> (<TrackingTimer start={this.state.time} />)</div>}
             </div>
         );
     }
 }
 
 export class NavMenu extends Component {
+    static Auth = false;
+
     constructor(props) {
         super(props);
-
+        NavMenu.Auth = hasAuthorized();
         this.state = {
-            collapsed: true,
+            collapsed: true
         };
     }
 
@@ -142,19 +132,20 @@ export class NavMenu extends Component {
 
     Signout = (event) => {
         localStorage.removeItem('tokenKey');
+        NavMenu.Auth = false;
         this.setState({ collapsed: false });
     }
 
     render() {
-        const auth = hasAuthorized();
+        let tracking = NavMenu.Auth ? (<HeaderMenuTracking auth={NavMenu.Auth} />) : <div />;
 
-        let menu = auth ? (
+        let menu = NavMenu.Auth ? (
             <ul className="navbar-nav flex-grow">
                 <NavItem>
                     <NavLink className="text-dark" href="/swagger">Time Tracker API</NavLink>
                 </NavItem>
                 <NavItem>
-                    <NavLink tag={Link} className="text-dark" to="/stat/">Статистика</NavLink>
+                    <NavLink tag={Link} className="text-dark" to="/report/">Отчёты</NavLink>
                 </NavItem>
                 <NavItem>
                     <NavLink tag={Link} className="text-dark" to="/project/all">Проекты</NavLink>
@@ -183,8 +174,8 @@ export class NavMenu extends Component {
                     <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
                         <Container>
                             <NavbarBrand tag={Link} to="/">Time Tracker</NavbarBrand>
-                            <HeaderMenuTracking />
                             <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
+                            {tracking}
                             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                                 {menu}
                             </Collapse>

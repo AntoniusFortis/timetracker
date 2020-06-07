@@ -2,11 +2,12 @@
 
 namespace Timetracker.Entities.Models
 {
-    public class State
+    public class Role
     {
         public byte Id { get; set; }
 
-        [StringLength( 60 )]
+        [Required]
+        [StringLength( 50 )]
         public string Title { get; set; }
     }
 }

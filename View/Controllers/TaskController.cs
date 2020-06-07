@@ -6,11 +6,14 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Timetracker.Entities.Classes;
+using Timetracker.Entities.Hubs;
 using Timetracker.Entities.Models;
+using Timetracker.Models.Response;
 
-namespace Timetracker.View.Controllers
+namespace Timetracker.Entities.Controllers
 {
     public class TaskUpdateModel
     {
@@ -31,8 +34,9 @@ namespace Timetracker.View.Controllers
     {
         private readonly TimetrackerContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly IHubContext<TrackingHub> _hub;
 
-        public TaskController(TimetrackerContext authorizedUsersRepository)
+        public TaskController(TimetrackerContext authorizedUsersRepository, IHubContext<TrackingHub> hub )
         {
             _dbContext = authorizedUsersRepository;
 
@@ -40,6 +44,7 @@ namespace Timetracker.View.Controllers
             {
                 PropertyNameCaseInsensitive = true
             };
+            _hub = hub;
         }
 
         [HttpPost]
@@ -72,9 +77,18 @@ namespace Timetracker.View.Controllers
         [HttpGet]
         public async Task<IActionResult> Get(int? Id)
         {
+            if ( !Id.HasValue )
+            {
+                return new JsonResult( new
+                {
+                    status = HttpStatusCode.BadRequest,
+                    message = "Вы должны ввести идентификатор"
+                } );
+            }
+
             var id = Id.Value;
 
-            var worktask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
+            var worktask = await _dbContext.Worktasks.SingleOrDefaultAsync(x => x.Id == id)
                 .ConfigureAwait(false);
 
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
@@ -119,7 +133,7 @@ namespace Timetracker.View.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateState( UpdateStateModel model )
         {
-            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == model.TaskId );
+            var dbWorkTask = _dbContext.Worktasks.FirstOrDefault(x => x.Id == model.TaskId );
             dbWorkTask.StateId = (byte)model.StateId;
 
             _dbContext.Update( dbWorkTask );
@@ -146,7 +160,7 @@ namespace Timetracker.View.Controllers
                 }, _jsonOptions);
             }
 
-            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == view.worktask.Id);
+            var dbWorkTask = _dbContext.Worktasks.FirstOrDefault(x => x.Id == view.worktask.Id);
             dbWorkTask.Title = view.worktask.Title;
             dbWorkTask.Description = view.worktask.Description;
             dbWorkTask.Duration = view.worktask.Duration;
@@ -164,25 +178,46 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Delete(int? Id)
+        public async Task<JsonResult> Delete( [FromQuery] uint? id)
         {
-            var id = Id.Value;
+            if ( !id.HasValue )
+            {
+                return new JsonResult( new
+                {
+                    status = HttpStatusCode.BadRequest,
+                    message = "Вы должны ввести идентификатор"
+                } );
+            }
+
+            var worktaskId = id.Value;
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var dbWorkTask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
+            var dbWorkTask = await _dbContext.Worktasks.FirstOrDefaultAsync(x => x.Id == worktaskId)
                 .ConfigureAwait(false);
 
-            var au = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .SingleOrDefaultAsync( x => x.ProjectId == dbWorkTask.ProjectId && x.User.Id == user.Id )
+            var hasAccess = await _dbContext.AuthorizedUsers.AsNoTracking()
+                .AnyAsync( x => x.ProjectId == dbWorkTask.ProjectId && x.User.Id == user.Id && x.RightId != 1 )
                 .ConfigureAwait(false);
 
-            if ( au == null || au.RightId != 1 )
+            if ( !hasAccess )
             {
-                return new JsonResult(new
+                return new JsonResult(new ErrorResponse
                 {
-                    status = HttpStatusCode.Unauthorized
-                }, _jsonOptions);
+                    message = "У вас недостаточно прав для удаления задачи"
+                } );
+            }
+
+            // Если на задачу кто-то тречит - заставить их прекратить
+            var runningWorktracks = _dbContext.Worktracks.Where( x => x.WorktaskId == dbWorkTask.Id && x.Running);
+            if ( runningWorktracks.Any() )
+            {
+                var users = runningWorktracks.Select( x => x.User.Login );
+
+                foreach ( var userName in users )
+                {
+                    await _hub.Clients.Group( userName ).SendAsync( "getActiveTracking", false, null, false, "Задача была удалена и больше не отслеживается" );
+                }
             }
 
             _dbContext.Remove(dbWorkTask);
@@ -192,7 +227,8 @@ namespace Timetracker.View.Controllers
 
             return new JsonResult(new
             {
-                status = HttpStatusCode.OK
+                status = HttpStatusCode.OK,
+                worktask = dbWorkTask
             }, _jsonOptions);
         }
     }

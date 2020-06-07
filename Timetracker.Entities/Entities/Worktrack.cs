@@ -12,14 +12,14 @@ namespace Timetracker.Entities.Models
 
         public User User { get; set; }
 
+        public int WorktaskId { get; set; }
+
+        public WorkTask Worktask { get; set; }
+
         public DateTime StartedTime { get; set; }
 
         public DateTime StoppedTime { get; set; }
 
-        public int TaskId { get; set; }
-
-        public WorkTask Task { get; set; }
-
-        public bool Draft { get; set; }
+        public bool Running { get; set; }
     }
 }

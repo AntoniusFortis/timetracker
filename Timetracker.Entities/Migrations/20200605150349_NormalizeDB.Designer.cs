@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Timetracker.Entities.Classes;
 
 namespace Timetracker.Entities.Migrations
 {
     [DbContext(typeof(TimetrackerContext))]
-    partial class TimetrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20200605150349_NormalizeDB")]
+    partial class NormalizeDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,8 +30,8 @@ namespace Timetracker.Entities.Migrations
 
                     b.Property<string>("AccessToken")
                         .IsRequired()
-                        .HasColumnType("nvarchar(305)")
-                        .HasMaxLength(305);
+                        .HasColumnType("nvarchar(300)")
+                        .HasMaxLength(300);
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
@@ -95,7 +97,7 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.Role", b =>
+            modelBuilder.Entity("Timetracker.Entities.Models.Right", b =>
                 {
                     b.Property<byte>("Id")
                         .HasColumnType("tinyint");
@@ -215,7 +217,7 @@ namespace Timetracker.Entities.Migrations
 
                     b.HasIndex("StateId");
 
-                    b.ToTable("Worktasks");
+                    b.ToTable("Tasks");
                 });
 
             modelBuilder.Entity("Timetracker.Entities.Models.Worktrack", b =>
@@ -234,17 +236,17 @@ namespace Timetracker.Entities.Migrations
                     b.Property<DateTime>("StoppedTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("TaskId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WorktaskId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("TaskId");
 
-                    b.HasIndex("WorktaskId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Worktracks");
                 });
@@ -257,7 +259,7 @@ namespace Timetracker.Entities.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Timetracker.Entities.Models.Role", "Right")
+                    b.HasOne("Timetracker.Entities.Models.Right", "Right")
                         .WithMany()
                         .HasForeignKey("RightId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -287,15 +289,15 @@ namespace Timetracker.Entities.Migrations
 
             modelBuilder.Entity("Timetracker.Entities.Models.Worktrack", b =>
                 {
-                    b.HasOne("Timetracker.Entities.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                    b.HasOne("Timetracker.Entities.Models.WorkTask", "Task")
+                        .WithMany("WorkTracks")
+                        .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Timetracker.Entities.Models.WorkTask", "Worktask")
-                        .WithMany("WorkTracks")
-                        .HasForeignKey("WorktaskId")
+                    b.HasOne("Timetracker.Entities.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

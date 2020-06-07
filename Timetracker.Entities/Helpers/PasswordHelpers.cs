@@ -2,21 +2,29 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
-namespace Timetracker.View
+namespace Timetracker.Entities
 {
-    public class PasswordHelpers
+    public static class PasswordHelpers
     {
-        public static bool SlowEquals(string a, string b)
+        private const int SaltSize = 16;
+        private const int IterationsCount = 1024;
+
+        public static bool SlowEquals( [NotNull] string a, [NotNull] string b)
         {
+            if ( a.Length != b.Length )
+            {
+                return false;
+            }
+
             int diff = a.Length ^ b.Length;
             for (int i = 0; i < a.Length && i < b.Length; i++)
                 diff |= a[i] ^ b[i];
             return diff == 0;
         }
 
-        public static byte[] GenerateSalt(int length)
+        public static byte[] GenerateSalt()
         {
-            byte[] salt = new byte[length];
+            var salt = new byte[SaltSize];
 
             using (var rngCsp = new RNGCryptoServiceProvider())
             {
@@ -26,9 +34,9 @@ namespace Timetracker.View
             return salt;
         }
 
-        public static string EncryptPassword([NotNull] string pass, byte[] salt, int iterations)
+        public static string EncryptPassword( [NotNull] string pass, [NotNull] byte[] salt )
         {
-            var pbkdf2 = new Rfc2898DeriveBytes(pass, salt, iterations, HashAlgorithmName.SHA512);
+            var pbkdf2 = new Rfc2898DeriveBytes(pass, salt, IterationsCount, HashAlgorithmName.SHA512);
 
             var key = pbkdf2.GetBytes(128);
             pbkdf2.Reset();

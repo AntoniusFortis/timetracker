@@ -15,7 +15,7 @@ using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
 using Timetracker.Entities.Responses;
 
-namespace Timetracker.View.Controllers
+namespace Timetracker.Entities.Controllers
 {
     [Produces("application/json", new[] { "multipart/form-data" })]
     [ApiController]
@@ -40,30 +40,40 @@ namespace Timetracker.View.Controllers
         [HttpGet]
         public async Task<JsonResult> Get()
         {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name, true )
+            var dbUser = await _dbContext.GetUserAsync( User.Identity.Name )
                 .ConfigureAwait(false);
 
-            var response = new
+            var user = new
             {
-                status = HttpStatusCode.OK,
-                user
+                dbUser.Id,
+                dbUser.Login,
+                dbUser.FirstName,
+                dbUser.Surname,
+                dbUser.MiddleName,
+                dbUser.BirthDate,
+                dbUser.City,
+                dbUser.Email
             };
 
-            return new JsonResult(response, _jsonOptions);
+            return new JsonResult( new
+            {
+                status = HttpStatusCode.OK,
+                user = user
+            }, _jsonOptions );
         }
 
         [HttpPost]
         public async Task<JsonResult> Update( MyPageModel model )
         {
             var login = User.Identity.Name;
-            var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == login)
+            var dbUser = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == login)
                 .ConfigureAwait(false);
 
             var passwordChanged = !string.IsNullOrEmpty(model.Pass);
             if ( passwordChanged )
             {
-                var password = PasswordHelpers.EncryptPassword(model.CurrentPass, user.Salt, 1024);
-                if ( !PasswordHelpers.SlowEquals( password, user.Pass ) )
+                var password = PasswordHelpers.EncryptPassword(model.CurrentPass, dbUser.Salt);
+                if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass ) )
                 {
                     var responseUnauthorized = new
                     {
@@ -73,40 +83,40 @@ namespace Timetracker.View.Controllers
                     return new JsonResult( responseUnauthorized, _jsonOptions );
                 }
 
-                var salt = PasswordHelpers.GenerateSalt(16);
-                var hash = PasswordHelpers.EncryptPassword(model.Pass, salt, 1024);
-                user.Pass = hash;
-                user.Salt = salt;
+                var salt = PasswordHelpers.GenerateSalt();
+                var hash = PasswordHelpers.EncryptPassword(model.Pass, salt);
+                dbUser.Pass = hash;
+                dbUser.Salt = salt;
             }
 
-            user.FirstName = model.FirstName;
-            user.Surname = model.Surname;
-            user.MiddleName = model.MiddleName;
-            user.City = model.City;
-            user.Email = model.Email;
-            user.BirthDate = model.BirthDate;
+            dbUser.FirstName = model.FirstName;
+            dbUser.Surname = model.Surname;
+            dbUser.MiddleName = model.MiddleName;
+            dbUser.City = model.City;
+            dbUser.Email = model.Email;
+            dbUser.BirthDate = model.BirthDate;
 
-            _dbContext.Update(user);
+            _dbContext.Update(dbUser);
 
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait(false);
 
-            var resultUser = new
+            var user = new
             {
-                user.Login,
-                user.FirstName,
-                user.Surname,
-                user.MiddleName,
-                user.City,
-                user.Email,
-                user.BirthDate
+                dbUser.Login,
+                dbUser.FirstName,
+                dbUser.Surname,
+                dbUser.MiddleName,
+                dbUser.City,
+                dbUser.Email,
+                dbUser.BirthDate
             };
             await _dbContext.GetUserAsync( User.Identity.Name, true );
 
             var response = new
             {
                 status = HttpStatusCode.OK,
-                newUser = resultUser,
+                newUser = user,
                 passwordChanged = passwordChanged
             };
 

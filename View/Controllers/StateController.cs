@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Timetracker.Entities.Classes;
 
-namespace Timetracker.View.Controllers
+namespace Timetracker.Entities.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
@@ -29,6 +29,7 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpGet]
+        [ResponseCache(Duration = 360)]
         public async Task<JsonResult> GetAll()
         {
             var statesArray = await _dbContext.States.AsNoTracking()

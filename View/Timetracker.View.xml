@@ -4,11 +4,31 @@
         <name>Timetracker.View</name>
     </assembly>
     <members>
+        <member name="M:View.Controllers.ProjectController.Add(Timetracker.Models.Models.AddProjectModel)">
+            <summary>
+            Добавить проект
+            </summary>
+        </member>
+        <member name="M:View.Controllers.ProjectController.GetAll">
+            <summary>
+            Получить все проекты
+            </summary>
+        </member>
+        <member name="M:View.Controllers.ProjectController.Get(System.Nullable{System.UInt32})">
+            <summary>
+            Получить информацию о проекте
+            </summary>
+        </member>
+        <member name="M:View.Controllers.ProjectController.Update(View.Controllers.CU_ProjectView)">
+            <summary>
+            Обновить проект
+            </summary>
+        </member>
         <member name="M:View.Controllers.ProjectController.Delete(System.Nullable{System.Int32})">
             <summary>
             Удалить проект
             </summary>
-            <param name="Id"></param>     
+            <param name="id">Идентификатор проекта</param>     
         </member>
     </members>
 </doc>

@@ -36,8 +36,10 @@ const ProjectGetAllInvitesTable = (props) => {
         <table className='table table-striped' aria-labelledby="tabelLabel">
             <thead>
                 <tr>
+                    <th></th>
                     <th>Название</th>
                     <th>Описание</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -45,11 +47,12 @@ const ProjectGetAllInvitesTable = (props) => {
                     props.projects.map(project =>
                         (
                             <tr key={project.Id}>
-                                <td>{project.Title}</td>
-                                <td>{project.Description}</td>
                                 <td>
                                     <button onClick={(e) => props.acceptInvite(project.Id)}>Принять</button>
+                                    <button onClick={(e) => props.rejectInvite(project.Id)}>Отказать</button>
                                 </td>
+                                <td>{project.Title}</td>
+                                <td>{project.Description}</td>
                             </tr>
                         )
                     )
@@ -63,7 +66,7 @@ export class ProjectGetAll extends PureComponent {
         super(props);
 
         this.state = {
-            projectView: { SignedProjects: [], NotSignedProjects: [] },
+            projectView: { acceptedProjects: [], notAcceptedProjects: [] },
             selectedTab: 0
         };
     }
@@ -83,9 +86,13 @@ export class ProjectGetAll extends PureComponent {
 
     acceptInvite = (projectId) => {
         Post('api/project/accept', { ProjectId: projectId }, (response) => {
-            response.json().then(result => {
-                this.getProjectsData();
-            });
+            this.getProjectsData();
+        });
+    }
+
+    rejectInvite = (projectId) => {
+        Post('api/project/reject?id=' + projectId, {}, (response) => {
+            this.getProjectsData();
         });
     }
 
@@ -94,10 +101,10 @@ export class ProjectGetAll extends PureComponent {
         return (
             <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                 <Tab name="first" title="Проекты">
-                    <ProjectGetAllTable projects={projectView.SignedProjects} />
+                    <ProjectGetAllTable projects={projectView.acceptedProjects} />
                 </Tab>
-                <Tab name="second" title="Проекты в которые вы были приглашены">
-                    <ProjectGetAllInvitesTable projects={projectView.NotSignedProjects} acceptInvite={this.acceptInvite} />
+                <Tab name="second" title="Приглашения">
+                    <ProjectGetAllInvitesTable projects={projectView.notAcceptedProjects} acceptInvite={this.acceptInvite} rejectInvite={this.rejectInvite} />
                 </Tab>
             </Tabs>
         );

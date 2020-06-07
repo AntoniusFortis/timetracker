@@ -10,7 +10,7 @@ export const ProjectAdd = () => {
     const tryAddProject = (event) => {
         event.preventDefault();
 
-        const body = { Title: title, Description: descr };
+        const body = { title: title, description: descr };
 
         Post("api/project/add", body, (response) => {
             if (response.status === 200) {

@@ -1,6 +1,6 @@
 ﻿namespace Timetracker.Entities.Models
 {
-    public class WorkTrackStatModel
+    public class ReportModel
     {
         public int projectId { get; set; }
 

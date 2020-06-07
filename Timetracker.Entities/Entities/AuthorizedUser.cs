@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
@@ -7,12 +6,11 @@ namespace Timetracker.Entities.Models
     public class AuthorizedUser
     {
         [Key]
-        [DatabaseGenerated( DatabaseGeneratedOption.Identity )]
         public int Id { get; set; }
 
         public byte RightId { get; set; }
 
-        public virtual Right Right { get; set; }
+        public virtual Role Right { get; set; }
 
         public int UserId { get; set; }
 
@@ -23,6 +21,6 @@ namespace Timetracker.Entities.Models
         [JsonIgnore]
         public virtual Project Project { get; set; }
 
-        public bool IsSigned { get; set; }
+        public bool Accepted { get; set; }
     }
 }

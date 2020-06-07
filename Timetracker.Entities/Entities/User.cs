@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
@@ -8,7 +6,6 @@ namespace Timetracker.Entities.Models
     public class User
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Required]
         public int Id { get; set; }
         
@@ -45,12 +42,6 @@ namespace Timetracker.Entities.Models
         [Required]
         public string Email { get; set; }
 
-        [StringLength( 50 )]
-        public string RefreshToken { get; set; }
-
-        [StringLength( 300 )]
-        public string AccessToken { get; set; }
-
-        public DateTime? TokenExpiredDate { get; set; }
+        public int? TokenId { get; set; }
     }
 }

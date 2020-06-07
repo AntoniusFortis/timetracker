@@ -5,16 +5,16 @@ namespace View
 {
     public class Program
     {
-        public static void Main()
+        public static void Main( string[] args )
         {
-            CreateHostBuilder().Build().Run();
+            CreateHostBuilder( args ).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder() =>
-            Host.CreateDefaultBuilder()
-                .ConfigureWebHostDefaults(webBuilder =>
+        public static IHostBuilder CreateHostBuilder( string[] args ) =>
+            Host.CreateDefaultBuilder( args )
+                .ConfigureWebHostDefaults( webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
+                } );
     }
 }
