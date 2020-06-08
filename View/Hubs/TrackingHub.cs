@@ -107,6 +107,7 @@ namespace Timetracker.Entities.Hubs
             var dbUser = await _dbContext.GetUserAsync( userName )
                 .ConfigureAwait( false );
 
+            // Получить запущенный трек 
             var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync( x => x.UserId == dbUser.Id && x.Running )
                 .ConfigureAwait( false );
 

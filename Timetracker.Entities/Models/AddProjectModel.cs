@@ -8,7 +8,7 @@ namespace Timetracker.Models.Models
         [StringLength( maximumLength: 50, MinimumLength = 5 )]
         public string title { get; set; }
 
-        [StringLength( maximumLength: 250, MinimumLength = 1 )]
+        [StringLength( maximumLength: 250 )]
         public string description { get; set; }
     }
 }

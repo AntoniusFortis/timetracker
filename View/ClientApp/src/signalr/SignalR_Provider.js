@@ -37,6 +37,7 @@ export class SignalR_Provider {
         connection.on('getActiveTracking', this.onSignalREvents);
 
         this.connection = connection;
+
         return connection;
     }
 

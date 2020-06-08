@@ -1,38 +1,63 @@
-﻿import React, { Component, PureComponent } from 'react';
+﻿import React, { Component, useState, useCallback, useEffect } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
-import { hasAuthorized, getToken } from './Account';
+import { hasAuthorized, getToken } from '../Account';
 import moment from 'moment'
-import { SignalR_Provider } from '../signalr/SignalR_Provider';
+import { SignalR_Provider } from '../../signalr/SignalR_Provider';
 
-class TrackingTimer extends Component {
-    constructor(props) {
-        super(props);
+const TrackingTimer = (props) => {
+    const [elapsed, setElapsed] = useState(0);
+    const [timer, setTimer] = useState(null);
 
-        this.state = {
-            elapsed: 0
-        };
-    }
+    const cleanupTimer = useCallback(() => {
+        clearInterval(timer);
+        setTimer(null);
+    });
 
-    componentDidMount() {
-        this.timer = setInterval(this.tick, 1000);
-    }
+    const tick = useCallback(() => {
+        setElapsed(moment().utc() - props.start);
+    });
 
-    componentWillUnmount() {
-        clearInterval(this.timer);
-    }
+    useEffect(() => {
+        const timerId = setInterval(tick, 1000);
+        setTimer(timerId);
 
-    tick = () => {
-        this.setState({ elapsed: moment().utc() - this.props.start });
-    }
+        return () => cleanupTimer();
+    }, []);
 
-    render() {
-        const displayTime = moment(this.state.elapsed).utc();
+    const displayTime = moment(elapsed).utc();
 
-        return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
-    }
+    return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
 }
+
+//class TrackingTimer extends Component {
+//    constructor(props) {
+//        super(props);
+
+//        this.state = {
+//            elapsed: 0
+//        };
+//    }
+
+//    componentDidMount() {
+//        this.timer = setInterval(this.tick, 1000);
+//    }
+
+//    componentWillUnmount() {
+//        clearInterval(this.timer);
+//    }
+
+//    tick = () => {
+//        this.setState({ elapsed: moment().utc() - this.props.start });
+//    }
+
+//    render() {
+//        const displayTime = moment(this.state.elapsed).utc();
+
+//        return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
+//    }
+//}
 
 class HeaderMenuTracking extends Component {
     timerId = 0;

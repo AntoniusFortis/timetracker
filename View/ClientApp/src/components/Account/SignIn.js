@@ -2,7 +2,7 @@
 import { Post } from '../../restManager';
 import { Redirect } from 'react-router';
 import { setToken } from '../Account'
-import { NavMenu } from '../NavMenu';
+import { NavMenu } from '../Menu/NavMenu';
 
 const InputField = (props) => {
     return (

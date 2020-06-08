@@ -76,12 +76,16 @@ export class ProjectGetAll extends PureComponent {
     }
 
     async getProjectsData() {
-        Get('api/project/getall', (response) => {
-            response.json()
-                .then(result => {
-                    this.setState({ projectView: result });
-                });
-        });
+        setTimeout(() => {
+            Get('api/project/getall', (response) => {
+                response.json()
+                    .then(result => {
+                        const projects = { acceptedProjects: result.acceptedProjects, notAcceptedProjects: result.notAcceptedProjects };
+                        this.setState({ projectView: projects });
+                    });
+            });
+        }, 900);
+
     }
 
     acceptInvite = (projectId) => {

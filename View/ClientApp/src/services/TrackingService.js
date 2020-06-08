@@ -27,23 +27,22 @@ export const TrackingService = (props) => {
     }, []);
 
     const startTracking = useCallback(() => {
-        debugger;
         SignalR_Provider.getConnection(getToken())
             .invoke('StartTracking', props.worktaskId)
-            .catch(err => {
-                console.error(err);
+            .catch(error => {
+                console.error(error);
                 setTracking(false);
             });
     }, []);
 
-    const stopTracking = (event) => {
+    const stopTracking = useCallback((event) => {
         SignalR_Provider.getConnection(getToken())
             .invoke('StopTracking')
-            .catch(err => {
-                console.error(err);
+            .catch(error => {
+                console.error(error);
                 setTracking(true);
             });
-    };
+    }, []);
 
     return (
         <div style={{ display: 'inline-block', margin: '5px' }}>
