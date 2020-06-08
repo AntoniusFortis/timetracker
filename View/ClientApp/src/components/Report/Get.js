@@ -36,7 +36,6 @@ export class Report extends PureComponent {
                             label: project.Title
                         }
                     });
-
                     this.setState({ projects: projects });
                 });
         });
@@ -84,7 +83,7 @@ export class Report extends PureComponent {
             taskId: taskId
         }
 
-        Post("api/worktrack/GetStat", body, (response) => {
+        Post("api/worktrack/GetReport", body, (response) => {
             response.json()
                 .then(result => {
                     this.setState({ worktracks: result });
@@ -135,25 +134,20 @@ export class Report extends PureComponent {
 
     renderWorktracksTable(worktracks) {
         const offset = moment().utcOffset();
-
-        return (
-                        worktracks.map(worktrack => {
-                            const startedTime = moment(worktrack.StartedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
-                            const stop = moment(worktrack.StoppedTime).add(offset, 'm').format('YYYY-MM-DD hh:mm:ss');
+        return ( worktracks.map(worktrack => {
+                            const startedTime = moment(worktrack.startedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
+                            const stop = moment(worktrack.stoppedTime).add(offset, 'm').format('YYYY-MM-DD hh:mm:ss');
 
                             return (
-                                <tr key={worktrack.Id}>
-                                    <td>{worktrack.User}</td>
-                                    <td><NavLink style={{ width: '250px', display: 'inline' }} tag={Link} to={"/task/get/" + worktrack.TaskId}>{worktrack.Task}</NavLink>{}</td>
+                                <tr key={worktrack.id}>
+                                    <td>{worktrack.login}</td>
+                                    <td><NavLink style={{ width: '250px', display: 'inline' }} tag={Link} to={"/task/get/" + worktrack.taskId}>{worktrack.task}</NavLink></td>
                                     <td>{startedTime}</td>
                                     <td>{stop}</td>
-                                    <td>{worktrack.TotalTime}</td>
+                                    <td>{worktrack.totalTime}</td>
                                 </tr>
                             )
-                        }
-                        )
-                    
-
+                } )
         );
     }
 
@@ -173,10 +167,12 @@ export class Report extends PureComponent {
             <div>
                 <div>
                     <div>
-                        <div style={{ width: '270px', display: 'inline-block' }}> <Select options={this.state.projects} onChange={this.onProjectChange} /> </div>
-
-                        <div style={{ width: '260px', display: 'inline-block' }}><Select isDisabled={this.state.projectId == 0} isClearable={true} options={this.state.users} onChange={this.onUserChange} /> </div>
-                        <div style={{ width: '270px', display: 'inline-block' }}><Select isDisabled={this.state.projectId == 0} isClearable={true} options={this.state.tasks} onChange={this.onTaskChange} /> </div>
+                        <div style={{ width: '270px', display: 'inline-block', padding: '5px' }}>Проект: <Select options={this.state.projects} onChange={this.onProjectChange} /> </div>
+                        <div style={{ width: '260px', display: 'inline-block', padding: '5px' }}>Пользователь: <Select isDisabled={this.state.projectId == 0} isClearable={true} options={this.state.users} onChange={this.onUserChange} /> </div>
+                        <div style={{ width: '270px', display: 'inline-block', padding: '5px' }}>Задача: <Select isDisabled={this.state.projectId == 0} isClearable={true} options={this.state.tasks} onChange={this.onTaskChange} /> </div>
+                    </div>
+                    <div style={{ padding: '5px' }}>
+                        <div> Даты: </div>
                         <div style={{ width: '170px', display: 'inline-block' }}>
                             <span>С </span>
                             <input type="date" onChange={this.onFromDate} />
@@ -185,10 +181,11 @@ export class Report extends PureComponent {
                             <label>по </label>
                             <input type="date" onChange={this.onEndDate} />
                         </div>
-
                     </div>
-
-                    <button disabled={!isReady} onClick={(e) => { this.getStat() }}>Запросить</button>
+                    <hr />
+                    <div style={{ marginBottom: '15px' }}>
+                        <button disabled={!isReady} onClick={(e) => { this.getStat() }}>Запросить</button>
+                    </div>
                 </div>
                 <div>
                     <table className='table table-striped' aria-labelledby="tabelLabel">

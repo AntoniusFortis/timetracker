@@ -11,9 +11,9 @@ namespace Timetracker.Entities.Classes
     public class TimetrackerContext : DbContext, IDisposable
     {
         public DbSet<User> Users { get; set; }
-        public DbSet<Role> Rights { get; set; }
+        public DbSet<Role> Roles { get; set; }
         public DbSet<Project> Projects { get; set; }
-        public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
+        public DbSet<LinkedProject> LinkedProjects { get; set; }
         public DbSet<WorkTask> Worktasks { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<Worktrack> Worktracks { get; set; }
@@ -29,12 +29,12 @@ namespace Timetracker.Entities.Classes
 
             Database.Migrate();
 
-            Rights.Load();
+            Roles.Load();
             States.Load();
             Tokens.Load();
             Users.Load();
             Projects.Load();
-            AuthorizedUsers.Load();
+            LinkedProjects.Load();
             Worktasks.Load();
             Worktracks.Load();
         }
@@ -76,9 +76,9 @@ namespace Timetracker.Entities.Classes
             return user;
         }
 
-        public AuthorizedUser GetLinkedProjectForUser( int projectId, int userId )
+        public LinkedProject GetLinkedProjectForUser( int projectId, int userId )
         {
-            return AuthorizedUsers.FirstOrDefault( x => x.ProjectId == projectId && x.UserId == userId );
+            return LinkedProjects.FirstOrDefault( x => x.ProjectId == projectId && x.UserId == userId );
         }
 
         public bool CheckAccessForProject( int projectId, User user, bool invalidateCache = false )
@@ -86,7 +86,7 @@ namespace Timetracker.Entities.Classes
             var key = $"Access:{projectId}{user.Id}";
             if ( !_cache.TryGetValue( key, out bool hasAU ) || invalidateCache )
             {
-                hasAU = AuthorizedUsers.AsNoTracking()
+                hasAU = LinkedProjects.AsNoTracking()
                     .Any( x => x.ProjectId == projectId && x.User.Id == user.Id && x.Accepted );
 
                 if ( hasAU )

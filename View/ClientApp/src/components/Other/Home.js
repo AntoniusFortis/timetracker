@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { hasAuthorized } from './Account';
+import { hasAuthorized } from '../Account';
 import { Redirect } from 'react-router-dom';
 
 export const Home = () => {

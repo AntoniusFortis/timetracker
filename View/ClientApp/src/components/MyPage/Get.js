@@ -1,6 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Get, Post } from '../../restManager';
 import { Redirect } from 'react-router';
+
+const InputField = (props) => {
+    return (
+        <div style={{ paddingTop: '15px' }}>
+            <input required={props.required} minLength={props.minLength} maxLength={props.maxLength} style={{ width: '270px', textAlign: 'center' }} type={props.type} placeholder={props.placeholder} value={props.value} onChange={props.onChange} />
+        </div>);
+}
 
 export const MyPageGet = () => {
     const [currentPwd, setCurrentPwd] = useState('');
@@ -14,7 +21,7 @@ export const MyPageGet = () => {
     const [email, setEmail] = useState('');
     const [referrer, setReferrer] = useState(null);
 
-    const getInfo = () => {
+    const getInfo = useCallback(() => {
         Get('api/mypage/get', (response) => {
             response.json().then(result => {
                 setFirstName(result.user.FirstName);
@@ -25,8 +32,7 @@ export const MyPageGet = () => {
                 setEmail(result.user.Email);
             });
         });
-    }
-
+    }, []);
 
     useEffect(() => getInfo(), []);
 
@@ -62,38 +68,24 @@ export const MyPageGet = () => {
     }
 
     return (
-        <div>
+        <div style={{ width: '300px', margin: '0 auto', paddingTop: '60px', height: '300px', display: 'block' }}>
             {referrer && <Redirect to={referrer} />}
             <form onSubmit={updateInfo}>
-                <p>
-                    <input type="password" minLength="4" maxLength="20" placeholder="Введите нынешний пароль" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} />
-                </p>
-            <p>
-                <input type="password" minLength="4" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </p>
-            <p>
-                <input type="password" minLength="4" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" required minLength="2" maxLength="30" placeholder="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" required minLength="2" maxLength="30" placeholder="Фамилия" value={surname} onChange={(e) => setSurname(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" minLength="2" maxLength="30" placeholder="Отчество" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
-            </p>
-            <p>
-                <input type="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" minLength="3" maxLength="50" placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} />
-            </p>
-            <p>
-                <input type="date" placeholder="Дата рождения" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-            </p>
+                <InputField type="password" required={false} minLength="4" maxLength="20" placeholder="Нынешний пароль" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} />
+                <InputField type="password" required={false} minLength="4" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <InputField type="password" required={false} minLength="4" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
+                <InputField type="text" required={true} minLength="2" maxLength="30" placeholder="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <InputField type="text" required={true} minLength="2" maxLength="30" placeholder="Фамилия" value={surname} onChange={(e) => setSurname(e.target.value)} />
+                <InputField type="text" required={false} minLength="2" maxLength="30" placeholder="Отчество" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+                <div style={{ paddingTop: '15px' }}>
+                    <input required style={{ width: '270px', textAlign: 'center' }} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <InputField type="text" required={false} minLength="3" maxLength="50" placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} />
+                <div style={{ paddingTop: '15px' }}>
+                    <input style={{ width: '270px', textAlign: 'center' }} type="date" placeholder="Дата рождения" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+                </div>
             <br />
-            <input type="submit" value="Изменить" />
+                <input style={{ display: 'block', width: '270px', marginTop: '15px' }} type="submit" value="Изменить" />
             </form>
         </div>);
 }

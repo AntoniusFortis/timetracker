@@ -6,7 +6,6 @@ import { Tabs, Tab } from '../../Tabs';
 import moment from 'moment'
 import { Redirect } from 'react-router';
 import { NavLink } from 'reactstrap';
-import { Link } from 'react-router-dom';
 const editIcon = require('../editProject.png');
 const deleteIcon = require('../deleteProject.png');
 
@@ -105,14 +104,14 @@ export class TaskGet extends Component {
                 <tbody>
                     {
                         worktracks.map(worktrack => {
-                            const start = moment(worktrack.StartedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
-                            const stop = moment(worktrack.StoppedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
+                            const start = moment(worktrack.startedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
+                            const stop = moment(worktrack.stoppedTime).add(offset, 'm').format('YYYY-MM-DD HH:mm:ss');
                             return (
-                                <tr key={worktrack.Id}>
-                                    <td>{worktrack.User}</td>
+                                <tr key={worktrack.id}>
+                                    <td>{worktrack.login}</td>
                                     <td>{start}</td>
                                     <td>{stop}</td>
-                                    <td>{worktrack.TotalTime}</td>
+                                    <td>{worktrack.totalTime}</td>
                                 </tr>
                             )
                          } )

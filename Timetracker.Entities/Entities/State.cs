@@ -4,6 +4,8 @@ namespace Timetracker.Entities.Models
 {
     public class State
     {
+        [Key]
+        [Required]
         public byte Id { get; set; }
 
         [Required]

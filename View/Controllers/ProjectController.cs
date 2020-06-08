@@ -76,7 +76,7 @@ namespace View.Controllers
                 } );
             }
 
-            var users = await _dbContext.AuthorizedUsers.Where(x => x.ProjectId == projectId)
+            var users = await _dbContext.LinkedProjects.Where(x => x.ProjectId == projectId)
                 .Select(x => new {
                     Id = x.UserId,
                     login = x.User.Login,
@@ -98,7 +98,7 @@ namespace View.Controllers
             byte rId = byte.Parse( model.rightId);
             int pId = int.Parse( model.projectId);
 
-            var authorizedUsers = await _dbContext.AuthorizedUsers.SingleOrDefaultAsync(x => x.User.Login == model.userLogin && x.ProjectId == pId )
+            var authorizedUsers = await _dbContext.LinkedProjects.SingleOrDefaultAsync(x => x.User.Login == model.userLogin && x.ProjectId == pId )
                 .ConfigureAwait(false);
 
             authorizedUsers.RightId = (byte)rId;
@@ -119,7 +119,7 @@ namespace View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name, true )
                 .ConfigureAwait(false);
 
-            var authorizedUsers = await _dbContext.AuthorizedUsers.SingleAsync(x => x.UserId == user.Id && x.ProjectId == id)
+            var authorizedUsers = await _dbContext.LinkedProjects.SingleAsync(x => x.UserId == user.Id && x.ProjectId == id)
                 .ConfigureAwait(false);
 
             var response = new
@@ -146,7 +146,7 @@ namespace View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var authorizedUsers = await _dbContext.AuthorizedUsers.FirstOrDefaultAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
+            var authorizedUsers = await _dbContext.LinkedProjects.FirstOrDefaultAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
                 .ConfigureAwait(false);
 
             if ( authorizedUsers == null )
@@ -187,7 +187,7 @@ namespace View.Controllers
 
             var projectId = model.projectId;
 
-            var authorizedUsers = await _dbContext.AuthorizedUsers.SingleAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
+            var authorizedUsers = await _dbContext.LinkedProjects.SingleAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
                 .ConfigureAwait(false);
 
             authorizedUsers.Accepted = true;
@@ -210,11 +210,11 @@ namespace View.Controllers
             var projectId = int.Parse( model.ProjectId );
             var userId = model.UserId;
 
-            var au = await _dbContext.AuthorizedUsers
+            var au = await _dbContext.LinkedProjects
                 .FirstOrDefaultAsync( x => x.ProjectId == projectId && x.UserId == userId )
                 .ConfigureAwait(false);
 
-            _dbContext.AuthorizedUsers.Remove( au );
+            _dbContext.LinkedProjects.Remove( au );
 
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
@@ -233,7 +233,7 @@ namespace View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var hasAccess = await _dbContext.AuthorizedUsers.AnyAsync( x => x.ProjectId == projectId && x.User.Id == user.Id  && x.RightId != 1 )
+            var hasAccess = await _dbContext.LinkedProjects.AnyAsync( x => x.ProjectId == projectId && x.User.Id == user.Id  && x.RightId != 1 )
                 .ConfigureAwait(false);
 
             if ( !hasAccess )
@@ -250,7 +250,7 @@ namespace View.Controllers
                 .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
 
-            if ( _dbContext.AuthorizedUsers.AsNoTracking().Any( x => x.UserId == newUserId && x.ProjectId == projectId ) )
+            if ( _dbContext.LinkedProjects.AsNoTracking().Any( x => x.UserId == newUserId && x.ProjectId == projectId ) )
             {
                 return new JsonResult( new ErrorResponse
                 {
@@ -258,7 +258,7 @@ namespace View.Controllers
                 } );
             }
 
-            await _dbContext.AuthorizedUsers.AddAsync( new AuthorizedUser
+            await _dbContext.LinkedProjects.AddAsync( new LinkedProject
             {
                 ProjectId = projectId,
                 UserId = newUserId,
@@ -282,14 +282,6 @@ namespace View.Controllers
         [HttpPost]
         public async Task<JsonResult> Add( [FromBody] AddProjectModel model )
         {
-            if ( string.IsNullOrEmpty( model.title.Trim() ) )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Вы не ввели название проекта"
-                } );
-            }
-
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
@@ -312,7 +304,7 @@ namespace View.Controllers
             await _dbContext.SaveChangesAsync()
                    .ConfigureAwait( false );
 
-            await _dbContext.AddAsync( new AuthorizedUser
+            await _dbContext.AddAsync( new LinkedProject
             {
                 Accepted = true,
                 ProjectId = addedProject.Entity.Id,
@@ -325,9 +317,8 @@ namespace View.Controllers
             await _dbContext.SaveChangesAsync()
                            .ConfigureAwait( false );
 
-            return new JsonResult( new
+            return new JsonResult( new ProjectAddResponse
             {
-                status = HttpStatusCode.OK,
                 project = addedProject
             } );
         }
@@ -341,7 +332,7 @@ namespace View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var userProjects = _dbContext.AuthorizedUsers.AsNoTracking()
+            var userProjects = _dbContext.LinkedProjects.AsNoTracking()
                 .Where(x => x.UserId == user.Id);
 
             var acceptedProjects = await userProjects.Where( x => x.Accepted )
@@ -416,7 +407,7 @@ namespace View.Controllers
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            var users = await _dbContext.AuthorizedUsers.AsNoTracking()
+            var users = await _dbContext.LinkedProjects.AsNoTracking()
                 .Where(x => x.ProjectId == id )
                 .Select(x => new
                 {
@@ -461,7 +452,7 @@ namespace View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var hasAccess = await _dbContext.AuthorizedUsers.AnyAsync( x => x.ProjectId == model.Project.Id && x.User.Id == user.Id  && x.RightId != 1 )
+            var hasAccess = await _dbContext.LinkedProjects.AnyAsync( x => x.ProjectId == model.Project.Id && x.User.Id == user.Id  && x.RightId != 1 )
                 .ConfigureAwait(false);
 
             if ( !hasAccess )
@@ -514,7 +505,7 @@ namespace View.Controllers
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var hasAccess = await _dbContext.AuthorizedUsers.AnyAsync( x => x.ProjectId == projectId && x.User.Id == user.Id  && x.RightId != 1 )
+            var hasAccess = await _dbContext.LinkedProjects.AnyAsync( x => x.ProjectId == projectId && x.User.Id == user.Id  && x.RightId != 1 )
                 .ConfigureAwait(false);
 
             if ( !hasAccess )
@@ -525,8 +516,8 @@ namespace View.Controllers
                 } );
             }
 
-            var linkedProjects = _dbContext.AuthorizedUsers.Where( x => x.ProjectId == projectId );
-            _dbContext.AuthorizedUsers.RemoveRange( linkedProjects );
+            var linkedProjects = _dbContext.LinkedProjects.Where( x => x.ProjectId == projectId );
+            _dbContext.LinkedProjects.RemoveRange( linkedProjects );
 
             var project = await _dbContext.Projects.FirstOrDefaultAsync(x => x.Id == projectId)
                 .ConfigureAwait(false);

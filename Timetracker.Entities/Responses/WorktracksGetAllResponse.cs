@@ -3,17 +3,13 @@ using System.Net;
 
 namespace Timetracker.Models.Responses
 {
-    public class ReportResponse
+    public class WorktracksGetAllResponse
     {
         public HttpStatusCode status = HttpStatusCode.OK;
 
         public int id { get; set; }
 
         public string login { get; set; }
-
-        public string task { get; set; }
-
-        public int taskId { get; set; }
 
         public DateTime startedTime { get; set; }
 

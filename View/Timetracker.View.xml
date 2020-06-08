@@ -19,12 +19,12 @@
             Получить информацию о проекте
             </summary>
         </member>
-        <member name="M:View.Controllers.ProjectController.Update(View.Controllers.CU_ProjectView)">
+        <member name="M:View.Controllers.ProjectController.Update(Timetracker.Models.Models.ProjectUpdateModel)">
             <summary>
             Обновить проект
             </summary>
         </member>
-        <member name="M:View.Controllers.ProjectController.Delete(System.Nullable{System.Int32})">
+        <member name="M:View.Controllers.ProjectController.Delete(System.Nullable{System.UInt32})">
             <summary>
             Удалить проект
             </summary>

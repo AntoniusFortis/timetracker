@@ -14,10 +14,11 @@ using Microsoft.Extensions.Caching.Memory;
 using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
 using Timetracker.Entities.Responses;
+using Timetracker.Models.Responses;
 
 namespace Timetracker.Entities.Controllers
 {
-    [Produces("application/json", new[] { "multipart/form-data" })]
+    [Produces("application/json")]
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class MyPageController : ControllerBase
@@ -55,9 +56,8 @@ namespace Timetracker.Entities.Controllers
                 dbUser.Email
             };
 
-            return new JsonResult( new
+            return new JsonResult( new MypageGetResponse
             {
-                status = HttpStatusCode.OK,
                 user = user
             }, _jsonOptions );
         }

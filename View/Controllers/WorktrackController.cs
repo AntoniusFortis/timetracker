@@ -47,12 +47,12 @@ namespace Timetracker.Entities.Controllers
 
             var worktracks = await _dbContext.Worktracks.Where(x => x.WorktaskId == id.Value && !x.Running )
                 .OrderByDescending( x => x.StartedTime )
-                .Select( x => new {
-                    x.Id,
-                    User = x.User.Login,
-                    StartedTime = x.StartedTime,
-                    StoppedTime = x.StoppedTime,
-                    TotalTime = (x.StoppedTime - x.StartedTime).ToString(@"hh\:mm\:ss")
+                .Select( x => new WorktracksGetAllResponse {
+                    id = x.Id,
+                    login = x.User.Login,
+                    startedTime = x.StartedTime,
+                    stoppedTime = x.StoppedTime,
+                    totalTime = (x.StoppedTime - x.StartedTime).ToString(@"hh\:mm\:ss")
                 })
                 .ToListAsync()
                 .ConfigureAwait(false);

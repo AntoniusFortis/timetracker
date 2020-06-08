@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import { NavLink } from 'reactstrap';
 import { Tabs, Tab } from '../../Tabs';
 import Select from 'react-select';
+import { Redirect } from 'react-router';
+const addUser = require('../addUser.png');
+const addTaskIcon = require('../addTask.png');
 const editIcon = require('../editProject.png');
 const deleteIcon = require('../deleteProject.png');
 
@@ -14,20 +17,29 @@ const ProjectHeaderPanel = (props) => {
         </form>
     </div> : (<div />);
 
+    const changeButton = props.isAdmin ? <div style={{ display: "inline-block", margin: '5px' }}>
+        <button onClick={props.onClickEditProject} style={{ border: 'none', paddingLeft: '2px' }}><img src={editIcon} style={{ marginBottom: '3px' }} width="28"></img><span>Редактировать</span></button>
+    </div> : (<div />);
+
+    const adminRightes = props.isAdmin ? <div style={{ display: "inline-block", margin: '5px' }}>
+            <button onClick={props.onClickInviteProject} style={{ border: 'none', paddingLeft: '2px' }}><img src={addUser} style={{ marginBottom: '3px' }} width="28"></img><span>Добавить участников</span></button>
+        </div> : (<div />);
+
     return <div>
         <div style={{ display: 'block' }}>
             <h4>Проект: {props.Title}</h4>
         </div>
         {removebutton}
-        {
-            props.isAdmin && <button onClick={props.onClickEditProject}>Редактировать проект</button>
-        }
+        {changeButton}
+        <div style={{ display: "inline-block", margin: '5px' }}>
+            <button onClick={props.onClickAddTask} style={{ border: 'none', paddingLeft: '2px' }}><img src={addTaskIcon} style={{ marginBottom: '3px' }} width="28"></img><span>Добавить задачу</span></button>
+        </div>
+        {adminRightes}
     </div>;
 }
 
 const WorktasksPanel = (props) => {
     return (<div>
-        <NavLink style={{ width: '250px', display: 'inline' }} tag={Link} to={"/task/add/" + props.projectId}>Добавить задачу</NavLink>
         <TaskList tasks={props.tasks} />
     </div>);
 }
@@ -58,8 +70,8 @@ const TaskList = ({ tasks }) => (
 export class ProjectGet extends Component {
     projectId = null;
     options = [
-        { value: '1', label: 'Администратор' },
-        { value: '2', label: 'Пользователь' }
+        { value: '2', label: 'Администратор' },
+        { value: '1', label: 'Пользователь' }
     ]
 
     constructor(props) {
@@ -71,8 +83,7 @@ export class ProjectGet extends Component {
             users: [],
             caller: {},
             tasks: [],
-            isAdmin: true,
-            orderTasksFunc: (tasks) => tasks
+            referrer: null
         };
 
         this.projectId = this.props.match.params.projectId;
@@ -164,7 +175,11 @@ export class ProjectGet extends Component {
     }
 
     onClickEditProject = (event) => {
-        window.location.href = "/project/update/" + this.props.match.params.projectId;
+        this.setState({ referrer: "/project/update/" + this.props.match.params.projectId  });
+    }
+
+    onClickAddTask = (event) => {
+        this.setState({ referrer: "/task/add/" + this.props.match.params.projectId });
     }
 
     onClickInviteProject = (event) => {
@@ -179,17 +194,15 @@ export class ProjectGet extends Component {
 
         const users = this.renderUsersTable(this.state.users, this.state.caller.right.Id !== 1);
 
-        const adminRightes = this.state.caller.right.Id !== 1 ? <button onClick={this.onClickInviteProject}>Добавить участников</button> : (<div />);
-
         return (
             <div>
-                <ProjectHeaderPanel isAdmin={this.state.isAdmin} Id={this.state.project.Id} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
+                {this.state.referrer && <Redirect to={this.state.referrer} />}
+                <ProjectHeaderPanel isAdmin={this.state.caller.right.Id !== 1} Id={this.state.project.Id} onClickInviteProject={this.onClickInviteProject} onClickAddTask={this.onClickAddTask} Title={this.state.project.Title} onClickEditProject={this.onClickEditProject} onRemoveProject={this.onRemoveProject} />
                 <Tabs selectedTab={this.state.selectedTab} onChangeTab={selectedTab => this.setState({ selectedTab })}>
                     <Tab name="first" title="Задачи">
                         <WorktasksPanel projectId={this.props.match.params.projectId} tasks={this.state.tasks} />
                     </Tab>
                     <Tab name="second" title="Участники">
-                        {adminRightes}
                         {users}
                     </Tab>
                 </Tabs>

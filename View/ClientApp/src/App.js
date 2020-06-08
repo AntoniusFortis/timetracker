@@ -1,7 +1,7 @@
 import React, { PureComponent, Component } from 'react';
 import { Route } from 'react-router';
 import { Layout } from './components/Layout';
-import { Home } from './components/Home';
+import { Home } from './components/Other/Home';
 
 import { SignIn } from './components/Account/SignIn';
 import { SignUp } from './components/Account/SignUp';

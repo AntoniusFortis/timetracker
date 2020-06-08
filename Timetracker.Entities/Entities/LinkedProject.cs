@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Timetracker.Entities.Models
 {
-    public class AuthorizedUser
+    public class LinkedProject
     {
         [Key]
         public int Id { get; set; }

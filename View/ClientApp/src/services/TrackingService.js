@@ -27,6 +27,7 @@ export const TrackingService = (props) => {
     }, []);
 
     const startTracking = useCallback(() => {
+        debugger;
         SignalR_Provider.getConnection(getToken())
             .invoke('StartTracking', props.worktaskId)
             .catch(err => {
