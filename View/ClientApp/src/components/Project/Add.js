@@ -20,12 +20,14 @@ export const ProjectAdd = () => {
         const body = { title: title, description: descr };
 
         Post('api/project/add', body, (response) => {
-            if (response.status === 200) {
-                setReferrer('/project/all');
-            }
-            else {
-                alert(response.message);
-            }
+            response.json().then(result => {
+                if (result.status === 200) {
+                    setReferrer('/project/all');
+                }
+                else {
+                    alert(result.message);
+                }
+            });
         });
     }, [title, descr])
 
@@ -37,7 +39,7 @@ export const ProjectAdd = () => {
                 <div style={{ paddingTop: '15px' }}>
                     <textarea style={{ width: '270px', textAlign: 'center' }} maxLength="250" placeholder="Описание" value={descr} onChange={(e) => setDescr(e.target.value)} />
                 </div>
-                <input style={{ display: 'block', width: '270px', marginTop: '15px' }}  type="submit" value="Создать" />
+                <input style={{ display: 'block', width: '270px', marginTop: '15px' }} type="submit" value="Создать" />
             </form>
         </div>);
 }

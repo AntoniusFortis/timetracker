@@ -70,8 +70,8 @@ const TaskList = ({ tasks }) => (
 export class ProjectGet extends Component {
     projectId = null;
     options = [
-        { value: '2', label: 'Администратор' },
-        { value: '1', label: 'Пользователь' }
+        { value: '1', label: 'Пользователь' },
+        { value: '2', label: 'Администратор' }
     ]
 
     constructor(props) {
@@ -169,7 +169,7 @@ export class ProjectGet extends Component {
             { },
             (response) => {
                 if (response.status === 200) {
-                    window.location.href = "/project/all";
+                    this.setState({ referrer: '/project/all' });
                 }
             });
     }
@@ -183,9 +183,8 @@ export class ProjectGet extends Component {
     }
 
     onClickInviteProject = (event) => {
-        window.location.href = "/project/invite/" + this.props.match.params.projectId;
+        this.setState({ referrer: "/project/invite/" + this.props.match.params.projectId });
     }
-
 
     render() {
         if (this.state.loading) {

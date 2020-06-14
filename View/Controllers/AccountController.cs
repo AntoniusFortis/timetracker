@@ -30,7 +30,7 @@ using Timetracker.Models.Responses;
 
 namespace View.Controllers
 {
-    [Produces("application/json", new[] { "multipart/form-data" })]
+    [Produces("application/json")]
     [ApiController]
     [AllowAnonymous]
     [Route("api/[controller]/[action]")]
@@ -73,7 +73,6 @@ namespace View.Controllers
 
                         return new JsonResult( new TokenResponse
                         {
-                            status = HttpStatusCode.OK,
                             access_token = dbToken.AccessToken,
                             refresh_token = dbToken.RefreshToken,
                             expired_in = ( dbToken.TokenExpiredDate - now ).TotalSeconds
@@ -102,7 +101,6 @@ namespace View.Controllers
             } );
         }
         [HttpPost]
-        [ResponseCache( Duration = 100 )]
         public async Task<IActionResult> SignIn( [FromBody] SignInModel model )
         {
             if ( string.IsNullOrEmpty( model.login.Trim() ) || string.IsNullOrEmpty( model.pass.Trim() ) )
@@ -153,7 +151,6 @@ namespace View.Controllers
             {
                 return new JsonResult( new SignInResponse
                 {
-                    status = HttpStatusCode.OK,
                     access_token = dbToken.AccessToken,
                     refresh_token = dbToken.RefreshToken,
                     expired_in = ( dbToken.TokenExpiredDate - now ).TotalSeconds,
@@ -179,7 +176,6 @@ namespace View.Controllers
 
             return new JsonResult( new SignInResponse
             {
-                status = HttpStatusCode.OK,
                 access_token = dbToken.AccessToken,
                 refresh_token = dbToken.RefreshToken,
                 expired_in = ( dbToken.TokenExpiredDate - now ).TotalSeconds,
@@ -194,7 +190,7 @@ namespace View.Controllers
             var currentUser = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            return new JsonResult( new
+            return new JsonResult( new GetCurrentUserResponse
             {
                 status = HttpStatusCode.OK,
                 user = currentUser
@@ -234,9 +230,8 @@ namespace View.Controllers
             await _dbContext.AddAsync( user ).ConfigureAwait( false );
             await _dbContext.SaveChangesAsync().ConfigureAwait( false );
 
-            return new JsonResult( new
+            return new JsonResult( new OkResponse
             {
-                status = HttpStatusCode.OK,
                 message = "Регистрация пройдена успешно"
             } );
         }

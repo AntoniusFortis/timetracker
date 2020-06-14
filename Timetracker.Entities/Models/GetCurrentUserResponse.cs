@@ -1,12 +1,12 @@
 ﻿using System.Net;
 using Timetracker.Entities.Models;
 
-namespace Timetracker.Models.Responses
+namespace Timetracker.Models.Models
 {
-    public class WorktaskDeleteResponse
+    public class GetCurrentUserResponse
     {
         public HttpStatusCode status { get; set; } = HttpStatusCode.OK;
 
-        public WorkTask worktask { get; set; }
+        public User user { get; set; }
     }
 }

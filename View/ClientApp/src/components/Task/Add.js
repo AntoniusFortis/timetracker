@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { Post } from '../../restManager';
+import { Redirect } from 'react-router';
 
 const InputField = (props) => {
     return (
@@ -12,6 +13,7 @@ export const TaskAdd = (props) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [duration, setDuration] = useState('');
+    const [referrer, setReferrer] = useState(null);
 
     const tryAddTask = (event) => {
         event.preventDefault();
@@ -28,18 +30,19 @@ export const TaskAdd = (props) => {
         const body = { worktask: worktask };
 
         Post('api/task/add', body, (response) => {
-                if (response.status === 200) {
-                    window.location.href = '/project/get/' + props.match.params.projectId;
-                }
+            if (response.status === 200) {
+                setReferrer('/project/get/' + props.match.params.projectId);
+            }
         });
     }
 
     return (
         <div style={{ width: '300px', margin: '0 auto', paddingTop: '125px', height: '300px', display: 'block' }}>
+            {referrer && <Redirect to={referrer} />}
             <form style={{ width: '400px' }} onSubmit={tryAddTask}>
                 <InputField required={true} minLength="5" maxLength="50" type="text" placeholder="Название" value={title} onChange={(e) => setTitle(e.target.value)} />
                 <div style={{ paddingTop: '15px' }}>
-                    <input style={{ width: '270px', textAlign: 'center' }} type="number" min="1" max="100" placeholder="Длительность" value={duration} onChange={(e) => setDuration(e.target.value)} />
+                    <input style={{ width: '270px', textAlign: 'center' }} required type="number" min="1" max="100" placeholder="Сколько нужно часов на это?" value={duration} onChange={(e) => setDuration(e.target.value)} />
                 </div>
                 <div style={{ paddingTop: '15px' }}>
                     <textarea style={{ width: '270px', textAlign: 'center' }} maxLength="250" placeholder="Описание" value={description} onChange={(e) => setDescription(e.target.value)} />

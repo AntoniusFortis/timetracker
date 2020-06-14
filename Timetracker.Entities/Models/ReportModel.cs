@@ -1,7 +1,10 @@
-﻿namespace Timetracker.Entities.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Timetracker.Entities.Models
 {
     public class ReportModel
     {
+        [Required]
         public int projectId { get; set; }
 
         public int? userId { get; set; }

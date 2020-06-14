@@ -319,7 +319,12 @@ namespace View.Controllers
 
             return new JsonResult( new ProjectAddResponse
             {
-                project = addedProject
+                project = new
+                {
+                    addedProject.Entity.Id,
+                    addedProject.Entity.Title,
+                    addedProject.Entity.Description
+                }
             } );
         }
 

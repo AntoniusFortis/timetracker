@@ -34,7 +34,7 @@ export class TaskGet extends Component {
         Get("api/task/get?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ worktask: result.worktask, project: result.project, isAdmin: result.isAdmin });
+                    this.setState({ worktask: result.worktask, project: result.project, isAdmin: result.isAdmin !== 1 });
                 });
         });
     }

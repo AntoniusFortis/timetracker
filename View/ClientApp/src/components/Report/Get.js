@@ -108,7 +108,7 @@ export class Report extends PureComponent {
                     this.setState({
                         projectId: event.value,
                         tasks: tasks,
-                        isAdmin: result.caller.right.Id === 1
+                        isAdmin: result.caller.right.Id !== 1
                     }, () => { this.getUsers() });
                 });
         });

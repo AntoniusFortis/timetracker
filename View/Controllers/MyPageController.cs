@@ -111,35 +111,15 @@ namespace Timetracker.Entities.Controllers
                 dbUser.Email,
                 dbUser.BirthDate
             };
+
             await _dbContext.GetUserAsync( User.Identity.Name, true );
 
-            var response = new
+            return new JsonResult( new
             {
                 status = HttpStatusCode.OK,
                 newUser = user,
                 passwordChanged = passwordChanged
-            };
-
-            return new JsonResult(response, _jsonOptions);
+            }, _jsonOptions);
         }
-
-        //[HttpDelete]
-        //public async Task<JsonResult> Delete()
-        //{
-        //    var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == User.Identity.Name)
-        //        .ConfigureAwait(false);
-
-        //    _dbContext.Remove(user);
-
-        //    await _dbContext.SaveChangesAsync()
-        //        .ConfigureAwait(false);
-
-        //    var response = new
-        //    {
-        //        status = HttpStatusCode.OK
-        //    };
-
-        //    return new JsonResult(response, _jsonOptions);
-        //}
     }
 }

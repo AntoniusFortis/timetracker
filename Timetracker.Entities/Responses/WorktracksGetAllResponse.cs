@@ -5,7 +5,7 @@ namespace Timetracker.Models.Responses
 {
     public class WorktracksGetAllResponse
     {
-        public HttpStatusCode status = HttpStatusCode.OK;
+        public HttpStatusCode status { get; set; } = HttpStatusCode.OK;
 
         public int id { get; set; }
 

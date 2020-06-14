@@ -23,21 +23,25 @@ export class ProjectInvite extends PureComponent {
         const body = { ProjectId: projectId, UserName: user_input };
 
         Post("api/project/addUserToProject", body, (response) => {
-            if (response.status != 200) {
-                console.log(response.statusText);
-            }
             response.json().then(result => {
+                if (result.status === 200) {
                     window.location.href = "/project/get/" + projectId;
+                }
+                else {
+                    alert(result.message);
+                }
             });
         });
     }
 
     render() {
         return (
-            <form onSubmit={this.onSubmit}>
-                <input type="text" placeholder="Имя пользователя" onChange={this.onUserInputChange} />
-                <input type="submit" value="Принять" />
-            </form>
+            <div style={{ width: '300px', margin: '0 auto', paddingTop: '125px', height: '300px', display: 'block' }}>
+                <form style={{ width: '400px' }} onSubmit={this.onSubmit}>
+                    <input required style={{ width: '270px', textAlign: 'center' }} maxLength="20" min="3" type="text" placeholder="Логин пользователя" onChange={this.onUserInputChange} />
+                    <input style={{ display: 'block', width: '270px', marginTop: '15px' }} type="submit" value="Добавить" />
+                </form>
+            </div>
         );
     }
 }

@@ -31,34 +31,6 @@ const TrackingTimer = (props) => {
     return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
 }
 
-//class TrackingTimer extends Component {
-//    constructor(props) {
-//        super(props);
-
-//        this.state = {
-//            elapsed: 0
-//        };
-//    }
-
-//    componentDidMount() {
-//        this.timer = setInterval(this.tick, 1000);
-//    }
-
-//    componentWillUnmount() {
-//        clearInterval(this.timer);
-//    }
-
-//    tick = () => {
-//        this.setState({ elapsed: moment().utc() - this.props.start });
-//    }
-
-//    render() {
-//        const displayTime = moment(this.state.elapsed).utc();
-
-//        return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
-//    }
-//}
-
 class HeaderMenuTracking extends Component {
     timerId = 0;
 
@@ -156,6 +128,11 @@ export class NavMenu extends Component {
     }
 
     Signout = (event) => {
+        SignalR_Provider.callbacks = [];
+        SignalR_Provider.connection.stop();
+        SignalR_Provider.connection = null;
+        SignalR_Provider.trackingIsOn = false;
+
         localStorage.removeItem('tokenKey');
         NavMenu.Auth = false;
         this.setState({ collapsed: false });

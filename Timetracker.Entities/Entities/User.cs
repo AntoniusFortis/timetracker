@@ -13,7 +13,7 @@ namespace Timetracker.Entities.Models
         [Required]
         public string Login { get; set; }
 
-        [StringLength(200)]
+        [StringLength(500)]
         [Required]
         public string Pass { get; set; }
 

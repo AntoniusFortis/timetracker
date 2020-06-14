@@ -10,6 +10,7 @@ const InputField = (props) => {
 }
 
 export const MyPageGet = () => {
+    const [login, setLogin] = useState('');
     const [currentPwd, setCurrentPwd] = useState('');
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
@@ -24,6 +25,7 @@ export const MyPageGet = () => {
     const getInfo = useCallback(() => {
         Get('api/mypage/get', (response) => {
             response.json().then(result => {
+                setLogin(result.user.Login);
                 setFirstName(result.user.FirstName);
                 setSurname(result.user.Surname);
                 setMiddleName(result.user.MiddleName);
@@ -71,6 +73,9 @@ export const MyPageGet = () => {
         <div style={{ width: '300px', margin: '0 auto', paddingTop: '60px', height: '300px', display: 'block' }}>
             {referrer && <Redirect to={referrer} />}
             <form onSubmit={updateInfo}>
+                <div style={{ paddingTop: '15px' }}>
+                    <input disabled style={{ width: '270px', textAlign: 'center' }} type="text" value={login}/>
+                </div>
                 <InputField type="password" required={false} minLength="4" maxLength="20" placeholder="Нынешний пароль" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} />
                 <InputField type="password" required={false} minLength="4" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <InputField type="password" required={false} minLength="4" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
