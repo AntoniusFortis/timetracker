@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Timetracker.Entities.Entity;
 using Timetracker.Entities.Models;
 
 namespace Timetracker.Entities.Classes
@@ -10,33 +11,40 @@ namespace Timetracker.Entities.Classes
     public class TimetrackerContext : DbContext, IDisposable
     {
         public DbSet<User> Users { get; set; }
-        public DbSet<Right> Rights { get; set; }
+        public DbSet<Role> Roles { get; set; }
         public DbSet<Project> Projects { get; set; }
-        public DbSet<AuthorizedUser> AuthorizedUsers { get; set; }
-        public DbSet<WorkTask> Tasks { get; set; }
+        public DbSet<LinkedProject> LinkedProjects { get; set; }
+        public DbSet<WorkTask> Worktasks { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<Worktrack> Worktracks { get; set; }
+        public DbSet<Token> Tokens { get; set; }
 
         private readonly IMemoryCache _cache;
         private readonly MemoryCacheEntryOptions cacheOptions;
 
-        public TimetrackerContext(DbContextOptions options, IMemoryCache cache) : base(options)
+        public TimetrackerContext(DbContextOptions<TimetrackerContext> options, IMemoryCache cache) : base(options)
         {
             _cache = cache;
             cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(1));
 
+            Database.Migrate();
+
+            Roles.Load();
+            States.Load();
+            Tokens.Load();
             Users.Load();
             Projects.Load();
-            AuthorizedUsers.Load();
-            Tasks.Load();
-            States.Load();
+            LinkedProjects.Load();
+            Worktasks.Load();
             Worktracks.Load();
         }
 
         protected override void OnModelCreating( ModelBuilder modelBuilder )
         {
+            base.OnModelCreating( modelBuilder );
+
             modelBuilder.Entity<Worktrack>()
-            .HasOne( p => p.Task )
+            .HasOne( p => p.Worktask )
             .WithMany( t => t.WorkTracks )
             .OnDelete( DeleteBehavior.Cascade );
 
@@ -46,40 +54,44 @@ namespace Timetracker.Entities.Classes
                 .OnDelete( DeleteBehavior.Cascade );
         }
 
-        public bool UserExists( string name )
+        public async Task<bool> UserExists( string name )
         {
-            var exist = Users.AsNoTracking().Any(p => p.Login == name);
-            return exist;
+            return await Users.AsNoTracking().AnyAsync( p => p.Login == name );
         }
 
-        public async Task<User> GetUserAsync(string name, bool invalidateCache = false)
+        public async Task<User> GetUserAsync( string name, bool invalidateCache = false )
         {
-            if ( invalidateCache || !_cache.TryGetValue(name, out User user) )
+            if ( invalidateCache || !_cache.TryGetValue( $"UserObject:{name}", out User user ) )
             {
                 user = await Users
-                    .SingleOrDefaultAsync(p => p.Login == name)
-                    .ConfigureAwait(false);
+                    .SingleOrDefaultAsync( p => p.Login == name )
+                    .ConfigureAwait( false );
 
-                if (user != null)
+                if ( user != null )
                 {
-                    _cache.Set(user.Login, user, cacheOptions);
+                    _cache.Set( $"UserObject:{user.Login}", user, cacheOptions );
                 }
             }
 
             return user;
         }
 
-        public bool CheckAccessForProject(int projectId, User user)
+        public LinkedProject GetLinkedProjectForUser( int projectId, int userId )
         {
-            var key = $"{projectId}{user.Id}";
-            if (!_cache.TryGetValue(key, out bool hasAU))
-            {
-                hasAU = AuthorizedUsers.AsNoTracking()
-                    .Any(x => x.ProjectId == projectId && x.User.Id == user.Id);
+            return LinkedProjects.FirstOrDefault( x => x.ProjectId == projectId && x.UserId == userId );
+        }
 
-                if (hasAU)
+        public bool CheckAccessForProject( int projectId, User user, bool invalidateCache = false )
+        {
+            var key = $"Access:{projectId}{user.Id}";
+            if ( !_cache.TryGetValue( key, out bool hasAU ) || invalidateCache )
+            {
+                hasAU = LinkedProjects.AsNoTracking()
+                    .Any( x => x.ProjectId == projectId && x.User.Id == user.Id && x.Accepted );
+
+                if ( hasAU )
                 {
-                    _cache.Set(key, hasAU, cacheOptions);
+                    _cache.Set( key, hasAU, cacheOptions );
                 }
             }
 

@@ -15,15 +15,22 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Timetracker.Entities.Classes;
+using Timetracker.Entities.Entity;
 using Timetracker.Entities.Models;
 using Timetracker.Entities.Responses;
-using Timetracker.View;
+using Timetracker.Entities;
+using Timetracker.Models.Models;
+using Timetracker.Models.Helpers;
+using Timetracker.Models.Response;
+using Timetracker.Models.Responses;
 
 namespace View.Controllers
 {
-    [Produces("application/json", new[] { "multipart/form-data" })]
+    [Produces("application/json")]
     [ApiController]
     [AllowAnonymous]
     [Route("api/[controller]/[action]")]
@@ -54,76 +61,73 @@ namespace View.Controllers
                 if ( now >= token.ValidTo )
                 {
                     var login = token.Claims.FirstOrDefault().Value;
-                    var dbUser = await _dbContext.GetUserAsync(login, true);
 
-                    if ( dbUser.RefreshToken == model.RefreshToken )
+                    var dbUser = await _dbContext.GetUserAsync(login, true)
+                        .ConfigureAwait(false);
+
+                    var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId);
+
+                    if ( dbToken.RefreshToken == model.RefreshToken )
                     {
-                        GenerateToken( login, dbUser );
+                        await TokenHelpers.GenerateToken( login, dbToken, _dbContext );
 
-                        var responseToken = new
+                        return new JsonResult( new TokenResponse
                         {
-                            status = HttpStatusCode.OK,
-                            access_token = dbUser.AccessToken,
-                            refresh_token = dbUser.RefreshToken,
-                            expired_in = (dbUser.TokenExpiredDate - now).Value.TotalSeconds
-                        };
-
-                        return new JsonResult( responseToken );
+                            access_token = dbToken.AccessToken,
+                            refresh_token = dbToken.RefreshToken,
+                            expired_in = ( dbToken.TokenExpiredDate - now ).TotalSeconds
+                        } );
                     }
+                    else
+                    {
+                        return new JsonResult( new ErrorResponse
+                        {
+                            message = "Неверный Refresh Token"
+                        } );
+                    }
+                }
+                else
+                {
+                    return new JsonResult( new ErrorResponse
+                    {
+                        message = "Срок действия вашего токена ещё не истёк"
+                    } );
                 }
             }
 
-            var response = new
+            return new JsonResult( new ErrorResponse
             {
-                status = HttpStatusCode.InternalServerError
-            };
-
-            return new JsonResult( response );
-        }
-
-        private void GenerateToken(string login, User user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimsIdentity.DefaultNameClaimType, login)
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            var tokenLifetime = TimeSpan.FromMinutes( 30 );
-            var now = DateTime.UtcNow;
-            var expiredIn = now.Add( tokenLifetime );
-            var jwt = new JwtSecurityToken(
-                    issuer: TimetrackerAuthorizationOptions.ISSUER,
-                    audience: TimetrackerAuthorizationOptions.AUDIENCE,
-                    notBefore: now,
-                    claims: claimsIdentity.Claims,
-                    expires: expiredIn,
-                    signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-
-            var access_token = new JwtSecurityTokenHandler().WriteToken(jwt);
-            var refresh_token = Guid.NewGuid().ToString().Replace("-", "");
-
-            user.AccessToken = access_token;
-            user.RefreshToken = refresh_token;
-            user.TokenExpiredDate = expiredIn;
-
-            _dbContext.SaveChanges();
+                message = "Срок действия вашего токена ещё не истёк"
+            } );
         }
         [HttpPost]
-        public async Task<IActionResult> SignIn( [FromBody] SignInModel view )
+        public async Task<IActionResult> SignIn( [FromBody] SignInModel model )
         {
-            var dbUser = await _dbContext.GetUserAsync(view.Login, true)
-                .ConfigureAwait(false);
-
-            if ( dbUser == null )
+            if ( string.IsNullOrEmpty( model.login.Trim() ) || string.IsNullOrEmpty( model.pass.Trim() ) )
             {
-                return Unauthorized();
+                return new JsonResult( new ErrorResponse
+                {
+                    message = "Отсутствует логин или пароль"
+                } );
             }
 
-            var password = PasswordHelpers.EncryptPassword(view.Pass, dbUser.Salt, 1024);
+            var dbUser = await _dbContext.GetUserAsync(model.login, true)
+                .ConfigureAwait(false);
+            if ( dbUser == null )
+            {
+                return new JsonResult( new ErrorResponse
+                {
+                    message = "Пользователя с таким логином не существует"
+                } );
+            }
+
+            var password = PasswordHelpers.EncryptPassword(model.pass, dbUser.Salt);
             if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass ) )
             {
-                return Unauthorized();
+                return new JsonResult( new ErrorResponse
+                {
+                    message = "Неправильный логин или пароль"
+                } );
             }
 
             var now = DateTime.UtcNow;
@@ -140,32 +144,43 @@ namespace View.Controllers
                 dbUser.City
             };
 
-            if ( dbUser.TokenExpiredDate >= now )
-            {
-                var responseUser = new
-                {
-                    status = HttpStatusCode.OK,
-                    access_token = dbUser.AccessToken,
-                    refresh_token = dbUser.RefreshToken,
-                    expired_in = (dbUser.TokenExpiredDate - now).Value.TotalSeconds,
-                    user = user
-                };
+            var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId)
+                .ConfigureAwait(false);
 
-                return new JsonResult( responseUser );
+            if ( dbToken != null && dbToken.TokenExpiredDate >= now )
+            {
+                return new JsonResult( new SignInResponse
+                {
+                    access_token = dbToken.AccessToken,
+                    refresh_token = dbToken.RefreshToken,
+                    expired_in = ( dbToken.TokenExpiredDate - now ).TotalSeconds,
+                    user = user
+                } );
             }
 
-            GenerateToken( dbUser.Login, dbUser );
-
-            var responseWithToken = new
+            bool isFirst = false;
+            // Если пользователь авторизуется впервые
+            if ( dbToken == null )
             {
-                status = HttpStatusCode.OK,
-                access_token = dbUser.AccessToken,
-                refresh_token = dbUser.RefreshToken,
-                expired_in =  (dbUser.TokenExpiredDate - now).Value.TotalSeconds,
-                user = user
-            };
+                dbToken = new Token();
+                isFirst = true;
+            }
 
-            return new JsonResult( responseWithToken );
+            await TokenHelpers.GenerateToken( dbUser.Login, dbToken, _dbContext, isFirst )
+                .ConfigureAwait( false );
+
+            dbUser.TokenId = dbToken.Id;
+
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait( false );
+
+            return new JsonResult( new SignInResponse
+            {
+                access_token = dbToken.AccessToken,
+                refresh_token = dbToken.RefreshToken,
+                expired_in = ( dbToken.TokenExpiredDate - now ).TotalSeconds,
+                user = user
+            } );
         }
 
         [HttpGet]
@@ -175,54 +190,50 @@ namespace View.Controllers
             var currentUser = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var response = new
+            return new JsonResult( new GetCurrentUserResponse
             {
                 status = HttpStatusCode.OK,
                 user = currentUser
-            };
-
-            return new JsonResult( response, _jsonOptions );
+            }, _jsonOptions );
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignUp( AccountModel view )
+        public async Task<JsonResult> SignUp( [FromBody] SignUpModel model )
         {
-            var userExist = _dbContext.UserExists(view.Login);
+            var userExists = await _dbContext.UserExists(model.Login)
+                .ConfigureAwait(false);
 
-            if ( userExist )
+            if ( userExists )
             {
-                return BadRequest( new
+                return new JsonResult( new ErrorResponse
                 {
-                    text = "Пользователь с таким именем уже существует."
+                    message = "Пользователь с таким логином уже существует"
                 } );
             }
 
-            var salt = PasswordHelpers.GenerateSalt(16);
-            var hash = PasswordHelpers.EncryptPassword(view.Pass, salt, 1024);
+            var salt = PasswordHelpers.GenerateSalt();
+            var hash = PasswordHelpers.EncryptPassword(model.Pass, salt);
 
             var user = new User
             {
-                Login = view.Login,
+                Login = model.Login,
                 Pass = hash,
                 Salt = salt,
-                FirstName = view.FirstName,
-                Surname = view.Surname,
-                MiddleName = view.MiddleName,
-                City = view.City,
-                BirthDate = view.BirthDate,
-                Email = view.Email
+                FirstName = model.FirstName,
+                Surname = model.Surname,
+                MiddleName = model.MiddleName,
+                City = model.City,
+                BirthDate = model.BirthDate,
+                Email = model.Email
             };
 
             await _dbContext.AddAsync( user ).ConfigureAwait( false );
             await _dbContext.SaveChangesAsync().ConfigureAwait( false );
 
-            var response = new
+            return new JsonResult( new OkResponse
             {
-                status = HttpStatusCode.OK,
-                text = "Вы успешно зарегистрировались!"
-            };
-
-            return new JsonResult( response );
+                message = "Регистрация пройдена успешно"
+            } );
         }
     }
 }

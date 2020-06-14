@@ -1,7 +1,7 @@
 import React, { PureComponent, Component } from 'react';
 import { Route } from 'react-router';
-import { Layout } from './components/Layout';
-import { Home } from './components/Home';
+import { Layout } from './components/Other/Layout';
+import { Home } from './components/Other/Home';
 
 import { SignIn } from './components/Account/SignIn';
 import { SignUp } from './components/Account/SignUp';
@@ -16,11 +16,11 @@ import { TaskGet } from './components/Task/Get';
 import { TaskUpdate } from './components/Task/Update';
 import { TaskAdd } from './components/Task/Add';
 
-import { MyPageGet } from './components/MyPage/Get';
+import { MyPageGet } from './components/Mypage/Get';
 
 import { ErrorPageUnauthorized } from './components/Other/ErrorPage';
 
-import { Today } from './components/WorktrackStat/Get';
+import { Report } from './components/Report/Get';
 
 import './custom.css'
 
@@ -47,7 +47,7 @@ export default class App extends Component {
 
                 <Route exact path='/mypage/' component={MyPageGet} />
 
-                <Route exact path='/stat/' component={Today} />
+                <Route exact path='/report/' component={Report} />
             </Layout>
         );
     }

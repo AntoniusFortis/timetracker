@@ -6,7 +6,6 @@ export function Tabs({ children, selectedTab, onChangeTab }) {
         if (child.type === Tab) {
             const { title, name } = child.props
             tabProps.push({ title, name })
-            // By default show first tab if there is none selected
             if (selectedTab ? (selectedTab !== child.props.name) : (tabProps.length !== 1)) {
                 return null
             }

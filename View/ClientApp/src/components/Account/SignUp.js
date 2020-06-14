@@ -1,6 +1,13 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { Post } from '../../restManager';
 import { Redirect } from 'react-router';
+
+const InputField = (props) => {
+    return (
+        <div style={{ paddingTop: '15px' }}>
+            <input required={props.required} minLength={props.minLength} maxLength={props.maxLength} style={{ width: '270px', textAlign: 'center' }} type={props.type} placeholder={props.placeholder} value={props.value} onChange={props.onChange} />
+        </div>);
+}
 
 export const SignUp = () => {
     const [name, setName] = useState('');
@@ -14,13 +21,16 @@ export const SignUp = () => {
     const [email, setEmail] = useState('');
     const [referrer, setReferrer] = useState(null);
 
-    const onSuccessSignedUp = (response) => {
+    const onResponse = useCallback((response) => {
         if (response.status === 200) {
             setReferrer('/account/signin');
         }
-    }
+        else {
+            alert(response.message);
+        }
+    }, []);
 
-    const trySignUp = (event) => {
+    const trySignUp = useCallback((event) => {
         event.preventDefault();
 
         if (password !== password2) {
@@ -39,42 +49,27 @@ export const SignUp = () => {
             Email: email
         }
 
-        Post('api/account/signup', body, onSuccessSignedUp);
-    }
+        Post('api/account/signup', body, (response) => {
+            response.json().then(onResponse);
+        });
+    }, [name, password, password2, firstName, surname, middleName, city, birthDate, email]);
 
     return (
-        <div>
+        <div style={{ width: '300px', margin: '0 auto', paddingTop: '60px', height: '300px', display: 'block' }}>
             {referrer && <Redirect to={referrer} />}
-        <form onSubmit={trySignUp}>
-            <p>
-                <input type="text" required minLength="4" maxLength="20" placeholder="Логин" value={name} onChange={(e) => setName(e.target.value)} />
-            </p>
-            <p>
-                <input type="password" required minLength="5" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </p>
-            <p>
-                <input type="password" required minLength="5" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" required minLength="2" maxLength="30" placeholder="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" required minLength="2" maxLength="30" placeholder="Фамилия" value={surname} onChange={(e) => setSurname(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" minLength="2" maxLength="30" placeholder="Отчество" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
-            </p>
-            <p>
-                <input type="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </p>
-            <p>
-                <input type="text" minLength="3" maxLength="50" placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} />
-            </p>
-            <p>
-                <input type="date" placeholder="Дата рождения" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-            </p>
-            <br />
-            <input type="submit" value="Зарегистрироваться" />
+            <form onSubmit={trySignUp}>
+                <InputField type="text" required={true} minLength="4" maxLength="20" placeholder="Логин" value={name} onChange={(e) => setName(e.target.value)} />
+                <InputField type="password" required={true} minLength="5" maxLength="20" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <InputField type="password" required={true} minLength="5" maxLength="20" placeholder="Повторите пароль" value={password2} onChange={(e) => setPassword2(e.target.value)} />
+                <InputField type="text" required={true} minLength="2" maxLength="30" placeholder="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <InputField type="text" required={true} minLength="2" maxLength="30" placeholder="Фамилия" value={surname} onChange={(e) => setSurname(e.target.value)} />
+                <InputField type="text" required={false} minLength="2" maxLength="30" placeholder="Отчество" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+                <InputField type="email" required={true} minLength="3" maxLength="80" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <InputField type="text" required={false} minLength="3" maxLength="50" placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} />
+                <div style={{ paddingTop: '15px' }}>
+                    <input style={{ width: '270px', textAlign: 'center' }} type="date" placeholder="Дата рождения" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+                </div>
+                <input style={{ display: 'block', width: '270px', marginTop: '15px' }} type="submit" value="Зарегистрироваться" />
             </form>
         </div>);
 }

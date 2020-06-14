@@ -6,17 +6,17 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Timetracker.Entities.Classes;
+using Timetracker.Entities.Hubs;
 using Timetracker.Entities.Models;
+using Timetracker.Models.Models;
+using Timetracker.Models.Response;
+using Timetracker.Models.Responses;
 
-namespace Timetracker.View.Controllers
+namespace Timetracker.Entities.Controllers
 {
-    public class TaskUpdateModel
-    {
-        public WorkTask worktask { get; set; }
-    }
-
     public class UpdateStateModel
     {
         public int TaskId { get; set; }
@@ -31,67 +31,74 @@ namespace Timetracker.View.Controllers
     {
         private readonly TimetrackerContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly IHubContext<TrackingHub> _hub;
 
-        public TaskController(TimetrackerContext authorizedUsersRepository)
+        public TaskController(TimetrackerContext dbContext, IHubContext<TrackingHub> hub )
         {
-            _dbContext = authorizedUsersRepository;
+            _dbContext = dbContext;
 
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             };
+            _hub = hub;
         }
 
         [HttpPost]
-        public async Task<JsonResult> Add(TaskUpdateModel view)
+        public async Task<JsonResult> Add( [FromBody] WorktaskUpdateModel model )
         {
-            var worktask = view.worktask;
+            var worktask = model.worktask;
             var user = await _dbContext.GetUserAsync(User.Identity.Name).
                 ConfigureAwait(false);
 
             if (!_dbContext.CheckAccessForProject(worktask.ProjectId, user))
             {
-                return new JsonResult(new
+                return new JsonResult(new ErrorResponse
                 {
-                    status = HttpStatusCode.Unauthorized
-                }, _jsonOptions);
+                    message = "У вас нет прав для добавления новой задачи"
+                } );
             }
 
             worktask.CreatedDate = DateTime.UtcNow;
 
-            var addedTask = await _dbContext.AddAsync(worktask);
+            var addedTask = await _dbContext.AddAsync(worktask)
+                .ConfigureAwait( false );
 
             await _dbContext.SaveChangesAsync();
 
-            return new JsonResult(new
+            return new JsonResult(new OkResponse
             {
-                status = HttpStatusCode.OK
-            }, _jsonOptions);
+                message = "Вы успешно добавили задачу"
+            } );
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get(int? Id)
+        public async Task<JsonResult> Get(int? Id)
         {
+            if ( !Id.HasValue )
+            {
+                return new JsonResult( new
+                {
+                    status = HttpStatusCode.BadRequest,
+                    message = "Вы должны ввести идентификатор"
+                } );
+            }
+
             var id = Id.Value;
 
-            var worktask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
+            var worktask = await _dbContext.Worktasks.SingleOrDefaultAsync(x => x.Id == id)
                 .ConfigureAwait(false);
 
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var au = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .SingleOrDefaultAsync( x => x.ProjectId == worktask.ProjectId && x.User.Id == user.Id )
-                .ConfigureAwait(false);
-
-            if ( au == null )
+            var linkedProject = _dbContext.GetLinkedProjectForUser( worktask.ProjectId, user.Id );
+            if ( linkedProject == null || !linkedProject.Accepted )
             {
-                return new JsonResult(new
+                return new JsonResult( new ErrorResponse
                 {
-                    status = HttpStatusCode.InternalServerError,
-                    project = (Project)null,
-                    worktask = (WorkTask)null
-                });
+                    message = "У вас нет доступа для изменения задачи"
+                } );
             }
 
             var task = new
@@ -111,17 +118,29 @@ namespace Timetracker.View.Controllers
                 status = HttpStatusCode.OK,
                 project = worktask.Project,
                 worktask = task,
-                isAdmin = au.RightId
+                isAdmin = linkedProject.RightId
             }, _jsonOptions);
         }
 
 
         [HttpPost]
-        public async Task<IActionResult> UpdateState( UpdateStateModel model )
+        public async Task<JsonResult> UpdateState( UpdateStateModel model )
         {
-            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == model.TaskId );
-            dbWorkTask.StateId = (byte)model.StateId;
+            var dbWorkTask = _dbContext.Worktasks.FirstOrDefault(x => x.Id == model.TaskId );
 
+            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+                .ConfigureAwait( false );
+            var linkedProject = _dbContext.GetLinkedProjectForUser( dbWorkTask.ProjectId, user.Id );
+
+            if ( linkedProject == null )
+            {
+                return new JsonResult( new ErrorResponse
+                {
+                    message = "У вас нет доступа для изменения задачи"
+                } );
+            }
+
+            dbWorkTask.StateId = ( byte ) model.StateId;
             _dbContext.Update( dbWorkTask );
 
             await _dbContext.SaveChangesAsync();
@@ -133,56 +152,78 @@ namespace Timetracker.View.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Update(TaskUpdateModel view)
+        public async Task<JsonResult> Update( [FromBody] WorktaskUpdateModel model )
         {
-            var worktask = view.worktask;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name);
+            var worktask = model.worktask;
+            var user = await _dbContext.GetUserAsync(User.Identity.Name).ConfigureAwait( false );
 
-            if (!_dbContext.CheckAccessForProject(worktask.Project.Id, user))
+            var linkedProject = _dbContext.GetLinkedProjectForUser( worktask.Project.Id, user.Id );
+
+            if ( linkedProject == null || linkedProject.RightId == 1 )
             {
-                return new JsonResult(new
+                return new JsonResult( new ErrorResponse
                 {
-                    status = HttpStatusCode.Unauthorized
-                }, _jsonOptions);
+                    message = "У вас нет доступа для изменения задачи"
+                } );
             }
 
-            var dbWorkTask = _dbContext.Tasks.FirstOrDefault(x => x.Id == view.worktask.Id);
-            dbWorkTask.Title = view.worktask.Title;
-            dbWorkTask.Description = view.worktask.Description;
-            dbWorkTask.Duration = view.worktask.Duration;
-            dbWorkTask.StateId = view.worktask.StateId;
+            var dbWorkTask = _dbContext.Worktasks.FirstOrDefault(x => x.Id == model.worktask.Id);
+            dbWorkTask.Title = model.worktask.Title;
+            dbWorkTask.Description = model.worktask.Description;
+            dbWorkTask.Duration = model.worktask.Duration;
+            dbWorkTask.StateId = model.worktask.StateId;
 
-            _dbContext.Update(dbWorkTask);
-            
+            _dbContext.Update( dbWorkTask );
+
             await _dbContext.SaveChangesAsync();
 
-            return new JsonResult(new
+            return new JsonResult( new
             {
                 status = HttpStatusCode.OK,
                 worktask = worktask
-            }, _jsonOptions);
+            }, _jsonOptions );
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Delete(int? Id)
+        public async Task<JsonResult> Delete( [FromQuery] uint? id)
         {
-            var id = Id.Value;
+            if ( !id.HasValue )
+            {
+                return new JsonResult( new ErrorResponse
+                {
+                    message = "Вы должны ввести идентификатор"
+                } );
+            }
+
+            var worktaskId = id.Value;
             var user = await _dbContext.GetUserAsync(User.Identity.Name)
                 .ConfigureAwait(false);
 
-            var dbWorkTask = await _dbContext.Tasks.SingleOrDefaultAsync(x => x.Id == id)
+            var dbWorkTask = await _dbContext.Worktasks.FirstOrDefaultAsync(x => x.Id == worktaskId)
                 .ConfigureAwait(false);
 
-            var au = await _dbContext.AuthorizedUsers.AsNoTracking()
-                .SingleOrDefaultAsync( x => x.ProjectId == dbWorkTask.ProjectId && x.User.Id == user.Id )
+            var hasAccess = await _dbContext.LinkedProjects.AsNoTracking()
+                .AnyAsync( x => x.ProjectId == dbWorkTask.ProjectId && x.User.Id == user.Id && x.RightId != 1 )
                 .ConfigureAwait(false);
 
-            if ( au == null || au.RightId != 1 )
+            if ( !hasAccess )
             {
-                return new JsonResult(new
+                return new JsonResult(new ErrorResponse
                 {
-                    status = HttpStatusCode.Unauthorized
-                }, _jsonOptions);
+                    message = "У вас недостаточно прав для удаления задачи"
+                } );
+            }
+
+            // Если на задачу кто-то тречит - заставить их прекратить
+            var runningWorktracks = _dbContext.Worktracks.Where( x => x.WorktaskId == dbWorkTask.Id && x.Running);
+            if ( runningWorktracks.Any() )
+            {
+                var users = runningWorktracks.Select( x => x.User.Login );
+
+                foreach ( var userName in users )
+                {
+                    await _hub.Clients.Group( userName ).SendAsync( "getActiveTracking", false, null, false, "Задача была удалена и больше не отслеживается" );
+                }
             }
 
             _dbContext.Remove(dbWorkTask);
@@ -190,9 +231,9 @@ namespace Timetracker.View.Controllers
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait(false);
 
-            return new JsonResult(new
+            return new JsonResult(new WorktaskDeleteResponse
             {
-                status = HttpStatusCode.OK
+                worktask = dbWorkTask
             }, _jsonOptions);
         }
     }

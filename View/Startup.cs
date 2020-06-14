@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using Timetracker.Entities.Classes;
 using Timetracker.Entities.Extensions;
-using Timetracker.View.Hubs;
+using Timetracker.Entities.Hubs;
 
 namespace View
 {
@@ -69,7 +69,6 @@ namespace View
             app.UseAuthorization();
             //app.UseCors();
 
-            dbContext.Database.Migrate();
 
             app.UseEndpoints( endpoints =>
              {
