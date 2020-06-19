@@ -1,7 +1,7 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
 
-namespace Timetracker.Entities.Responses
+namespace Timetracker.Models.Models
 {
     public class SignUpModel
     {

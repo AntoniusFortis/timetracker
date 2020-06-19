@@ -2,37 +2,23 @@
 * Проект: Timetracker.View
 */
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security.Claims;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using Timetracker.Entities.Models;
-using Timetracker.Entities.Responses;
-using Timetracker.Entities;
-using Timetracker.Models.Models;
-using Timetracker.Models.Helpers;
-using Timetracker.Models.Responses;
-using Timetracker.Models.Classes;
-using Timetracker.Models.Entities;
-
 namespace View.Controllers
 {
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
+    using System;
+    using System.IdentityModel.Tokens.Jwt;
+    using System.Linq;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using Timetracker.Models.Classes;
+    using Timetracker.Models.Entities;
+    using Timetracker.Models.Helpers;
+    using Timetracker.Models.Models;
+    using Timetracker.Models.Responses;
+
     [Produces("application/json")]
     [ApiController]
     [AllowAnonymous]
@@ -56,6 +42,8 @@ namespace View.Controllers
         /// <summary>
         /// Получение нового токена
         /// </summary>
+        /// <param name="model">Данные для получения новых токенов</param>  
+        /// <returns>Новая связка токенов</returns>
         [HttpPost]
         public async Task<JsonResult> Token( [FromBody] TokenModel model )
         {
@@ -70,7 +58,8 @@ namespace View.Controllers
                     var userId = token.Claims.FirstOrDefault().Value;
                     var intUserId = int.Parse( userId );
 
-                    var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Id == intUserId );
+                    var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Id == intUserId )
+                        .ConfigureAwait( false );
                     var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId);
 
                     if ( dbToken.RefreshToken == model.RefreshToken )
@@ -208,9 +197,11 @@ namespace View.Controllers
                 throw new Exception( "Пользователь с таким логином уже существует" );
             }
 
+            // Хешируем пароли
             var salt = PasswordHelpers.GenerateSalt();
             var hash = PasswordHelpers.EncryptPassword(model.Pass, salt);
 
+            // Шифруем личные данные
             var IV = PasswordHelpers.GetIV();
             var firstName = PasswordHelpers.EncryptData( model.FirstName, IV );
             var surName = PasswordHelpers.EncryptData( model.Surname, IV );

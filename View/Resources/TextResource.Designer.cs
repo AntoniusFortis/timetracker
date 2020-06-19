@@ -97,11 +97,29 @@ namespace Timetracker.View.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Проект или участник проекта не существует.
+        /// </summary>
+        public static string API_NotExistLinkedProject {
+            get {
+                return ResourceManager.GetString("API_NotExistLinkedProject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Не существует проекта с таким идентификатором.
         /// </summary>
         public static string API_NotExistProjectId {
             get {
                 return ResourceManager.GetString("API_NotExistProjectId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Неверный идентификатор состояния задачи.
+        /// </summary>
+        public static string API_NotExistStateId {
+            get {
+                return ResourceManager.GetString("API_NotExistStateId", resourceCulture);
             }
         }
         

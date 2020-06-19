@@ -28,9 +28,9 @@ namespace Timetracker.View.Controllers
         private readonly TimetrackerContext _context;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public RoleController( TimetrackerContext dbContext )
+        public RoleController( TimetrackerContext context )
         {
-            _context = dbContext;
+            _context = context;
 
             _jsonOptions = new JsonSerializerOptions
             {
@@ -43,17 +43,17 @@ namespace Timetracker.View.Controllers
         /// </summary>
         /// <returns>Список всех ролей/returns>
         [HttpGet]
-        [ResponseCache( Duration = 360 )]
+        [ProducesResponseType( typeof( RoleGetAllResponse ), StatusCodes.Status200OK )]
+        [ResponseCache( Duration = 720 )]
         public async Task<JsonResult> GetAll()
         {
             var roles = await _context.Roles.AsNoTracking()
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return new JsonResult( new
+            return new JsonResult( new RoleGetAllResponse
             {
-                status = HttpStatusCode.OK,
-                roles = roles,
+                roles = roles
             }, _jsonOptions );
         }
 
@@ -65,13 +65,15 @@ namespace Timetracker.View.Controllers
         /// <response code="403">Отсутствие доступа</response>
         /// <response code="400">Ошибка формата идентификатора</response>          
         [HttpPost]
+        [ProducesResponseType( typeof( RoleUpdateUserResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> UpdateUser( UpdateUserModel model )
         {
-            byte rId = byte.Parse( model.rightId);
+            byte roleId = byte.Parse( model.rightId);
             int projectId = int.Parse( model.projectId);
 
             int userId = int.Parse( User.Identity.Name );
 
+            // Проверка доступа
             var linkedProjectRequestUser = await _context.GetLinkedAcceptedProject( projectId, userId )
                 .ConfigureAwait( false );
             if ( linkedProjectRequestUser == null || linkedProjectRequestUser.RoleId == 1 )
@@ -79,40 +81,45 @@ namespace Timetracker.View.Controllers
                 throw new Exception( TextResource.API_NoAccess );
             }
 
+            // Проверка существования проекта
             var linkedProject = await _context.LinkedProjects.FirstOrDefaultAsync(x => x.User.Login == model.userLogin && x.ProjectId == projectId )
                 .ConfigureAwait(false);
             if ( linkedProject == null )
             {
-                throw new Exception( TextResource.API_NotExistProjectId );
+                throw new Exception( TextResource.API_NotExistLinkedProject );
             }
 
-            linkedProject.RoleId = ( byte ) rId;
+            linkedProject.RoleId = ( byte ) roleId;
 
-            await _context.SaveChangesAsync()
+            await _context.SaveChangesAsync( true )
                 .ConfigureAwait( false );
 
-            var response = new
+            // Обновляем значение в кэше
+            await _context.GetLinkedAcceptedProject( linkedProject.ProjectId, linkedProject.UserId, true )
+                .ConfigureAwait( false );
+
+            return new JsonResult( new RoleUpdateUserResponse
             {
-                status = HttpStatusCode.OK,
                 project = linkedProject.Project,
-                newRole = rId
-            };
-
-            await _context.GetLinkedAcceptedProject( linkedProject.ProjectId, linkedProject.UserId, true );
-
-            return new JsonResult( response, _jsonOptions );
+                roleId = roleId
+            }, _jsonOptions );
         }
 
         /// <summary>
         /// Получить роль в проекте для вызвавшего пользователя
         /// </summary>
         /// <param name="id">Идентификатор проекта</param>  
+        /// <returns>Идентификатор новой роли</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>    
         [HttpGet]
+        [ProducesResponseType( typeof( RoleGetRoleResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> GetRole( [FromQuery] uint? id )
         {
             int projectId = this.ParseValue( id );
             int userId = int.Parse( User.Identity.Name );
 
+            // Проверка доступа
             var linkedProject = await _context.GetLinkedAcceptedProject( projectId, userId )
                 .ConfigureAwait(false);
             if ( linkedProject == null )
@@ -120,14 +127,11 @@ namespace Timetracker.View.Controllers
                 throw new Exception( TextResource.API_NotExistWorktaskId );
             }
 
-            var response = new
+            return new JsonResult( new RoleGetRoleResponse
             {
-                status = HttpStatusCode.OK,
                 role = linkedProject.RoleId,
                 isAdmin = linkedProject.RoleId == 1
-            };
-
-            return new JsonResult( response );
+            } );
         }
     }
 }

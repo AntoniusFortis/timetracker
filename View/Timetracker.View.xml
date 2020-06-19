@@ -4,10 +4,12 @@
         <name>Timetracker.View</name>
     </assembly>
     <members>
-        <member name="M:View.Controllers.AccountController.Token(Timetracker.Entities.Models.TokenModel)">
+        <member name="M:View.Controllers.AccountController.Token(Timetracker.Models.Models.TokenModel)">
             <summary>
             Получение нового токена
             </summary>
+            <param name="model">Данные для получения новых токенов</param>  
+            <returns>Новая связка токенов</returns>
         </member>
         <member name="M:View.Controllers.AccountController.SignIn(Timetracker.Models.Models.SignInModel)">
             <summary>
@@ -19,7 +21,7 @@
             Получить объект авторизованного пользователя
             </summary>
         </member>
-        <member name="M:View.Controllers.AccountController.SignUp(Timetracker.Entities.Responses.SignUpModel)">
+        <member name="M:View.Controllers.AccountController.SignUp(Timetracker.Models.Models.SignUpModel)">
             <summary>
             Регистрация пользователя
             </summary>
@@ -109,7 +111,7 @@
             <response code="403">Отсутствие доступа</response>
             <response code="400">Ошибка формата идентификатора</response>  
         </member>
-        <member name="M:Timetracker.Entities.Controllers.MyPageController.Update(Timetracker.Entities.Responses.MyPageModel)">
+        <member name="M:Timetracker.Entities.Controllers.MyPageController.Update(Timetracker.Models.Models.MyPageModel)">
             <summary>
             Изменить персональную информацию о пользователе
             </summary>
@@ -180,6 +182,9 @@
             Получить роль в проекте для вызвавшего пользователя
             </summary>
             <param name="id">Идентификатор проекта</param>  
+            <returns>Идентификатор новой роли</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>    
         </member>
         <member name="M:Timetracker.View.Controllers.WorktrackController.GetAll(System.Nullable{System.UInt32})">
             <summary>
@@ -235,9 +240,19 @@
               Looks up a localized string similar to У вас нет доступа.
             </summary>
         </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_NotExistLinkedProject">
+            <summary>
+              Looks up a localized string similar to Проект или участник проекта не существует.
+            </summary>
+        </member>
         <member name="P:Timetracker.View.Resources.TextResource.API_NotExistProjectId">
             <summary>
               Looks up a localized string similar to Не существует проекта с таким идентификатором.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_NotExistStateId">
+            <summary>
+              Looks up a localized string similar to Неверный идентификатор состояния задачи.
             </summary>
         </member>
         <member name="P:Timetracker.View.Resources.TextResource.API_NotExistUserId">

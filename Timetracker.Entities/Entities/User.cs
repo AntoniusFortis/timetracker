@@ -21,7 +21,7 @@ namespace Timetracker.Models.Entities
         [Required]
         [JsonIgnore]
         [Column("PassId")]
-        public virtual Pass Pass { get; set; }
+        public Pass Pass { get; set; }
 
         [StringLength( 50 )]
         [Required]

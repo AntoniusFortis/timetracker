@@ -5,10 +5,10 @@
 namespace Timetracker.Entities.Controllers
 {
     using System;
-    using System.Linq;
     using System.Net;
     using System.Text.Json;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
@@ -18,6 +18,7 @@ namespace Timetracker.Entities.Controllers
     using Timetracker.View.Resources;
 
     [ApiController]
+    [Authorize]
     [Route("api/[controller]/[action]")]
     [Produces( "application/json" )]
     [ProducesResponseType( typeof( ErrorResponse ), StatusCodes.Status400BadRequest )]
@@ -42,6 +43,7 @@ namespace Timetracker.Entities.Controllers
         /// </summary>
         /// <returns>Список всех состояний задач</returns>
         [HttpGet]
+        [ProducesResponseType( typeof( StateGetAllResponse ), StatusCodes.Status200OK )]
         [ResponseCache( Duration = 360 )]
         public async Task<JsonResult> GetAll()
         {
@@ -49,9 +51,8 @@ namespace Timetracker.Entities.Controllers
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return new JsonResult( new
+            return new JsonResult( new StateGetAllResponse
             {
-                status = HttpStatusCode.OK,
                 states = states,
             }, _jsonOptions );
         }
@@ -67,7 +68,8 @@ namespace Timetracker.Entities.Controllers
         [ProducesResponseType( typeof( OkResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Update( [FromBody] UpdateStateModel model )
         {
-            var dbWorkTask = _context.Worktasks.FirstOrDefault(x => x.Id == model.TaskId );
+            var dbWorkTask = await _context.Worktasks.FirstOrDefaultAsync(x => x.Id == model.TaskId )
+                .ConfigureAwait( false );
             if ( dbWorkTask == null )
             {
                 throw new Exception( TextResource.API_NotExistWorktaskId );
@@ -77,7 +79,7 @@ namespace Timetracker.Entities.Controllers
                 .ConfigureAwait( false );
             if ( !stateExist )
             {
-                throw new Exception( "Неверный идентификатор состояния задачи" );
+                throw new Exception( TextResource.API_NotExistStateId );
             }
 
             int projectId = dbWorkTask.ProjectId;
@@ -93,7 +95,7 @@ namespace Timetracker.Entities.Controllers
 
             _context.Update( dbWorkTask );
 
-            await _context.SaveChangesAsync()
+            await _context.SaveChangesAsync( true )
                 .ConfigureAwait( false );
 
             return new JsonResult( new OkResponse

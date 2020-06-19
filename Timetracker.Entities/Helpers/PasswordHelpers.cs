@@ -4,7 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using Timetracker.Models.Classes;
 
-namespace Timetracker.Entities
+namespace Timetracker.Models.Helpers
 {
     public static class PasswordHelpers
     {

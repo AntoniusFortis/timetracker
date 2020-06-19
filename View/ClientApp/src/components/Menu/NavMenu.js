@@ -15,18 +15,18 @@ const TrackingTimer = (props) => {
         setTimer(null);
     });
 
-    const tick = useCallback(() => {
-        setElapsed(moment().utc() - props.start);
-    });
+    const tick = () => {
+        const now = moment.utc();
+        setElapsed(now.diff(props.start));
+    };
 
     useEffect(() => {
         const timerId = setInterval(tick, 1000);
         setTimer(timerId);
-
         return () => cleanupTimer();
     }, []);
 
-    const displayTime = moment(elapsed).utc();
+    const displayTime = moment.utc(elapsed);
 
     return <div style={{ display: 'inline' }}>{displayTime.format('HH:mm:ss')}</div>;
 }
@@ -74,14 +74,8 @@ class HeaderMenuTracking extends Component {
             });
             return;
         }
-
-        let startTime;
-        if (started) {
-            startTime = moment(worktask.startedTime).utcOffset(this.state.offset);
-        }
-        else {
-            startTime = moment(worktask.startedTime).add(this.state.offset, 'm');
-        }
+        
+        const startTime = moment.utc(worktask.startedTime);
 
         this.setState({
             isTracked: istracking,

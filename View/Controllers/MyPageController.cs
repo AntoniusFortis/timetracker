@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -11,9 +10,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Timetracker.Entities.Models;
-using Timetracker.Entities.Responses;
 using Timetracker.Models.Classes;
+using Timetracker.Models.Helpers;
+using Timetracker.Models.Models;
 using Timetracker.Models.Responses;
 using Timetracker.View.Resources;
 

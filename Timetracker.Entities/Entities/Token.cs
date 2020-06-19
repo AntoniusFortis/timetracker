@@ -1,8 +1,12 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
 namespace Timetracker.Models.Entities
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+
     public class Token
     {
         [Key]
