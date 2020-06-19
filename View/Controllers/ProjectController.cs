@@ -230,13 +230,19 @@ namespace View.Controllers
                 throw new Exception( TextResource.API_NoAccess );
             }
 
-            var newUserId = await _dbContext.Users.AsNoTracking()
+            var newUser = await _dbContext.Users.AsNoTracking()
                 .Where( x => x.Login == model.UserName )
-                .Select( x => x.Id )
+                .Select( x => new { x.Id, x.Login } )
                 .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
 
-            var linkedProjectNewUser = _dbContext.GetLinkedProjectForUser( projectId, newUserId );
+            // Проверяем что пользователь вообще существует
+            if ( newUser == null )
+            {
+                throw new Exception( "Пользователь с таким логином не существует" );
+            }
+
+            var linkedProjectNewUser = _dbContext.GetLinkedProjectForUser( projectId, newUser.Id );
             if ( linkedProjectNewUser != null )
             {
                 throw new Exception( "Этот пользователь уже есть в проекте" );
@@ -245,7 +251,7 @@ namespace View.Controllers
             await _dbContext.LinkedProjects.AddAsync( new LinkedProject
             {
                 ProjectId = projectId,
-                UserId = newUserId,
+                UserId = newUser.Id,
                 RoleId = 1,
                 Accepted = false
             } )
