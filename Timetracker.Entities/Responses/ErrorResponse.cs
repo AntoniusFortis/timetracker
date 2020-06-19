@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Timetracker.Models.Response
+namespace Timetracker.Models.Responses
 {
     public class ErrorResponse
     {

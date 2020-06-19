@@ -4,31 +4,261 @@
         <name>Timetracker.View</name>
     </assembly>
     <members>
-        <member name="M:View.Controllers.ProjectController.Add(Timetracker.Models.Models.AddProjectModel)">
+        <member name="M:View.Controllers.AccountController.Token(Timetracker.Entities.Models.TokenModel)">
             <summary>
-            Добавить проект
+            Получение нового токена
             </summary>
+        </member>
+        <member name="M:View.Controllers.AccountController.SignIn(Timetracker.Models.Models.SignInModel)">
+            <summary>
+            Авторизация пользователей
+            </summary>
+        </member>
+        <member name="M:View.Controllers.AccountController.GetCurrentUser">
+            <summary>
+            Получить объект авторизованного пользователя
+            </summary>
+        </member>
+        <member name="M:View.Controllers.AccountController.SignUp(Timetracker.Entities.Responses.SignUpModel)">
+            <summary>
+            Регистрация пользователя
+            </summary>
+        </member>
+        <member name="M:View.Controllers.ProjectController.GetUsers(System.Nullable{System.UInt32})">
+            <summary>
+            Получить всех пользователей проекта
+            </summary>
+            <param name="id">Идентификатор проекта</param>  
+            <returns>Список всех пользователей проекта</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>   
+        </member>
+        <member name="M:View.Controllers.ProjectController.Reject(System.Nullable{System.UInt32})">
+            <summary>
+            Отменить приглашение в проект
+            </summary>
+            <param name="id">Идентификатор проекта</param>  
+            <returns>Сообщение об отмене приглашения</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>  
+        </member>
+        <member name="M:View.Controllers.ProjectController.Accept(Timetracker.Models.Models.InviteAcceptModel)">
+            <summary>
+            Принять приглашение в проект
+            </summary>
+            <param name="model">Данные для осуществления приглашения</param>  
+            <returns>Данные о проекте в который пригласили</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата данных</response>  
+        </member>
+        <member name="M:View.Controllers.ProjectController.RemoveUserFromProject(Timetracker.Models.Models.ProjectUserModel)">
+            <summary>
+            Удалить пользователя из проекта
+            </summary>
+            <param name="model">Данные для осуществления удаления пользователя из проекта</param>  
+            <returns>Данные о проекте из которого удалили</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата данных</response>  
+        </member>
+        <member name="M:View.Controllers.ProjectController.AddUserToProject(Timetracker.Models.Models.ProjectIdUserNameModel)">
+            <summary>
+            Добавить пользователя из проекта
+            </summary>
+            <param name="model">Данные для осуществления добавления пользователя в проект</param> 
+            <returns>Данные о проекте</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата данных</response> 
         </member>
         <member name="M:View.Controllers.ProjectController.GetAll">
             <summary>
             Получить все проекты
             </summary>
+            <returns>Информация обо всех проектах, доступных пользователю</returns>
         </member>
         <member name="M:View.Controllers.ProjectController.Get(System.Nullable{System.UInt32})">
             <summary>
             Получить информацию о проекте
             </summary>
+            <param name="id">Идентификатор проекта</param> 
+            <returns>Информация о проекте и его задачах</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>   
+        </member>
+        <member name="M:View.Controllers.ProjectController.Add(Timetracker.Models.Models.AddProjectModel)">
+            <summary>
+            Добавить проект
+            </summary>
+            <param name="model">Данные о создаваемой проекте</param> 
+            <returns>Информация о созданном проекте</returns>
         </member>
         <member name="M:View.Controllers.ProjectController.Update(Timetracker.Models.Models.ProjectUpdateModel)">
             <summary>
             Обновить проект
             </summary>
+            <param name="model">Данные о создаваемой проекте</param> 
+            <returns>Информация об изменённом проекте</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>  
         </member>
         <member name="M:View.Controllers.ProjectController.Delete(System.Nullable{System.UInt32})">
             <summary>
             Удалить проект
             </summary>
-            <param name="id">Идентификатор проекта</param>     
+            <param name="id">Идентификатор проекта</param>  
+            <returns>Информация об удалённом проекте</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>  
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.MyPageController.Update(Timetracker.Entities.Responses.MyPageModel)">
+            <summary>
+            Изменить персональную информацию о пользователе
+            </summary>
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.StateController.GetAll">
+            <summary>
+            Получить все доступные состояния задач
+            </summary>
+            <returns>Список всех состояний задач</returns>
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.StateController.Update(Timetracker.Models.Models.UpdateStateModel)">
+            <summary>
+            Изменить состояние задачи
+            </summary>
+            <param name="model">Данные для осуществления изменения задачи</param>  
+            <returns>Сообщение об успешной смене состояния</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата данных</response>  
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.TaskController.Get(System.Nullable{System.UInt32})">
+            <summary>
+            Получить информацию о задаче
+            </summary>
+            <param name="id">Идентификатор задачи</param>   
+            <returns>Информация о задаче</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>   
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.TaskController.Add(Timetracker.Models.Models.WorktaskUpdateModel)">
+            <summary>
+            Добавить задачу
+            </summary>
+            <param name="model">Данные для добавления задачи</param>  
+            <returns>Информация о добавленной задаче</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>  
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.TaskController.Update(Timetracker.Models.Models.WorktaskUpdateModel)">
+            <summary>
+            Изменить задачу
+            </summary>
+            <param name="model">Данные для изменения задачи</param>  
+            <returns>Информация об изменённой задаче</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>  
+        </member>
+        <member name="M:Timetracker.Entities.Controllers.TaskController.Delete(System.Nullable{System.UInt32})">
+            <summary>
+            Удалить задачу
+            </summary>
+            <param name="id">Идентификатор задачи</param>  
+            <returns>Информация об удалённой задаче</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response> 
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:Timetracker.View.Controllers.RoleController.GetAll" -->
+        <member name="M:Timetracker.View.Controllers.RoleController.UpdateUser(Timetracker.Models.Models.UpdateUserModel)">
+            <summary>
+            Изменить роль пользователя в проекте
+            </summary>
+            <param name="model">Данные для изменения роли</param>  
+            <returns>Проект в котором изменили роль и сам Ид роли</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>          
+        </member>
+        <member name="M:Timetracker.View.Controllers.RoleController.GetRole(System.Nullable{System.UInt32})">
+            <summary>
+            Получить роль в проекте для вызвавшего пользователя
+            </summary>
+            <param name="id">Идентификатор проекта</param>  
+        </member>
+        <member name="M:Timetracker.View.Controllers.WorktrackController.GetAll(System.Nullable{System.UInt32})">
+            <summary>
+            Получить все треки задачи
+            </summary>
+            <param name="id">Идентификатор задачи</param>   
+            <returns>Список всех треков задачи</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>   
+        </member>
+        <member name="M:Timetracker.View.Controllers.WorktrackController.GetReport(Timetracker.Models.Models.ReportModel)">
+            <summary>
+            Получить отчёт
+            </summary>
+            <param name="model">Данные для составления отчёта</param>   
+            <returns>Отчёт с треками</returns>
+            <response code="403">Отсутствие доступа</response>
+            <response code="400">Ошибка формата идентификатора</response>   
+        </member>
+        <member name="T:Timetracker.View.Resources.TextResource">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_BadDateCompare">
+            <summary>
+              Looks up a localized string similar to Конечная дата не может быть меньше начальной.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_BadDateFormat">
+            <summary>
+              Looks up a localized string similar to Ошибка формата даты.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_InviteAccepted">
+            <summary>
+              Looks up a localized string similar to Вы уже приняли приглашение в проект.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_NoAccess">
+            <summary>
+              Looks up a localized string similar to У вас нет доступа.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_NotExistProjectId">
+            <summary>
+              Looks up a localized string similar to Не существует проекта с таким идентификатором.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_NotExistUserId">
+            <summary>
+              Looks up a localized string similar to Не существует пользователя с таким идентификатором.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_NotExistWorktaskId">
+            <summary>
+              Looks up a localized string similar to Не существует задачи с таким идентификатором.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_YouAreNotInvited">
+            <summary>
+              Looks up a localized string similar to Вы не были приглашены в этот проект.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.SignalR_TaskIsRemoved">
+            <summary>
+              Looks up a localized string similar to Задача была удалена и больше не отслеживается.
+            </summary>
         </member>
     </members>
 </doc>

@@ -1,8 +1,12 @@
-﻿using System;
-using System.Net;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.Models
+*/
 
 namespace Timetracker.Models.Responses
 {
+    using System;
+    using System.Net;
+
     public class WorktracksGetAllResponse
     {
         public HttpStatusCode status { get; set; } = HttpStatusCode.OK;

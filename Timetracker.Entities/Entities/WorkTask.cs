@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Timetracker.Entities.Models
+namespace Timetracker.Models.Entities
 {
     public class WorkTask
     {

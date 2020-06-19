@@ -86,7 +86,11 @@ export class Report extends PureComponent {
         Post("api/worktrack/GetReport", body, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ worktracks: result });
+                    if (result.status) {
+                        alert(result.message);
+                    } else {
+                        this.setState({ worktracks: result });
+                    }
                 });
         });
     }

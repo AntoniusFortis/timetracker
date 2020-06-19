@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Timetracker.Entities.Classes;
+using Timetracker.Models.Classes;
 
 namespace Timetracker.Entities.Migrations
 {

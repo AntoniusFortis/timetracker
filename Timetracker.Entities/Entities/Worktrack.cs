@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Timetracker.Entities.Models
+namespace Timetracker.Models.Entities
 {
     public class Worktrack
     {

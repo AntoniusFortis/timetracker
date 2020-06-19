@@ -1,16 +1,14 @@
 ﻿import { hasAuthorized, getToken, setToken } from './components/Account'
 
 export class HttpRequestHelper {
-    static Fetch(uri, callback, body, method, contentType) {
+    static Fetch(uri, callback, body, method) {
         const headers = new Headers();
         const token = getToken();
         if (hasAuthorized()) {
             headers.append('Authorization', 'Bearer ' + token);
         }
 
-        if (contentType === 'Json') {
-            headers.append('Content-Type', 'application/json')
-        }
+        headers.append('Content-Type', 'application/json')
 
         const request = async () => {
             const response = await fetch(uri, {
@@ -55,25 +53,25 @@ export class HttpRequestHelper {
 }
 
 export function Get(uri, callback) {
-    HttpRequestHelper.Fetch(uri, callback, null, 'GET', null);
+    HttpRequestHelper.Fetch(uri, callback, null, 'GET');
 }
 
 export function Post(uri, body, callback, contentType = 'Json') {
     if (contentType === 'Json') {
         const json = JSON.stringify(body);
-        HttpRequestHelper.Fetch(uri, callback, json, 'POST', contentType);
+        HttpRequestHelper.Fetch(uri, callback, json, 'POST');
         return;
     }
 
-    HttpRequestHelper.Fetch(uri, callback, body, 'POST', contentType);
+    HttpRequestHelper.Fetch(uri, callback, body, 'POST');
 }
 
 export function Delete(uri, body, callback, contentType = 'Json') {
     if (contentType === 'Json') {
         const json = JSON.stringify(body);
-        HttpRequestHelper.Fetch(uri, callback, json, 'DELETE', contentType);
+        HttpRequestHelper.Fetch(uri, callback, json, 'DELETE');
         return;
     }
 
-    HttpRequestHelper.Fetch(uri, callback, body, 'DELETE', contentType);
+    HttpRequestHelper.Fetch(uri, callback, body, 'DELETE');
 }

@@ -4,20 +4,20 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Timetracker.Entities.Classes;
-using Timetracker.Entities.Entity;
+using Timetracker.Models.Classes;
+using Timetracker.Models.Entities;
 
 namespace Timetracker.Models.Helpers
 {
     public static class TokenHelpers
     {
-        private static readonly TimeSpan tokenDurability =  TimeSpan.FromDays( 30 );
+        private static readonly TimeSpan tokenDurability =  TimeSpan.FromDays( 29 );
 
-        public static async Task GenerateToken( string login, Token user, TimetrackerContext context, bool isNew = false )
+        public static async Task GenerateToken( string id, Token user, TimetrackerContext context, bool isNew = false )
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimsIdentity.DefaultNameClaimType, login)
+                new Claim(ClaimsIdentity.DefaultNameClaimType, id)
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
@@ -41,7 +41,8 @@ namespace Timetracker.Models.Helpers
 
             if ( isNew )
             {
-                await context.AddAsync( user );
+                await context.AddAsync( user )
+                    .ConfigureAwait( false );
             }
 
             context.SaveChanges();

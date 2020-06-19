@@ -2,11 +2,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Timetracker.Entities.Models
+namespace Timetracker.Models.Entities
 {
     public class Project
     {
         [Key]
+        [Required]
         public int Id { get; set; }
 
         [Required]

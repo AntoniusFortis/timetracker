@@ -7,9 +7,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using Timetracker.Entities.Classes;
-using Timetracker.Entities.Extensions;
-using Timetracker.Entities.Hubs;
+using System.IO;
+using System.Reflection;
+using Timetracker.Models.Classes;
+using Timetracker.Models.Extensions;
+using Timetracker.View.Hubs;
+using Timetracker.View.Middlewares;
 
 namespace View
 {
@@ -22,27 +25,22 @@ namespace View
             Configuration = configuration;
         }
 
-
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddCors( x => {
-            //    x.AddDefaultPolicy( policy =>
-            //    {
-            //        policy.AllowAnyOrigin()
-            //        .AllowAnyHeader()
-            //        .AllowAnyMethod();
-            //    } );
-            //} );
             services.AddMemoryCache();
             services.AddDatabase(Configuration);
             services.AddControllers();
             services.AddAuth();
             services.AddSignalR();
-            services.AddSwagger();
-            services.AddSpaStaticFiles(configuration =>
-            {
-                configuration.RootPath = "ClientApp/build";
-            });
+
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            services.AddSwagger( xmlPath );
+
+            services.AddSpaStaticFiles( configuration =>
+             {
+                 configuration.RootPath = "ClientApp/build";
+             } );
         }
 
         public void Configure( IApplicationBuilder app, IWebHostEnvironment env, TimetrackerContext dbContext )
@@ -54,21 +52,23 @@ namespace View
                  c.SwaggerEndpoint( "/swagger/v1/swagger.json", "Time Tracker API" );
              } );
 
-            app.UseExceptionHandler( "/Error" );
-
             if ( !env.IsDevelopment() )
             {
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
-            app.UseSpaStaticFiles();
+            if ( !env.IsDevelopment() )
+            {
+                app.UseSpaStaticFiles();
+            }
+
+            app.UseMiddleware( typeof( OldRoutingMiddleware ) );
+            app.UseMiddleware( typeof( ExceptionHandlerMiddleware ) );
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
-            //app.UseCors();
-
 
             app.UseEndpoints( endpoints =>
              {

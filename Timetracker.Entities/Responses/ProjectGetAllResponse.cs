@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Net;
-using Timetracker.Entities.Models;
+using Timetracker.Models.Entities;
 
 namespace Timetracker.Models.Responses
 {
     public class ProjectGetAllResponse
     {
-       public HttpStatusCode status { get; set; }
+        public HttpStatusCode status { get; set; } = HttpStatusCode.OK;
 
        public List<Project> acceptedProjects { get; set; }
 

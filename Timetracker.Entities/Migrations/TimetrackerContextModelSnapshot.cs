@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Timetracker.Entities.Classes;
+using Timetracker.Models.Classes;
 
 namespace Timetracker.Entities.Migrations
 {
@@ -28,8 +28,8 @@ namespace Timetracker.Entities.Migrations
 
                     b.Property<string>("AccessToken")
                         .IsRequired()
-                        .HasColumnType("nvarchar(305)")
-                        .HasMaxLength(305);
+                        .HasColumnType("nvarchar(1024)")
+                        .HasMaxLength(1024);
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
@@ -44,7 +44,7 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("Tokens");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.LinkedProject", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.LinkedProject", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -57,7 +57,7 @@ namespace Timetracker.Entities.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
-                    b.Property<byte>("RightId")
+                    b.Property<byte>("RoleId")
                         .HasColumnType("tinyint");
 
                     b.Property<int>("UserId")
@@ -67,14 +67,35 @@ namespace Timetracker.Entities.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.HasIndex("RightId");
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("LinkedProjects");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.Project", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.Pass", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(500)")
+                        .HasMaxLength(500);
+
+                    b.Property<byte[]>("Salt")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Passes");
+                });
+
+            modelBuilder.Entity("Timetracker.Models.Entities.Project", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -95,7 +116,7 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.Role", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.Role", b =>
                 {
                     b.Property<byte>("Id")
                         .HasColumnType("tinyint");
@@ -110,7 +131,7 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("Roles");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.State", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.State", b =>
                 {
                     b.Property<byte>("Id")
                         .HasColumnType("tinyint");
@@ -125,7 +146,7 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("States");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.User", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -133,22 +154,27 @@ namespace Timetracker.Entities.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("BirthDate")
-                        .HasColumnType("nvarchar(30)")
-                        .HasMaxLength(30);
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<string>("City")
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasColumnType("nvarchar(512)")
+                        .HasMaxLength(512);
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(30)")
-                        .HasMaxLength(30);
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
+
+                    b.Property<string>("IV")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)")
+                        .HasMaxLength(50);
 
                     b.Property<string>("Login")
                         .IsRequired()
@@ -156,32 +182,28 @@ namespace Timetracker.Entities.Migrations
                         .HasMaxLength(20);
 
                     b.Property<string>("MiddleName")
-                        .HasColumnType("nvarchar(30)")
-                        .HasMaxLength(30);
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
-                    b.Property<string>("Pass")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(500)")
-                        .HasMaxLength(500);
-
-                    b.Property<byte[]>("Salt")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
+                    b.Property<int>("PassId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Surname")
                         .IsRequired()
-                        .HasColumnType("nvarchar(30)")
-                        .HasMaxLength(30);
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<int?>("TokenId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PassId");
+
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.WorkTask", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.WorkTask", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -218,7 +240,7 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("Worktasks");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.Worktrack", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.Worktrack", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -249,51 +271,60 @@ namespace Timetracker.Entities.Migrations
                     b.ToTable("Worktracks");
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.LinkedProject", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.LinkedProject", b =>
                 {
-                    b.HasOne("Timetracker.Entities.Models.Project", "Project")
+                    b.HasOne("Timetracker.Models.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Timetracker.Entities.Models.Role", "Right")
+                    b.HasOne("Timetracker.Models.Entities.Role", "Role")
                         .WithMany()
-                        .HasForeignKey("RightId")
+                        .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Timetracker.Entities.Models.User", "User")
+                    b.HasOne("Timetracker.Models.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.WorkTask", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.User", b =>
                 {
-                    b.HasOne("Timetracker.Entities.Models.Project", "Project")
+                    b.HasOne("Timetracker.Models.Entities.Pass", "Pass")
+                        .WithMany()
+                        .HasForeignKey("PassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Timetracker.Models.Entities.WorkTask", b =>
+                {
+                    b.HasOne("Timetracker.Models.Entities.Project", "Project")
                         .WithMany("Tasks")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Timetracker.Entities.Models.State", "State")
+                    b.HasOne("Timetracker.Models.Entities.State", "State")
                         .WithMany()
                         .HasForeignKey("StateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Timetracker.Entities.Models.Worktrack", b =>
+            modelBuilder.Entity("Timetracker.Models.Entities.Worktrack", b =>
                 {
-                    b.HasOne("Timetracker.Entities.Models.User", "User")
+                    b.HasOne("Timetracker.Models.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Timetracker.Entities.Models.WorkTask", "Worktask")
+                    b.HasOne("Timetracker.Models.Entities.WorkTask", "Worktask")
                         .WithMany("WorkTracks")
                         .HasForeignKey("WorktaskId")
                         .OnDelete(DeleteBehavior.Cascade)

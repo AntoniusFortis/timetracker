@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using Timetracker.Entities.Models;
+using Timetracker.Models.Entities;
 
 namespace Timetracker.Models.Responses
 {

@@ -32,10 +32,15 @@ export const ProjectUpdate = (props) => {
         event.preventDefault();
 
         const body = { Project: { Id: projectId, Title: title.trim(), Description: descr.trim() } };
-        Post("api/project/update", body, (response) => {
-            if (response.status === 200) {
-                setReferrer('/project/get/' + props.match.params.projectId);
-            }
+        Post('api/project/update', body, (response) => {
+            response.json().then(result => {
+                if (result.status === 200) {
+                    setReferrer('/project/all/');
+                }
+                else {
+                    alert(result.message);
+                }
+            });
         });
     }, [projectId, title, descr]);
 

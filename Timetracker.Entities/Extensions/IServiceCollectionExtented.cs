@@ -3,23 +3,39 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Timetracker.Entities.Classes;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Timetracker.Models.Classes;
 
-namespace Timetracker.Entities.Extensions
+namespace Timetracker.Models.Extensions
 {
     public static class IServiceCollectionExtented
     {
+        public static int ParseValue( this ControllerBase controller, uint? id )
+        {
+            if ( !id.HasValue )
+            {
+                throw new Exception( "Вы не предоставили поле id" );
+            }
+
+            if ( !int.TryParse( id.Value.ToString(), out var parsedId ) )
+            {
+                throw new Exception( "Недопустимый формат идентификатора" );
+            }
+
+            return parsedId;
+        }
+
         public static void AddDatabase( this IServiceCollection services, IConfiguration configuration )
         {
             services.AddDbContext<TimetrackerContext>( x =>
                  x.UseSqlServer( configuration.GetConnectionString( "Timetracker" ) ), contextLifetime: ServiceLifetime.Scoped );
         }
 
-        public static void AddSwagger( this IServiceCollection services )
+        public static void AddSwagger( this IServiceCollection services, string xmlPath )
         {
             services.AddSwaggerGen( c =>
             {
@@ -29,9 +45,8 @@ namespace Timetracker.Entities.Extensions
                     Title = "Time Tracker API"
                 } );
 
-                //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                //c.IncludeXmlComments( xmlPath );
+
+                c.IncludeXmlComments( xmlPath );
             } );
         }
 

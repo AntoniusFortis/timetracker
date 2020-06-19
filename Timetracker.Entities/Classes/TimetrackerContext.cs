@@ -1,13 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Timetracker.Entities.Entity;
-using Timetracker.Entities.Models;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
-namespace Timetracker.Entities.Classes
+namespace Timetracker.Models.Classes
 {
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Timetracker.Models.Entities;
+
     public class TimetrackerContext : DbContext, IDisposable
     {
         public DbSet<User> Users { get; set; }
@@ -18,6 +21,7 @@ namespace Timetracker.Entities.Classes
         public DbSet<State> States { get; set; }
         public DbSet<Worktrack> Worktracks { get; set; }
         public DbSet<Token> Tokens { get; set; }
+        public DbSet<Pass> Passes { get; set; }
 
         private readonly IMemoryCache _cache;
         private readonly MemoryCacheEntryOptions cacheOptions;
@@ -32,6 +36,7 @@ namespace Timetracker.Entities.Classes
             Roles.Load();
             States.Load();
             Tokens.Load();
+            Passes.Load();
             Users.Load();
             Projects.Load();
             LinkedProjects.Load();
@@ -54,22 +59,19 @@ namespace Timetracker.Entities.Classes
                 .OnDelete( DeleteBehavior.Cascade );
         }
 
-        public async Task<bool> UserExists( string name )
+        public async Task<User> GetUserAsync( string id, bool invalidateCache = false )
         {
-            return await Users.AsNoTracking().AnyAsync( p => p.Login == name );
-        }
+            var key = $"UserObject:{id}";
+            var userId = int.Parse( id );
 
-        public async Task<User> GetUserAsync( string name, bool invalidateCache = false )
-        {
-            if ( invalidateCache || !_cache.TryGetValue( $"UserObject:{name}", out User user ) )
+            if ( invalidateCache || !_cache.TryGetValue( key, out User user ) )
             {
-                user = await Users
-                    .SingleOrDefaultAsync( p => p.Login == name )
+                user = await Users.FirstOrDefaultAsync( p => p.Id == userId )
                     .ConfigureAwait( false );
 
                 if ( user != null )
                 {
-                    _cache.Set( $"UserObject:{user.Login}", user, cacheOptions );
+                    _cache.Set( key, user, cacheOptions );
                 }
             }
 
@@ -81,22 +83,22 @@ namespace Timetracker.Entities.Classes
             return LinkedProjects.FirstOrDefault( x => x.ProjectId == projectId && x.UserId == userId );
         }
 
-        public bool CheckAccessForProject( int projectId, User user, bool invalidateCache = false )
+        public async Task<LinkedProject> GetLinkedAcceptedProject( int projectId, int userId, bool invalidateCache = false )
         {
-            var key = $"Access:{projectId}{user.Id}";
-            if ( !_cache.TryGetValue( key, out bool hasAU ) || invalidateCache )
+            var key = $"LinkedAcceptedProject:{projectId}:{userId}";
+            if ( invalidateCache || !_cache.TryGetValue( key, out LinkedProject linkedProject ) )
             {
-                hasAU = LinkedProjects.AsNoTracking()
-                    .Any( x => x.ProjectId == projectId && x.User.Id == user.Id && x.Accepted );
+                linkedProject = await LinkedProjects.FirstOrDefaultAsync( x => x.ProjectId == projectId && x.UserId == userId && x.Accepted );
 
-                if ( hasAU )
+                if ( linkedProject != null )
                 {
-                    _cache.Set( key, hasAU, cacheOptions );
+                    _cache.Set( key, linkedProject, cacheOptions );
                 }
             }
 
-            return hasAU;
+            return linkedProject;
         }
+
 
         public override void Dispose()
         {

@@ -11,26 +11,25 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Timetracker.Entities.Classes;
 using Timetracker.Entities.Models;
 using Timetracker.Entities.Responses;
+using Timetracker.Models.Classes;
 using Timetracker.Models.Responses;
+using Timetracker.View.Resources;
 
 namespace Timetracker.Entities.Controllers
 {
-    [Produces("application/json")]
+    [Produces( "application/json" )]
     [ApiController]
-    [Route("api/[controller]/[action]")]
+    [Route( "api/[controller]/[action]" )]
     public class MyPageController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;
-        private readonly IMemoryCache _cache;
 
-        public MyPageController( TimetrackerContext dbContext, IMemoryCache cache )
+        public MyPageController( TimetrackerContext dbContext )
         {
             _dbContext = dbContext;
-            _cache = cache;
 
             _jsonOptions = new JsonSerializerOptions
             {
@@ -44,16 +43,25 @@ namespace Timetracker.Entities.Controllers
             var dbUser = await _dbContext.GetUserAsync( User.Identity.Name )
                 .ConfigureAwait(false);
 
+            var IV = dbUser.IV;
+
+            var firstName = PasswordHelpers.DecryptData( dbUser.FirstName, IV );
+            var surName = PasswordHelpers.DecryptData( dbUser.Surname, IV );
+            var middleName = string.IsNullOrEmpty( dbUser.MiddleName ) ? string.Empty : PasswordHelpers.DecryptData( dbUser.MiddleName, IV );
+            var birthDate = string.IsNullOrEmpty( dbUser.BirthDate ) ? string.Empty : PasswordHelpers.DecryptData( dbUser.BirthDate, IV );
+            var city = string.IsNullOrEmpty( dbUser.City ) ? string.Empty : PasswordHelpers.DecryptData( dbUser.City, IV );
+            var email = PasswordHelpers.DecryptData( dbUser.Email, IV );
+
             var user = new
             {
                 dbUser.Id,
                 dbUser.Login,
-                dbUser.FirstName,
-                dbUser.Surname,
-                dbUser.MiddleName,
-                dbUser.BirthDate,
-                dbUser.City,
-                dbUser.Email
+                FirstName = firstName,
+                Surname = surName,
+                MiddleName = middleName,
+                BirthDate = birthDate,
+                City = city,
+                Email = email
             };
 
             return new JsonResult( new MypageGetResponse
@@ -62,64 +70,70 @@ namespace Timetracker.Entities.Controllers
             }, _jsonOptions );
         }
 
+        /// <summary>
+        /// Изменить персональную информацию о пользователе
+        /// </summary>
         [HttpPost]
         public async Task<JsonResult> Update( MyPageModel model )
         {
-            var login = User.Identity.Name;
-            var dbUser = await _dbContext.Users.SingleOrDefaultAsync(x => x.Login == login)
+            var dbUser = await _dbContext.GetUserAsync( User.Identity.Name, true )
                 .ConfigureAwait(false);
 
             var passwordChanged = !string.IsNullOrEmpty(model.Pass);
             if ( passwordChanged )
             {
-                var password = PasswordHelpers.EncryptPassword(model.CurrentPass, dbUser.Salt);
-                if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass ) )
+                var password = PasswordHelpers.EncryptPassword(model.CurrentPass, dbUser.Pass.Salt);
+                if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass.Password ) )
                 {
-                    var responseUnauthorized = new
-                    {
-                        status = HttpStatusCode.Unauthorized
-                    };
-
-                    return new JsonResult( responseUnauthorized, _jsonOptions );
+                    throw new Exception( TextResource.API_NoAccess );
                 }
 
                 var salt = PasswordHelpers.GenerateSalt();
                 var hash = PasswordHelpers.EncryptPassword(model.Pass, salt);
-                dbUser.Pass = hash;
-                dbUser.Salt = salt;
+                dbUser.Pass.Password = hash;
+                dbUser.Pass.Salt = salt;
             }
 
-            dbUser.FirstName = model.FirstName;
-            dbUser.Surname = model.Surname;
-            dbUser.MiddleName = model.MiddleName;
-            dbUser.City = model.City;
-            dbUser.Email = model.Email;
-            dbUser.BirthDate = model.BirthDate;
+            var IV = dbUser.IV;
+            var firstName = PasswordHelpers.EncryptData( model.FirstName, IV );
+            var surName = PasswordHelpers.EncryptData( model.Surname, IV );
+            var email = PasswordHelpers.EncryptData( model.Email, IV );
+            var middleName = string.IsNullOrEmpty( model.MiddleName ) ? null : PasswordHelpers.EncryptData( model.MiddleName, IV );
+            var birthdate = string.IsNullOrEmpty( model.BirthDate ) ? null : PasswordHelpers.EncryptData( model.BirthDate, IV );
+            var city = string.IsNullOrEmpty( model.City ) ? null : PasswordHelpers.EncryptData( model.City, IV );
 
-            _dbContext.Update(dbUser);
+            dbUser.FirstName = firstName;
+            dbUser.Surname = surName;
+            dbUser.MiddleName = middleName;
+            dbUser.City = city;
+            dbUser.Email = email;
+            dbUser.BirthDate = birthdate;
+
+            _dbContext.Update( dbUser );
 
             await _dbContext.SaveChangesAsync()
-                .ConfigureAwait(false);
+                .ConfigureAwait( false );
 
             var user = new
             {
                 dbUser.Login,
-                dbUser.FirstName,
-                dbUser.Surname,
-                dbUser.MiddleName,
-                dbUser.City,
-                dbUser.Email,
-                dbUser.BirthDate
+                FirstName = model.FirstName,
+                Surname = model.Surname,
+                MiddleName = model.MiddleName,
+                City = model.City,
+                Email = model.Email,
+                BirthDate = model.BirthDate
             };
 
-            await _dbContext.GetUserAsync( User.Identity.Name, true );
+            await _dbContext.GetUserAsync( User.Identity.Name, true )
+                .ConfigureAwait( false );
 
             return new JsonResult( new
             {
                 status = HttpStatusCode.OK,
                 newUser = user,
                 passwordChanged = passwordChanged
-            }, _jsonOptions);
+            }, _jsonOptions );
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Timetracker.Entities.Entity
+namespace Timetracker.Models.Entities
 {
     public class Token
     {
@@ -13,9 +13,10 @@ namespace Timetracker.Entities.Entity
         public string RefreshToken { get; set; }
 
         [Required]
-        [StringLength( 305 )]
+        [StringLength( 1024 )]
         public string AccessToken { get; set; }
 
+        [Required]
         public DateTime TokenExpiredDate { get; set; }
     }
 }

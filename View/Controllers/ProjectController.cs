@@ -1,50 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.Extensions.Caching.Memory;
-using Timetracker.Entities.Classes;
-using Timetracker.Entities.Hubs;
-using Timetracker.Entities.Models;
-using Timetracker.Models.Models;
-using Timetracker.Models.Response;
-using Timetracker.Models.Responses;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
 namespace View.Controllers
 {
-    public class ProjectUserModel
-    {
-        public string ProjectId { get; set; }
-
-        public int UserId { get; set; }
-    }
-
-    public class ProjectIdUserNameModel
-    {
-        public string ProjectId { get; set; }
-
-        public string UserName { get; set; }
-    }
+    using System;
+    using System.Linq;
+    using System.Net;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.SignalR;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore.Internal;
+    using Microsoft.Extensions.Caching.Memory;
+    using Timetracker.Models.Classes;
+    using Timetracker.Models.Entities;
+    using Timetracker.Models.Extensions;
+    using Timetracker.Models.Models;
+    using Timetracker.Models.Responses;
+    using Timetracker.View.Hubs;
+    using Timetracker.View.Resources;
 
     [ApiController]
     [Authorize]
     [Route( "api/[controller]/[action]" )]
+    [Produces( "application/json" )]
+    [ProducesResponseType( typeof( ErrorResponse ), StatusCodes.Status403Forbidden )]
+    [ProducesResponseType( typeof( ErrorResponse ), StatusCodes.Status400BadRequest )]
     public class ProjectController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
         private readonly JsonSerializerOptions _jsonOptions;
-        private readonly IMemoryCache _cache;
-        private readonly IHubContext<TrackingHub> _hub;
+        private readonly Lazy<IHubContext<TrackingHub>> _hub;
 
-        public ProjectController( TimetrackerContext dbcontext, IMemoryCache cache, IHubContext<TrackingHub> hub )
+        public ProjectController( TimetrackerContext dbcontext, IHubContext<TrackingHub> hub )
         {
             _dbContext = dbcontext;
 
@@ -52,147 +44,160 @@ namespace View.Controllers
             {
                 PropertyNameCaseInsensitive = true
             };
-            _hub = hub;
+            _hub = new Lazy<IHubContext<TrackingHub>>( hub );
         }
 
+        /// <summary>
+        /// Получить всех пользователей проекта
+        /// </summary>
+        /// <param name="id">Идентификатор проекта</param>  
+        /// <returns>Список всех пользователей проекта</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>   
         [HttpGet]
+        [ProducesResponseType( typeof( ProjectGetUsersResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> GetUsers( [FromQuery] uint? id )
         {
-            if ( !id.HasValue )
-            {
-                return new JsonResult( new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    message = "Вы должны ввести идентификатор проекта"
-                } );
-            }
+            int projectId = this.ParseValue( id );
+            int userId = int.Parse( User.Identity.Name );
 
-            if ( !int.TryParse( id.Value.ToString(), out var projectId ) )
+            // Проверяем, что есть доступ
+            var linkedProject = _dbContext.GetLinkedAcceptedProject( projectId, userId );
+            if ( linkedProject == null )
             {
-                return new JsonResult( new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    message = "Недопустимый формат идентификатора"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
             var users = await _dbContext.LinkedProjects.Where(x => x.ProjectId == projectId)
                 .Select(x => new {
                     Id = x.UserId,
                     login = x.User.Login,
-                    right = x.Right
+                    right = x.Role
                 } )
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return new JsonResult( new
+            return new JsonResult( new ProjectGetUsersResponse
             {
-                status = HttpStatusCode.OK,
-                users = users,
+                users = users
             }, _jsonOptions );
         }
 
+        /// <summary>
+        /// Отменить приглашение в проект
+        /// </summary>
+        /// <param name="id">Идентификатор проекта</param>  
+        /// <returns>Сообщение об отмене приглашения</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>  
         [HttpPost]
-        public async Task<JsonResult> UpdateUser( UpdateUserModel model )
+        [ProducesResponseType( typeof( OkResponse ), StatusCodes.Status200OK )]
+        public async Task<JsonResult> Reject( [FromQuery] uint? id )
         {
-            byte rId = byte.Parse( model.rightId);
-            int pId = int.Parse( model.projectId);
+            int projectId = this.ParseValue( id );
+            int userId = int.Parse( User.Identity.Name );
 
-            var authorizedUsers = await _dbContext.LinkedProjects.SingleOrDefaultAsync(x => x.User.Login == model.userLogin && x.ProjectId == pId )
-                .ConfigureAwait(false);
-
-            authorizedUsers.RightId = (byte)rId;
-
-            await _dbContext.SaveChangesAsync().ConfigureAwait( false );
-
-            var response = new
+            // Проверяем, что есть доступ
+            var linkedProject = _dbContext.GetLinkedProjectForUser( projectId, userId );
+            if ( linkedProject == null )
             {
-                status = HttpStatusCode.OK
-            };
-
-            return new JsonResult( response, _jsonOptions );
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetMyRight( int id )
-        {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name, true )
-                .ConfigureAwait(false);
-
-            var authorizedUsers = await _dbContext.LinkedProjects.SingleAsync(x => x.UserId == user.Id && x.ProjectId == id)
-                .ConfigureAwait(false);
-
-            var response = new
-            {
-                status = HttpStatusCode.OK,
-                isAdmin = authorizedUsers.RightId == 1
-            };
-
-            return new JsonResult( response, _jsonOptions );
-        }
-
-        [HttpPost]
-        public async Task<JsonResult> Reject( uint? id )
-        {
-            if ( !int.TryParse( id.Value.ToString(), out var projectId ) )
-            {
-                return new JsonResult( new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    message = "Недопустимый формат идентификатора"
-                } );
+                throw new Exception( TextResource.API_YouAreNotInvited );
             }
 
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
-
-            var authorizedUsers = await _dbContext.LinkedProjects.FirstOrDefaultAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
-                .ConfigureAwait(false);
-
-            if ( authorizedUsers == null )
+            if ( linkedProject.Accepted )
             {
-                return new JsonResult( new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    message = "Вы не были приглашены в этот проект, либо проект не существует"
-                } );
+                throw new Exception( TextResource.API_InviteAccepted );
             }
 
-            if ( authorizedUsers.Accepted )
-            {
-                return new JsonResult( new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    message = "Вы уже приняли приглашение в проект"
-                } );
-            }
-
-            _dbContext.Remove( authorizedUsers );
+            _dbContext.Remove( linkedProject );
 
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
 
-            return new JsonResult( new
+            return new JsonResult( new OkResponse
             {
-                status = HttpStatusCode.OK,
                 message = "Вы отказались от приглашения в проект"
             } );
         }
 
+        /// <summary>
+        /// Принять приглашение в проект
+        /// </summary>
+        /// <param name="model">Данные для осуществления приглашения</param>  
+        /// <returns>Данные о проекте в который пригласили</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата данных</response>  
         [HttpPost]
+        [ProducesResponseType( typeof( ProjectAcceptResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Accept( [FromBody] InviteAcceptModel model )
         {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
+            int projectId = model.projectId;
+            int userId = int.Parse( User.Identity.Name );
 
-            var projectId = model.projectId;
+            // Проверяем, что есть доступ
+            var linkedProject = _dbContext.GetLinkedProjectForUser( projectId, userId );
+            if ( linkedProject == null )
+            {
+                throw new Exception( TextResource.API_YouAreNotInvited );
+            }
 
-            var authorizedUsers = await _dbContext.LinkedProjects.SingleAsync(x => x.UserId == user.Id && x.ProjectId == projectId)
-                .ConfigureAwait(false);
+            if ( linkedProject.Accepted )
+            {
+                throw new Exception( TextResource.API_InviteAccepted );
+            }
 
-            authorizedUsers.Accepted = true;
+            linkedProject.Accepted = true;
 
-            _dbContext.Update( authorizedUsers );
+            _dbContext.Update( linkedProject );
+
+            await _dbContext.SaveChangesAsync()
+                .ConfigureAwait( false );
+
+            return new JsonResult( new ProjectAcceptResponse
+            {
+                project = linkedProject.Project
+            } );
+        }
+
+        /// <summary>
+        /// Удалить пользователя из проекта
+        /// </summary>
+        /// <param name="model">Данные для осуществления удаления пользователя из проекта</param>  
+        /// <returns>Данные о проекте из которого удалили</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата данных</response>  
+        [HttpPost]
+        public async Task<JsonResult> RemoveUserFromProject( ProjectUserModel model )
+        {
+            var projectId = int.Parse( model.ProjectId );
+            int userId = int.Parse( User.Identity.Name );
+
+            // Проверяем, что есть доступ
+            var linkedProject = await _dbContext.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null || linkedProject.RoleId == 1 )
+            {
+                throw new Exception( TextResource.API_NoAccess );
+            }
+
+            // Если на задачу тречит удаляемый пользователь - останавливаем
+            var runningWorktracksUsers = _dbContext.Worktracks.Any( x => x.Worktask.ProjectId == projectId && x.UserId == model.UserId && x.Running );
+            if ( runningWorktracksUsers )
+            {
+                await _hub.Value.Clients.Group( User.Identity.Name ).SendAsync( "getActiveTracking", false, null, false, "У вас больше нет доступа к данной задаче" )
+                    .ConfigureAwait( false );
+            }
+
+            var linkedProjectToDelete = _dbContext.GetLinkedProjectForUser( projectId, model.UserId );
+            if ( linkedProjectToDelete == null )
+            {
+                throw new Exception( "Данного пользователя не существует в проекте" );
+            }
+
+            _dbContext.LinkedProjects.Remove( linkedProject );
+
+            await _dbContext.GetLinkedAcceptedProject( projectId, model.UserId, true )
+                .ConfigureAwait( false );
 
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
@@ -200,48 +205,29 @@ namespace View.Controllers
             return new JsonResult( new
             {
                 status = HttpStatusCode.OK,
-                messge = "Вы успешно приняли приглашение в проект"
+                project = linkedProject.Project
             } );
         }
 
-        [HttpPost]
-        public async Task<JsonResult> RemoveUserFromProject( ProjectUserModel model )
-        {
-            var projectId = int.Parse( model.ProjectId );
-            var userId = model.UserId;
-
-            var au = await _dbContext.LinkedProjects
-                .FirstOrDefaultAsync( x => x.ProjectId == projectId && x.UserId == userId )
-                .ConfigureAwait(false);
-
-            _dbContext.LinkedProjects.Remove( au );
-
-            await _dbContext.SaveChangesAsync()
-                .ConfigureAwait( false );
-
-            return new JsonResult( new
-            {
-                status = HttpStatusCode.OK
-            } );
-        }
-
+        /// <summary>
+        /// Добавить пользователя из проекта
+        /// </summary>
+        /// <param name="model">Данные для осуществления добавления пользователя в проект</param> 
+        /// <returns>Данные о проекте</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата данных</response> 
         [HttpPost]
         public async Task<JsonResult> AddUserToProject( [FromBody] ProjectIdUserNameModel model )
         {
             var projectId = int.Parse( model.ProjectId );
+            int userId = int.Parse( User.Identity.Name );
 
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
-
-            var hasAccess = await _dbContext.LinkedProjects.AnyAsync( x => x.ProjectId == projectId && x.User.Id == user.Id  && x.RightId != 1 )
-                .ConfigureAwait(false);
-
-            if ( !hasAccess )
+            // Проверяем, что есть доступ
+            var linkedProject = await _dbContext.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null || linkedProject.RoleId == 1 )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет прав для добавления нового участника в проект"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
             var newUserId = await _dbContext.Users.AsNoTracking()
@@ -250,19 +236,17 @@ namespace View.Controllers
                 .FirstOrDefaultAsync()
                 .ConfigureAwait(false);
 
-            if ( _dbContext.LinkedProjects.AsNoTracking().Any( x => x.UserId == newUserId && x.ProjectId == projectId ) )
+            var linkedProjectNewUser = _dbContext.GetLinkedProjectForUser( projectId, newUserId );
+            if ( linkedProjectNewUser != null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Этот пользователь уже есть в проекте"
-                } );
+                throw new Exception( "Этот пользователь уже есть в проекте" );
             }
 
             await _dbContext.LinkedProjects.AddAsync( new LinkedProject
             {
                 ProjectId = projectId,
                 UserId = newUserId,
-                RightId = 1,
+                RoleId = 1,
                 Accepted = false
             } )
                 .ConfigureAwait( false );
@@ -272,73 +256,23 @@ namespace View.Controllers
 
             return new JsonResult( new
             {
-                status = HttpStatusCode.OK
-            } );
-        }
-
-        /// <summary>
-        /// Добавить проект
-        /// </summary>
-        [HttpPost]
-        public async Task<JsonResult> Add( [FromBody] AddProjectModel model )
-        {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
-
-            if ( await _dbContext.Projects.AsNoTracking()
-                .AnyAsync( x => x.Title == model.title ) )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Проект с таким именем уже существует"
-                } );
-            }
-
-            var addedProject = await _dbContext.AddAsync(new Project
-            {
-                Title = model.title,
-                Description = model.description
-            })
-                .ConfigureAwait(false);
-
-            await _dbContext.SaveChangesAsync()
-                   .ConfigureAwait( false );
-
-            await _dbContext.AddAsync( new LinkedProject
-            {
-                Accepted = true,
-                ProjectId = addedProject.Entity.Id,
-                RightId = 3,
-                UserId = user.Id
-            } )
-                .ConfigureAwait( false );
-
-
-            await _dbContext.SaveChangesAsync()
-                           .ConfigureAwait( false );
-
-            return new JsonResult( new ProjectAddResponse
-            {
-                project = new
-                {
-                    addedProject.Entity.Id,
-                    addedProject.Entity.Title,
-                    addedProject.Entity.Description
-                }
+                status = HttpStatusCode.OK,
+                project = linkedProject.Project
             } );
         }
 
         /// <summary>
         /// Получить все проекты
         /// </summary>
+        /// <returns>Информация обо всех проектах, доступных пользователю</returns>
         [HttpGet]
+        [ProducesResponseType( typeof( ProjectGetAllResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> GetAll()
         {
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
+            int userId = int.Parse( User.Identity.Name );
 
             var userProjects = _dbContext.LinkedProjects.AsNoTracking()
-                .Where(x => x.UserId == user.Id);
+                .Where(x => x.UserId == userId );
 
             var acceptedProjects = await userProjects.Where( x => x.Accepted )
                     .Select( x => x.Project )
@@ -354,85 +288,71 @@ namespace View.Controllers
 
             return new JsonResult( new ProjectGetAllResponse
             {
-                status = HttpStatusCode.OK,
-                acceptedProjects = acceptedProjects ?? null,
-                notAcceptedProjects = notAcceptedProjects ?? null
+                acceptedProjects = acceptedProjects,
+                notAcceptedProjects = notAcceptedProjects
             }, _jsonOptions );
         }
 
         /// <summary>
         /// Получить информацию о проекте
         /// </summary>
+        /// <param name="id">Идентификатор проекта</param> 
+        /// <returns>Информация о проекте и его задачах</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>   
         [HttpGet]
+        [ProducesResponseType( typeof( ProjectGetResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Get( [FromQuery] uint? id )
         {
-            if ( !id.HasValue )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Вы должны ввести идентификатор проекта"
-                } );
-            }
-
-            if ( !int.TryParse( id.Value.ToString(), out var projectId ) )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Недопустимый формат идентификатора"
-                } );
-            }
-
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
-
-            // Проверяем, что есть доступ
-            var linkedProject = _dbContext.GetLinkedProjectForUser( projectId, user.Id );
-            if ( linkedProject == null || !linkedProject.Accepted )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет доступа к данному проекту"
-                } );
-            }
+            int projectId = this.ParseValue( id );
 
             var project = await _dbContext.Projects.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id)
                 .ConfigureAwait(false);
+            if ( project == null )
+            {
+                throw new Exception( TextResource.API_NotExistProjectId );
+            }
 
-            var tasks =  await _dbContext.Worktasks.AsNoTracking()
+            int userId = int.Parse( User.Identity.Name );
+
+            // Проверяем, что есть доступ
+            var linkedProject = await _dbContext.GetLinkedAcceptedProject( projectId, userId );
+            if ( linkedProject == null )
+            {
+                throw new Exception( TextResource.API_NoAccess );
+            }
+
+            var userLogin = _dbContext.Users.Where( x => x.Id == userId )
+                .Select( x => x.Login )
+                .FirstOrDefault();
+
+            var tasks =  await _dbContext.Worktasks
                 .Where(x => x.ProjectId == id)
                 .OrderBy( x => x.StateId )
-                .Select(x => new
-                {
-                    x.Id,
-                    x.Title,
-                    x.Description,
-                    x.State
-                })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             var users = await _dbContext.LinkedProjects.AsNoTracking()
                 .Where(x => x.ProjectId == id )
-                .Select(x => new
+                .Select( x => new
                 {
                     Id = x.UserId,
                     login = x.User.Login,
-                    right = x.Right
+                    right = x.Role
                 } )
                 .ToListAsync()
                 .ConfigureAwait(false);
 
             var caller = new
             {
-                id = user.Id,
-                login = user.Login,
-                right = linkedProject.Right
+                Id = userId,
+                login = userLogin,
+                right = linkedProject.Role
             };
 
-            return new JsonResult( new
+            return new JsonResult( new ProjectGetResponse
             {
-                status = HttpStatusCode.OK,
                 project = project,
                 tasks = tasks,
                 caller = caller,
@@ -441,35 +361,71 @@ namespace View.Controllers
         }
 
         /// <summary>
+        /// Добавить проект
+        /// </summary>
+        /// <param name="model">Данные о создаваемой проекте</param> 
+        /// <returns>Информация о созданном проекте</returns>
+        [HttpPost]
+        [ProducesResponseType( typeof( ProjectUpdateResponse ), StatusCodes.Status200OK )]
+        public async Task<JsonResult> Add( [FromBody] AddProjectModel model )
+        {
+            int userId = int.Parse( User.Identity.Name );
+
+            var addedProject = await _dbContext.AddAsync(new Project
+            {
+                Title = model.title,
+                Description = model.description
+            })
+                .ConfigureAwait(false);
+
+            await _dbContext.SaveChangesAsync( true )
+                   .ConfigureAwait( false );
+
+            await _dbContext.AddAsync( new LinkedProject
+            {
+                Accepted = true,
+                ProjectId = addedProject.Entity.Id,
+                RoleId = 3,
+                UserId = userId
+            } )
+                .ConfigureAwait( false );
+
+
+            await _dbContext.SaveChangesAsync( true )
+                .ConfigureAwait( false );
+
+            return new JsonResult( new ProjectUpdateResponse { project = addedProject.Entity } );
+        }
+
+        /// <summary>
         /// Обновить проект
         /// </summary>
+        /// <param name="model">Данные о создаваемой проекте</param> 
+        /// <returns>Информация об изменённом проекте</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>  
         [HttpPost]
+        [ProducesResponseType( typeof( ProjectUpdateResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Update( [FromBody] ProjectUpdateModel model )
         {
-            if ( model.Project == null )
+            int projectId = model.Project.Id;
+            int userId = int.Parse( User.Identity.Name );
+
+            // Проверяем доступ
+            var linkedProject = await _dbContext.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null || linkedProject.RoleId == 1 )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Не существует проекта с таким Id"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+            var project = await _dbContext.Projects.FirstOrDefaultAsync( x => x.Id == projectId )
                 .ConfigureAwait(false);
 
-            var hasAccess = await _dbContext.LinkedProjects.AnyAsync( x => x.ProjectId == model.Project.Id && x.User.Id == user.Id  && x.RightId != 1 )
-                .ConfigureAwait(false);
-
-            if ( !hasAccess )
+            if ( project == null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет прав для изменения проекта"
-                } );
+                throw new Exception( TextResource.API_NotExistProjectId );
             }
-
-            var project = await _dbContext.Projects.FirstOrDefaultAsync( x => x.Id == model.Project.Id )
-                .ConfigureAwait(false);
 
             project.Title = model.Project.Title;
             project.Description = model.Project.Description;
@@ -477,76 +433,66 @@ namespace View.Controllers
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
 
-            return new JsonResult( new
-            {
-                status = HttpStatusCode.OK,
-                project = model.Project
-            }, _jsonOptions );
+            return new JsonResult( new ProjectUpdateResponse { project = model.Project } );
         }
 
         /// <summary>
         /// Удалить проект
         /// </summary>
-        /// <param name="id">Идентификатор проекта</param>     
+        /// <param name="id">Идентификатор проекта</param>  
+        /// <returns>Информация об удалённом проекте</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>  
         [HttpDelete]
+        [ProducesResponseType( typeof( ProjectUpdateResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Delete( [FromQuery] uint? id )
         {
-            if ( !id.HasValue )
+            int projectId = this.ParseValue( id );
+            int userId = int.Parse( User.Identity.Name );
+
+            // Проверяем доступ
+            var linkedProject = await _dbContext.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null || linkedProject.RoleId == 1 )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Вы должны ввести идентификатор проекта"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
-
-            if ( !int.TryParse( id.Value.ToString(), out var projectId ) )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Недопустимый формат идентификатора"
-                } );
-            }
-
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
-
-            var hasAccess = await _dbContext.LinkedProjects.AnyAsync( x => x.ProjectId == projectId && x.User.Id == user.Id  && x.RightId != 1 )
-                .ConfigureAwait(false);
-
-            if ( !hasAccess )
-            {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет прав для удаления проекта"
-                } );
-            }
-
-            var linkedProjects = _dbContext.LinkedProjects.Where( x => x.ProjectId == projectId );
-            _dbContext.LinkedProjects.RemoveRange( linkedProjects );
 
             var project = await _dbContext.Projects.FirstOrDefaultAsync(x => x.Id == projectId)
                 .ConfigureAwait(false);
-            _dbContext.Projects.Remove( project );
+            if ( project == null )
+            {
+                throw new Exception( TextResource.API_NotExistProjectId );
+            }
 
             // Если на задачу кто-то тречит - заставить их прекратить
             var runningWorktracksUsers = _dbContext.Worktracks.Where( x => x.Worktask.ProjectId == projectId && x.Running)
-                .Select( x => x.User.Login )
+                .Select( x => x.UserId )
                 .ToHashSet();
 
             foreach ( var userName in runningWorktracksUsers )
             {
-                await _hub.Clients.Group( userName ).SendAsync( "getActiveTracking", false, null, false, "Задача была удалена и больше не отслеживается" )
+                await _hub.Value.Clients.Group( userName.ToString() ).SendAsync( "getActiveTracking", false, null, false, TextResource.SignalR_TaskIsRemoved )
                     .ConfigureAwait( false );
             }
+
+            var linkedProjects = _dbContext.LinkedProjects.Where( x => x.ProjectId == projectId );
+
+            // Сбрасываем кэш
+            var cache = (IMemoryCache)Request.HttpContext.RequestServices.GetService( typeof(IMemoryCache) );
+            foreach ( var lp in linkedProjects.ToList() )
+            {
+                cache.Remove( $"LinkedAcceptedProject:{projectId}:{lp.UserId}" );
+            }
+
+            _dbContext.LinkedProjects.RemoveRange( linkedProjects );
+
+            _dbContext.Projects.Remove( project );
 
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
 
-            return new JsonResult( new 
-            {
-                message = "Вы успешно удалили проект",
-                project = project
-            }, _jsonOptions );
+            return new JsonResult( project );
         }
     }
 }
