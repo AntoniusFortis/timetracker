@@ -1,6 +1,7 @@
 ﻿import React, { useState, useCallback } from 'react';
 import { Post } from '../../restManager';
 import { Redirect } from 'react-router';
+import cogoToast from 'cogo-toast';
 
 const InputField = (props) => {
     return (
@@ -26,15 +27,17 @@ export const SignUp = () => {
             setReferrer('/account/signin');
         }
         else {
-            alert(response.message);
+            cogoToast.error(response.message);
         }
     }, []);
 
     const trySignUp = useCallback((event) => {
         event.preventDefault();
+        const { hide } = cogoToast.loading('Идёт отправка данных');
 
         if (password !== password2) {
-            alert('Пароли не совпадают');
+            hide();
+            cogoToast.error('Пароли не совпадают');
             return;
         }
 
@@ -50,6 +53,7 @@ export const SignUp = () => {
         }
 
         Post('api/account/signup', body, (response) => {
+            hide();
             response.json().then(onResponse);
         });
     }, [name, password, password2, firstName, surname, middleName, city, birthDate, email]);

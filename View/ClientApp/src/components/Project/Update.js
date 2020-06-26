@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Get, Post } from '../../restManager';
 import { Redirect } from 'react-router';
+import cogoToast from 'cogo-toast';
 
 const InputField = (props) => {
     return (
@@ -32,10 +33,15 @@ export const ProjectUpdate = (props) => {
         event.preventDefault();
 
         const body = { Project: { Id: projectId, Title: title.trim(), Description: descr.trim() } };
-        Post("api/project/update", body, (response) => {
-            if (response.status === 200) {
-                setReferrer('/project/get/' + props.match.params.projectId);
-            }
+        Post('api/project/update', body, (response) => {
+            response.json().then(result => {
+                if (result.status === 200) {
+                    setReferrer('/project/all/');
+                }
+                else {
+                    cogoToast.error(result.message);
+                }
+            });
         });
     }, [projectId, title, descr]);
 

@@ -1,11 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
-namespace Timetracker.Entities.Models
+namespace Timetracker.Models.Entities
 {
+    using System.ComponentModel.DataAnnotations;
+
     public class State
     {
         [Key]
-        [Required]
         public byte Id { get; set; }
 
         [Required]

@@ -57,3 +57,7 @@ code {
     border-top: 3px solid lightblue;
     border-bottom: 1px solid #fff;
 }
+
+.block-fields {
+    width: 300px;
+}

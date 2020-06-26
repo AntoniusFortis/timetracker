@@ -1,4 +1,4 @@
-﻿namespace Timetracker.Entities.Models
+﻿namespace Timetracker.Models.Models
 {
     public class TokenModel
     {

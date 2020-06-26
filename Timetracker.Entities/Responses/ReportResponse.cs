@@ -5,8 +5,6 @@ namespace Timetracker.Models.Responses
 {
     public class ReportResponse
     {
-        public HttpStatusCode status { get; set; } = HttpStatusCode.OK;
-
         public int id { get; set; }
 
         public string login { get; set; }

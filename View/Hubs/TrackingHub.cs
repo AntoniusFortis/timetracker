@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Timetracker.Entities.Classes;
-using Timetracker.Entities.Models;
+using Timetracker.Models.Classes;
+using Timetracker.Models.Entities;
 
-namespace Timetracker.Entities.Hubs
+namespace Timetracker.View.Hubs
 {
     [Authorize]
     public class TrackingHub : Hub
@@ -26,12 +26,10 @@ namespace Timetracker.Entities.Hubs
             var worktaskId = taskId.Value;
 
             var userName = Context.User.Identity.Name;
-
-            var dbUser = await _dbContext.GetUserAsync(userName)
-                    .ConfigureAwait(false);
+            int userId = int.Parse( Context.User.Identity.Name );
 
             var anyActiveWorktrack = await _dbContext.Worktracks.AsNoTracking()
-                    .AnyAsync( x => x.UserId == dbUser.Id && x.Running )
+                    .AnyAsync( x => x.User.Id == userId && x.Running )
                     .ConfigureAwait(false);
 
             if ( anyActiveWorktrack )
@@ -41,23 +39,38 @@ namespace Timetracker.Entities.Hubs
                 return;
             }
 
-            var projectId = await _dbContext.Worktasks.AsNoTracking()
+            var worktaskData = await _dbContext.Worktasks.AsNoTracking()
                     .Where( x => x.Id == worktaskId )
-                    .Select( x => x.ProjectId )
+                    .Select( x => new { x.ProjectId, x.State } )
                     .FirstOrDefaultAsync()
                     .ConfigureAwait(false);
 
-            if ( !_dbContext.CheckAccessForProject( projectId, dbUser ) )
+            if ( worktaskData == null )
+            {
+                await Clients.Caller.SendAsync( "getActiveTracking", false, null, false, "Не существует задачи с таким идентификатором" )
+                    .ConfigureAwait( false );
+                return;
+            }
+
+            var projectId = worktaskData.ProjectId;
+            if ( _dbContext.GetLinkedAcceptedProject( projectId, userId ) == null )
             {
                 await Clients.Caller.SendAsync( "getActiveTracking", false, null, false, "У вас недостаточно прав, чтобы отслеживать эту задачу." )
                     .ConfigureAwait( false );
                 return;
             }
 
+            if ( worktaskData.State.Id == 6 )
+            {
+                await Clients.Caller.SendAsync( "getActiveTracking", false, null, false, "Данная задача уже закрыта" )
+               .ConfigureAwait( false );
+                return;
+            }
+
             var now = DateTime.UtcNow;
             var worktrack = await _dbContext.AddAsync( new Worktrack
             {
-                UserId = dbUser.Id,
+                UserId = userId,
                 StartedTime = now,
                 StoppedTime = now,
                 WorktaskId = worktaskId,
@@ -77,11 +90,9 @@ namespace Timetracker.Entities.Hubs
         public async Task StopTracking()
         {
             var userName = Context.User.Identity.Name;
+            int userId = int.Parse( Context.User.Identity.Name );
 
-            var dbUser = await _dbContext.GetUserAsync( userName )
-                .ConfigureAwait( false );
-
-            var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync( x => x.UserId == dbUser.Id && x.Running )
+            var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync( x => x.User.Id == userId && x.Running )
                 .ConfigureAwait( false );
 
             dbWorktrack.Running = false;
@@ -104,11 +115,10 @@ namespace Timetracker.Entities.Hubs
             await Groups.AddToGroupAsync( Context.ConnectionId, userName )
                 .ConfigureAwait( false );
 
-            var dbUser = await _dbContext.GetUserAsync( userName )
-                .ConfigureAwait( false );
+            int userId = int.Parse( Context.User.Identity.Name );
 
             // Получить запущенный трек 
-            var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync( x => x.UserId == dbUser.Id && x.Running )
+            var dbWorktrack = await _dbContext.Worktracks.FirstOrDefaultAsync( x => x.User.Id == userId && x.Running )
                 .ConfigureAwait( false );
 
             await base.OnConnectedAsync()

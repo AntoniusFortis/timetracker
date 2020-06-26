@@ -1,8 +1,12 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
-namespace Timetracker.Entities.Entity
+namespace Timetracker.Models.Entities
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+
     public class Token
     {
         [Key]
@@ -13,9 +17,10 @@ namespace Timetracker.Entities.Entity
         public string RefreshToken { get; set; }
 
         [Required]
-        [StringLength( 305 )]
+        [StringLength( 1024 )]
         public string AccessToken { get; set; }
 
+        [Required]
         public DateTime TokenExpiredDate { get; set; }
     }
 }

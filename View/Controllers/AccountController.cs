@@ -1,39 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security.Claims;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using Timetracker.Entities.Classes;
-using Timetracker.Entities.Entity;
-using Timetracker.Entities.Models;
-using Timetracker.Entities.Responses;
-using Timetracker.Entities;
-using Timetracker.Models.Models;
-using Timetracker.Models.Helpers;
-using Timetracker.Models.Response;
-using Timetracker.Models.Responses;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
 namespace View.Controllers
 {
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
+    using System;
+    using System.IdentityModel.Tokens.Jwt;
+    using System.Linq;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using Timetracker.Models.Classes;
+    using Timetracker.Models.Entities;
+    using Timetracker.Models.Helpers;
+    using Timetracker.Models.Models;
+    using Timetracker.Models.Responses;
+    using Timetracker.View.Resources;
+
     [Produces("application/json")]
     [ApiController]
     [AllowAnonymous]
     [Route("api/[controller]/[action]")]
+    [ProducesResponseType( typeof( ErrorResponse ), StatusCodes.Status400BadRequest )]
     public class AccountController : ControllerBase
     {
         private readonly TimetrackerContext _dbContext;
@@ -49,6 +40,11 @@ namespace View.Controllers
             };
         }
 
+        /// <summary>
+        /// Получение нового токена
+        /// </summary>
+        /// <param name="model">Данные для получения новых токенов</param>  
+        /// <returns>Новая связка токенов</returns>
         [HttpPost]
         public async Task<JsonResult> Token( [FromBody] TokenModel model )
         {
@@ -60,16 +56,17 @@ namespace View.Controllers
 
                 if ( now >= token.ValidTo )
                 {
-                    var login = token.Claims.FirstOrDefault().Value;
+                    var userId = token.Claims.FirstOrDefault().Value;
+                    var intUserId = int.Parse( userId );
 
-                    var dbUser = await _dbContext.GetUserAsync(login, true)
-                        .ConfigureAwait(false);
-
-                    var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId);
+                    var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Id == intUserId )
+                        .ConfigureAwait( false );
+                    var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId )
+                        .ConfigureAwait( false );
 
                     if ( dbToken.RefreshToken == model.RefreshToken )
                     {
-                        await TokenHelpers.GenerateToken( login, dbToken, _dbContext );
+                        await TokenHelpers.GenerateToken( userId, dbToken, _dbContext );
 
                         return new JsonResult( new TokenResponse
                         {
@@ -80,54 +77,51 @@ namespace View.Controllers
                     }
                     else
                     {
-                        return new JsonResult( new ErrorResponse
-                        {
-                            message = "Неверный Refresh Token"
-                        } );
+                        throw new Exception( "Неверный Refresh Token" );
                     }
                 }
                 else
                 {
-                    return new JsonResult( new ErrorResponse
-                    {
-                        message = "Срок действия вашего токена ещё не истёк"
-                    } );
+                    throw new Exception( "Срок действия вашего токена ещё не истёк" );
                 }
             }
 
-            return new JsonResult( new ErrorResponse
-            {
-                message = "Срок действия вашего токена ещё не истёк"
-            } );
+            throw new Exception( "Срок действия вашего токена ещё не истёк" );
         }
+
+        /// <summary>
+        /// Авторизация пользователей
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> SignIn( [FromBody] SignInModel model )
         {
+            // Валидация
             if ( string.IsNullOrEmpty( model.login.Trim() ) || string.IsNullOrEmpty( model.pass.Trim() ) )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Отсутствует логин или пароль"
-                } );
+                throw new Exception( TextResource.Auth_EmptyValues );
             }
 
-            var dbUser = await _dbContext.GetUserAsync(model.login, true)
+            if ( model.login.Length < 5 || model.login.Length > 20 )
+            {
+                throw new Exception( TextResource.Auth_LoginWrongLength );
+            }
+
+            if ( model.pass.Length < 4 || model.pass.Length > 30 )
+            {
+                throw new Exception( TextResource.Auth_PassWrongLength );
+            }
+
+            var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Login == model.login )
                 .ConfigureAwait(false);
             if ( dbUser == null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Пользователя с таким логином не существует"
-                } );
+                throw new Exception( "Неправильный логин или пароль" );
             }
 
-            var password = PasswordHelpers.EncryptPassword(model.pass, dbUser.Salt);
-            if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass ) )
+            var password = PasswordHelpers.EncryptPassword(model.pass, dbUser.Pass.Salt);
+            if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass.Password ) )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Неправильный логин или пароль"
-                } );
+                throw new Exception( "Неправильный логин или пароль" );
             }
 
             var now = DateTime.UtcNow;
@@ -166,12 +160,12 @@ namespace View.Controllers
                 isFirst = true;
             }
 
-            await TokenHelpers.GenerateToken( dbUser.Login, dbToken, _dbContext, isFirst )
+            await TokenHelpers.GenerateToken( dbUser.Id.ToString(), dbToken, _dbContext, isFirst )
                 .ConfigureAwait( false );
 
             dbUser.TokenId = dbToken.Id;
 
-            await _dbContext.SaveChangesAsync()
+            await _dbContext.SaveChangesAsync( true )
                 .ConfigureAwait( false );
 
             return new JsonResult( new SignInResponse
@@ -183,52 +177,70 @@ namespace View.Controllers
             } );
         }
 
+        /// <summary>
+        /// Получить объект авторизованного пользователя
+        /// </summary>
         [HttpGet]
         [Authorize]
         public async Task<JsonResult> GetCurrentUser()
         {
-            var currentUser = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
+            int userId = int.Parse( User.Identity.Name );
+            var user = await _dbContext.Users.FirstOrDefaultAsync( x => x.Id == userId )
+                .ConfigureAwait( false );
 
             return new JsonResult( new GetCurrentUserResponse
             {
-                status = HttpStatusCode.OK,
-                user = currentUser
+                user = user
             }, _jsonOptions );
         }
 
+        /// <summary>
+        /// Регистрация пользователя
+        /// </summary>
         [HttpPost]
         public async Task<JsonResult> SignUp( [FromBody] SignUpModel model )
         {
-            var userExists = await _dbContext.UserExists(model.Login)
+            var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Login == model.Login )
                 .ConfigureAwait(false);
-
-            if ( userExists )
+            if ( dbUser != null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Пользователь с таким логином уже существует"
-                } );
+                throw new Exception( "Пользователь с таким логином уже существует" );
             }
 
+            // Хешируем пароли
             var salt = PasswordHelpers.GenerateSalt();
             var hash = PasswordHelpers.EncryptPassword(model.Pass, salt);
+
+            // Шифруем личные данные
+            var IV = PasswordHelpers.GetIV();
+            var firstName = PasswordHelpers.EncryptData( model.FirstName, IV );
+            var surName = PasswordHelpers.EncryptData( model.Surname, IV );
+            var email = PasswordHelpers.EncryptData( model.Email, IV );
+            var middleName = string.IsNullOrEmpty( model.MiddleName ) ? null : PasswordHelpers.EncryptData( model.MiddleName, IV );
+            var birthdate = string.IsNullOrEmpty( model.BirthDate ) ? null : PasswordHelpers.EncryptData( model.BirthDate, IV );
+            var city = string.IsNullOrEmpty( model.City ) ? null : PasswordHelpers.EncryptData( model.City, IV );
 
             var user = new User
             {
                 Login = model.Login,
-                Pass = hash,
-                Salt = salt,
-                FirstName = model.FirstName,
-                Surname = model.Surname,
-                MiddleName = model.MiddleName,
-                City = model.City,
-                BirthDate = model.BirthDate,
-                Email = model.Email
+                Pass = new Pass
+                {
+                    Password = hash,
+                    Salt = salt
+                },
+                IV = IV,
+                FirstName = firstName,
+                Surname = surName,
+                MiddleName = middleName,
+                City = city,
+                BirthDate = birthdate,
+                Email = email
             };
 
-            await _dbContext.AddAsync( user ).ConfigureAwait( false );
-            await _dbContext.SaveChangesAsync().ConfigureAwait( false );
+            await _dbContext.AddAsync( user )
+                .ConfigureAwait( false );
+            await _dbContext.SaveChangesAsync( true )
+                .ConfigureAwait( false );
 
             return new JsonResult( new OkResponse
             {

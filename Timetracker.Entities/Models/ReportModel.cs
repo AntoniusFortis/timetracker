@@ -1,7 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿/* Автор: Антон Другалев  
+*  Проект: Timetracker.Models
+*/
 
-namespace Timetracker.Entities.Models
+namespace Timetracker.Models.Models
 {
+    using System.ComponentModel.DataAnnotations;
+
     public class ReportModel
     {
         [Required]

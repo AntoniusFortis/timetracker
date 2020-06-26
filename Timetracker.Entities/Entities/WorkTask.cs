@@ -1,10 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
-namespace Timetracker.Entities.Models
+namespace Timetracker.Models.Entities
 {
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
+    using System.Text.Json.Serialization;
+
     public class WorkTask
     {
         [Key]

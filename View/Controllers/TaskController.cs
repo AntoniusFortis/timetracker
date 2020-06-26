@@ -1,104 +1,73 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Timetracker.Entities.Classes;
-using Timetracker.Entities.Hubs;
-using Timetracker.Entities.Models;
-using Timetracker.Models.Models;
-using Timetracker.Models.Response;
-using Timetracker.Models.Responses;
+﻿/* Автор: Антон Другалев  
+* Проект: Timetracker.View
+*/
 
 namespace Timetracker.Entities.Controllers
 {
-    public class UpdateStateModel
-    {
-        public int TaskId { get; set; }
-
-        public int StateId { get; set; }
-    }
+    using System;
+    using System.Linq;
+    using System.Net;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.SignalR;
+    using Microsoft.EntityFrameworkCore;
+    using Timetracker.Models.Classes;
+    using Timetracker.Models.Entities;
+    using Timetracker.Models.Extensions;
+    using Timetracker.Models.Models;
+    using Timetracker.Models.Responses;
+    using Timetracker.View.Hubs;
+    using Timetracker.View.Resources;
 
     [ApiController]
     [Authorize]
     [Route("api/[controller]/[action]")]
-    public class TaskController : Controller
+    [Produces( "application/json" )]
+    [ProducesResponseType( typeof( ErrorResponse ), StatusCodes.Status403Forbidden )]
+    [ProducesResponseType( typeof( ErrorResponse ), StatusCodes.Status400BadRequest )]
+    public class TaskController : ControllerBase
     {
-        private readonly TimetrackerContext _dbContext;
-        private readonly JsonSerializerOptions _jsonOptions;
-        private readonly IHubContext<TrackingHub> _hub;
+        private readonly TimetrackerContext _context;
+        private readonly Lazy<IHubContext<TrackingHub>> _hub;
 
-        public TaskController(TimetrackerContext dbContext, IHubContext<TrackingHub> hub )
+        public TaskController(TimetrackerContext context, IHubContext<TrackingHub> hub )
         {
-            _dbContext = dbContext;
-
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-            _hub = hub;
+            _context = context;
+            _hub = new Lazy<IHubContext<TrackingHub>>( hub );
         }
 
-        [HttpPost]
-        public async Task<JsonResult> Add( [FromBody] WorktaskUpdateModel model )
-        {
-            var worktask = model.worktask;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name).
-                ConfigureAwait(false);
-
-            if (!_dbContext.CheckAccessForProject(worktask.ProjectId, user))
-            {
-                return new JsonResult(new ErrorResponse
-                {
-                    message = "У вас нет прав для добавления новой задачи"
-                } );
-            }
-
-            worktask.CreatedDate = DateTime.UtcNow;
-
-            var addedTask = await _dbContext.AddAsync(worktask)
-                .ConfigureAwait( false );
-
-            await _dbContext.SaveChangesAsync();
-
-            return new JsonResult(new OkResponse
-            {
-                message = "Вы успешно добавили задачу"
-            } );
-        }
-
+        /// <summary>
+        /// Получить информацию о задаче
+        /// </summary>
+        /// <param name="id">Идентификатор задачи</param>   
+        /// <returns>Информация о задаче</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>   
         [HttpGet]
-        public async Task<JsonResult> Get(int? Id)
+        [ProducesResponseType( typeof( WorktaskGetResponse ), StatusCodes.Status200OK )]
+        public async Task<JsonResult> Get( [FromQuery] uint? id )
         {
-            if ( !Id.HasValue )
+            int taskId = this.ParseValue( id );
+
+            var worktask = await _context.Worktasks.FirstOrDefaultAsync( x => x.Id == taskId )
+                .ConfigureAwait(false);
+            if ( worktask == null )
             {
-                return new JsonResult( new
-                {
-                    status = HttpStatusCode.BadRequest,
-                    message = "Вы должны ввести идентификатор"
-                } );
+                throw new Exception( TextResource.API_NotExistWorktaskId );
             }
 
-            var id = Id.Value;
+            int projectId = worktask.ProjectId;
+            int userId = int.Parse( User.Identity.Name );
 
-            var worktask = await _dbContext.Worktasks.SingleOrDefaultAsync(x => x.Id == id)
-                .ConfigureAwait(false);
-
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
-
-            var linkedProject = _dbContext.GetLinkedProjectForUser( worktask.ProjectId, user.Id );
-            if ( linkedProject == null || !linkedProject.Accepted )
+            // Проверяем доступ
+            var linkedProject = await _context.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет доступа для изменения задачи"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
             var task = new
@@ -109,132 +78,145 @@ namespace Timetracker.Entities.Controllers
                 worktask.Title,
                 worktask.Description,
                 worktask.Duration,
-                Project = new { worktask.Project.Id, worktask.Project.Title },
                 worktask.CreatedDate
             };
 
-            return new JsonResult(new
+            return new JsonResult( new WorktaskGetResponse
             {
-                status = HttpStatusCode.OK,
                 project = worktask.Project,
                 worktask = task,
-                isAdmin = linkedProject.RightId
-            }, _jsonOptions);
+                isAdmin = linkedProject.RoleId
+            }, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            } );
         }
 
-
+        /// <summary>
+        /// Добавить задачу
+        /// </summary>
+        /// <param name="model">Данные для добавления задачи</param>  
+        /// <returns>Информация о добавленной задаче</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>  
         [HttpPost]
-        public async Task<JsonResult> UpdateState( UpdateStateModel model )
+        [ProducesResponseType( typeof( WorktaskAddResponse ), StatusCodes.Status200OK )]
+        public async Task<JsonResult> Add( [FromBody] WorktaskUpdateModel model )
         {
-            var dbWorkTask = _dbContext.Worktasks.FirstOrDefault(x => x.Id == model.TaskId );
+            var worktask = model.worktask;
 
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
+            int projectId = worktask.ProjectId;
+            int userId = int.Parse( User.Identity.Name );
+
+            // Проверяем доступ
+            var linkedProject = await _context.GetLinkedAcceptedProject( projectId, userId )
                 .ConfigureAwait( false );
-            var linkedProject = _dbContext.GetLinkedProjectForUser( dbWorkTask.ProjectId, user.Id );
-
             if ( linkedProject == null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет доступа для изменения задачи"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
-            dbWorkTask.StateId = ( byte ) model.StateId;
-            _dbContext.Update( dbWorkTask );
+            worktask.CreatedDate = DateTime.UtcNow;
 
-            await _dbContext.SaveChangesAsync();
+            var addedTask = await _context.AddAsync(worktask)
+                .ConfigureAwait( false );
 
-            return new JsonResult( new
-            {
-                status = HttpStatusCode.OK
-            }, _jsonOptions );
+            await _context.SaveChangesAsync( true )
+                .ConfigureAwait( false );
+
+            return new JsonResult( new WorktaskAddResponse { worktask = worktask } );
         }
 
+        /// <summary>
+        /// Изменить задачу
+        /// </summary>
+        /// <param name="model">Данные для изменения задачи</param>  
+        /// <returns>Информация об изменённой задаче</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response>  
         [HttpPost]
+        [ProducesResponseType( typeof( WorktaskUpdateResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Update( [FromBody] WorktaskUpdateModel model )
         {
             var worktask = model.worktask;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name).ConfigureAwait( false );
 
-            var linkedProject = _dbContext.GetLinkedProjectForUser( worktask.Project.Id, user.Id );
+            int projectId = worktask.ProjectId;
+            int userId = int.Parse( User.Identity.Name );
 
-            if ( linkedProject == null || linkedProject.RightId == 1 )
+            // Проверяем доступ
+            var linkedProject = await _context.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null || linkedProject.RoleId == 1 )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "У вас нет доступа для изменения задачи"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
-            var dbWorkTask = _dbContext.Worktasks.FirstOrDefault(x => x.Id == model.worktask.Id);
-            dbWorkTask.Title = model.worktask.Title;
-            dbWorkTask.Description = model.worktask.Description;
-            dbWorkTask.Duration = model.worktask.Duration;
-            dbWorkTask.StateId = model.worktask.StateId;
+            var dbWorkTask = await _context.Worktasks.FirstOrDefaultAsync( x => x.Id == worktask.Id )
+                .ConfigureAwait( false );
 
-            _dbContext.Update( dbWorkTask );
+            dbWorkTask.Title = worktask.Title;
+            dbWorkTask.Description = worktask.Description;
+            dbWorkTask.Duration = worktask.Duration;
+            dbWorkTask.StateId = worktask.StateId;
 
-            await _dbContext.SaveChangesAsync();
+            _context.Update( dbWorkTask );
 
-            return new JsonResult( new
-            {
-                status = HttpStatusCode.OK,
-                worktask = worktask
-            }, _jsonOptions );
+            await _context.SaveChangesAsync()
+                .ConfigureAwait( false );
+
+            return new JsonResult( new WorktaskUpdateResponse { worktask = worktask } );
         }
 
+        /// <summary>
+        /// Удалить задачу
+        /// </summary>
+        /// <param name="id">Идентификатор задачи</param>  
+        /// <returns>Информация об удалённой задаче</returns>
+        /// <response code="403">Отсутствие доступа</response>
+        /// <response code="400">Ошибка формата идентификатора</response> 
         [HttpDelete]
-        public async Task<JsonResult> Delete( [FromQuery] uint? id)
+        [ProducesResponseType( typeof( WorktaskDeleteResponse ), StatusCodes.Status200OK )]
+        public async Task<JsonResult> Delete( [FromQuery] uint? id )
         {
-            if ( !id.HasValue )
+            int taskId = this.ParseValue( id );
+
+            var worktask = await _context.Worktasks.FirstOrDefaultAsync( x => x.Id == taskId )
+                .ConfigureAwait(false);
+            if ( worktask == null )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Вы должны ввести идентификатор"
-                } );
+                throw new Exception( TextResource.API_NotExistWorktaskId );
             }
 
-            var worktaskId = id.Value;
-            var user = await _dbContext.GetUserAsync(User.Identity.Name)
-                .ConfigureAwait(false);
+            int projectId = worktask.ProjectId;
+            int userId = int.Parse( User.Identity.Name );
 
-            var dbWorkTask = await _dbContext.Worktasks.FirstOrDefaultAsync(x => x.Id == worktaskId)
-                .ConfigureAwait(false);
-
-            var hasAccess = await _dbContext.LinkedProjects.AsNoTracking()
-                .AnyAsync( x => x.ProjectId == dbWorkTask.ProjectId && x.User.Id == user.Id && x.RightId != 1 )
-                .ConfigureAwait(false);
-
-            if ( !hasAccess )
+            // Проверяем доступ
+            var linkedProject = await _context.GetLinkedAcceptedProject( projectId, userId )
+                .ConfigureAwait( false );
+            if ( linkedProject == null || linkedProject.RoleId == 1 )
             {
-                return new JsonResult(new ErrorResponse
-                {
-                    message = "У вас недостаточно прав для удаления задачи"
-                } );
+                throw new Exception( TextResource.API_NoAccess );
             }
 
             // Если на задачу кто-то тречит - заставить их прекратить
-            var runningWorktracks = _dbContext.Worktracks.Where( x => x.WorktaskId == dbWorkTask.Id && x.Running);
+            var runningWorktracks = _context.Worktracks.Where( x => x.WorktaskId == taskId && x.Running );
             if ( runningWorktracks.Any() )
             {
-                var users = runningWorktracks.Select( x => x.User.Login );
+                var users = runningWorktracks.Select( x => x.UserId );
 
                 foreach ( var userName in users )
                 {
-                    await _hub.Clients.Group( userName ).SendAsync( "getActiveTracking", false, null, false, "Задача была удалена и больше не отслеживается" );
+                    await _hub.Value.Clients.Group( userName.ToString() ).SendAsync( "getActiveTracking", false, null, false, TextResource.SignalR_TaskIsRemoved )
+                        .ConfigureAwait( false );
                 }
             }
 
-            _dbContext.Remove(dbWorkTask);
+            _context.Remove( worktask );
 
-            await _dbContext.SaveChangesAsync()
-                .ConfigureAwait(false);
+            await _context.SaveChangesAsync()
+                .ConfigureAwait( false );
 
-            return new JsonResult(new WorktaskDeleteResponse
-            {
-                worktask = dbWorkTask
-            }, _jsonOptions);
+            return new JsonResult( new WorktaskDeleteResponse { worktask = worktask } );
         }
     }
 }

@@ -4,6 +4,8 @@ import Select from 'react-select';
 import moment from 'moment'
 import { NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
+import cogoToast from 'cogo-toast';
+
 export class Report extends PureComponent {
     constructor(props) {
         super(props);
@@ -72,7 +74,7 @@ export class Report extends PureComponent {
         }
     }
 
-    async getStat() {
+    async getReport() {
         const { projectId, taskId, userId, startDate, endDate } = this.state;
 
         const body = {
@@ -86,7 +88,11 @@ export class Report extends PureComponent {
         Post("api/worktrack/GetReport", body, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ worktracks: result });
+                    if (result.status) {
+                        cogoToast.error(result.message);
+                    } else {
+                        this.setState({ worktracks: result });
+                    }
                 });
         });
     }
@@ -95,10 +101,11 @@ export class Report extends PureComponent {
         Get("api/project/get?id=" + event.value, (response) => {
             response.json()
                 .then(result => {
-                    if (result.status == 401) {
+                    if (result.status !== 200) {
                         window.location.href = "/error401";
                         return;
                     }
+
                     const tasks = result.tasks.map(proj => {
                         return {
                             value: proj.Id,
@@ -184,7 +191,7 @@ export class Report extends PureComponent {
                     </div>
                     <hr />
                     <div style={{ marginBottom: '15px' }}>
-                        <button disabled={!isReady} onClick={(e) => { this.getStat() }}>Запросить</button>
+                        <button disabled={!isReady} onClick={(e) => { this.getReport() }}>Запросить</button>
                     </div>
                 </div>
                 <div>
