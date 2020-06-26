@@ -37,14 +37,14 @@ export const TrackingService = (props) => {
             });
     };
 
-    const stopTracking = useCallback((event) => {
+    const stopTracking = (event) => {
         SignalR_Provider.getConnection(getToken())
             .invoke('StopTracking')
             .catch(error => {
                 console.error(error);
                 setTracking(true);
             });
-    }, []);
+    };
 
     return (
         loaded && <div style = {{ display: 'inline-block', margin: '5px' }}>

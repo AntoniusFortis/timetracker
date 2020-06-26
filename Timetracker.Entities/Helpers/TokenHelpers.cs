@@ -11,7 +11,7 @@ namespace Timetracker.Models.Helpers
 {
     public static class TokenHelpers
     {
-        private static readonly TimeSpan tokenDurability =  TimeSpan.FromDays( 29 );
+        private static readonly TimeSpan tokenDurability =  TimeSpan.FromDays( 28 );
 
         public static async Task GenerateToken( string id, Token user, TimetrackerContext context, bool isNew = false )
         {
@@ -20,7 +20,8 @@ namespace Timetracker.Models.Helpers
                 new Claim(ClaimsIdentity.DefaultNameClaimType, id)
             };
 
-            var claimsIdentity = new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+            var claimsIdentity = new ClaimsIdentity( claims, "Token", 
+                ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType );
 
             var now = DateTime.UtcNow;
             var expiredIn = now.Add( tokenDurability );
@@ -30,7 +31,10 @@ namespace Timetracker.Models.Helpers
                     notBefore: now,
                     claims: claimsIdentity.Claims,
                     expires: expiredIn,
-                    signingCredentials: new SigningCredentials(TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+                    signingCredentials: new SigningCredentials(
+                        TimetrackerAuthorizationOptions.GetSymmetricSecurityKey(), 
+                        SecurityAlgorithms.HmacSha256 )
+                    );
 
             var access_token = new JwtSecurityTokenHandler().WriteToken(jwt);
             var refresh_token = Guid.NewGuid().ToString().Replace("-", "");
@@ -45,7 +49,8 @@ namespace Timetracker.Models.Helpers
                     .ConfigureAwait( false );
             }
 
-            context.SaveChanges();
+            await context.SaveChangesAsync( true )
+                .ConfigureAwait( false );
         }
     }
 }

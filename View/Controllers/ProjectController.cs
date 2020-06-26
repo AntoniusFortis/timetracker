@@ -181,11 +181,15 @@ namespace View.Controllers
             }
 
             // Если на задачу тречит удаляемый пользователь - останавливаем
-            var runningWorktracksUsers = _dbContext.Worktracks.Any( x => x.Worktask.ProjectId == projectId && x.UserId == model.UserId && x.Running );
-            if ( runningWorktracksUsers )
+            var runningWorktracksUsers = _dbContext.Worktracks.FirstOrDefault( x => x.Worktask.ProjectId == projectId && x.UserId == model.UserId && x.Running );
+            if ( runningWorktracksUsers != null )
             {
                 await _hub.Value.Clients.Group( User.Identity.Name ).SendAsync( "getActiveTracking", false, null, false, "У вас больше нет доступа к данной задаче" )
                     .ConfigureAwait( false );
+                runningWorktracksUsers.Running = false;
+                runningWorktracksUsers.StoppedTime = DateTime.UtcNow;
+
+                _dbContext.Update( runningWorktracksUsers );
             }
 
             var linkedProjectToDelete = _dbContext.GetLinkedProjectForUser( projectId, model.UserId );
@@ -194,12 +198,12 @@ namespace View.Controllers
                 throw new Exception( "Данного пользователя не существует в проекте" );
             }
 
-            _dbContext.LinkedProjects.Remove( linkedProject );
+            _dbContext.LinkedProjects.Remove( linkedProjectToDelete );
 
-            await _dbContext.GetLinkedAcceptedProject( projectId, model.UserId, true )
+            await _dbContext.SaveChangesAsync( true )
                 .ConfigureAwait( false );
 
-            await _dbContext.SaveChangesAsync()
+            await _dbContext.GetLinkedAcceptedProject( projectId, model.UserId, true )
                 .ConfigureAwait( false );
 
             return new JsonResult( new
@@ -329,13 +333,14 @@ namespace View.Controllers
                 throw new Exception( TextResource.API_NoAccess );
             }
 
-            var userLogin = _dbContext.Users.Where( x => x.Id == userId )
+            var userLogin = await _dbContext.Users.Where( x => x.Id == userId )
                 .Select( x => x.Login )
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             var tasks =  await _dbContext.Worktasks
                 .Where(x => x.ProjectId == id)
                 .OrderBy( x => x.StateId )
+                .OrderByDescending( x => x.CreatedDate )
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -375,6 +380,16 @@ namespace View.Controllers
         [ProducesResponseType( typeof( ProjectUpdateResponse ), StatusCodes.Status200OK )]
         public async Task<JsonResult> Add( [FromBody] AddProjectModel model )
         {
+            if ( model.title.Length < 5 || model.title.Length > 50 )
+            {
+                throw new Exception( "Неверная длина названия проекта" );
+            }
+
+            if ( model.description.Length > 250 )
+            {
+                throw new Exception( "Неверная длина описания проекта" );
+            }
+
             int userId = int.Parse( User.Identity.Name );
 
             var addedProject = await _dbContext.AddAsync(new Project
@@ -439,7 +454,7 @@ namespace View.Controllers
             await _dbContext.SaveChangesAsync()
                 .ConfigureAwait( false );
 
-            return new JsonResult( new ProjectUpdateResponse { project = model.Project } );
+            return new JsonResult( new ProjectUpdateResponse { project = project } );
         }
 
         /// <summary>
@@ -464,7 +479,8 @@ namespace View.Controllers
                 throw new Exception( TextResource.API_NoAccess );
             }
 
-            var project = await _dbContext.Projects.FirstOrDefaultAsync(x => x.Id == projectId)
+            // Получае проект по указанному ИД
+            var project = await _dbContext.Projects.FirstOrDefaultAsync( x => x.Id == projectId )
                 .ConfigureAwait(false);
             if ( project == null )
             {
@@ -472,14 +488,24 @@ namespace View.Controllers
             }
 
             // Если на задачу кто-то тречит - заставить их прекратить
-            var runningWorktracksUsers = _dbContext.Worktracks.Where( x => x.Worktask.ProjectId == projectId && x.Running)
-                .Select( x => x.UserId )
-                .ToHashSet();
-
-            foreach ( var userName in runningWorktracksUsers )
+            var runningWorktracksUsers = _dbContext.Worktracks.Where( x => x.Worktask.ProjectId == projectId && x.Running )
+                .ToList();
+            if ( runningWorktracksUsers.Any() )
             {
-                await _hub.Value.Clients.Group( userName.ToString() ).SendAsync( "getActiveTracking", false, null, false, TextResource.SignalR_TaskIsRemoved )
-                    .ConfigureAwait( false );
+                foreach ( var userName in runningWorktracksUsers )
+                {
+                    await _hub.Value.Clients.Group( userName.UserId.ToString() ).SendAsync( "getActiveTracking", false, null, false, TextResource.SignalR_TaskIsRemoved )
+                        .ConfigureAwait( false );
+                }
+
+                var now = DateTime.UtcNow;
+                runningWorktracksUsers.ForEach( x =>
+                {
+                    x.Running = false;
+                    x.StoppedTime = now;
+                } );
+
+                _dbContext.UpdateRange( runningWorktracksUsers );
             }
 
             var linkedProjects = _dbContext.LinkedProjects.Where( x => x.ProjectId == projectId );

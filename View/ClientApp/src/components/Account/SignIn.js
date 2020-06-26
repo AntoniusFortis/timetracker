@@ -3,6 +3,7 @@ import { Post } from '../../restManager';
 import { Redirect } from 'react-router';
 import { setToken } from '../Account'
 import { NavMenu } from '../Menu/NavMenu';
+import cogoToast from 'cogo-toast';
 
 const InputField = (props) => {
     return (
@@ -24,22 +25,23 @@ export const SignIn = () => {
             setReferrer('/project/all');
         }
         else {
-            alert(response.message);
+            cogoToast.error(response.message);
         }
     }, []);
 
     const trySignIn = useCallback((event) => {
         event.preventDefault();
-
+        const { hide } = cogoToast.loading('Идёт отправка данных');
         const body = { login: name, pass: password };
 
         Post('api/account/signin', body, (response) => {
+            hide();
             response.json().then(onResponse);
         });
     }, [name, password]);
 
     return (
-        <div style={{ width: '300px', margin: '0 auto', paddingTop: '125px', height: '300px', display: 'block' }}>
+        <div className="block-fields" style={{ margin: '0 auto', paddingTop: '125px', height: '300px', display: 'block' }}>
             {referrer && <Redirect to={referrer} />}
             <form style={{ width: '400px' }} onSubmit={trySignIn}>
                 <InputField type="text" placeholder="Логин" value={name} onChange={(event) => setName(event.target.value)} />

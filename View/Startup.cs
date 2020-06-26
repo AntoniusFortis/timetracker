@@ -58,7 +58,7 @@ namespace View
             }
 
             app.UseHttpsRedirection();
-            if ( !env.IsDevelopment() )
+            //if ( !env.IsDevelopment() )
             {
                 app.UseSpaStaticFiles();
             }

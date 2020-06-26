@@ -5,16 +5,19 @@
 namespace Timetracker.Entities.Controllers
 {
     using System;
+    using System.Linq;
     using System.Net;
     using System.Text.Json;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.SignalR;
     using Microsoft.EntityFrameworkCore;
     using Timetracker.Models.Classes;
     using Timetracker.Models.Models;
     using Timetracker.Models.Responses;
+    using Timetracker.View.Hubs;
     using Timetracker.View.Resources;
 
     [ApiController]
@@ -27,8 +30,9 @@ namespace Timetracker.Entities.Controllers
     {
         private readonly TimetrackerContext _context;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly Lazy<IHubContext<TrackingHub>> _hub;
 
-        public StateController(TimetrackerContext dbContext)
+        public StateController(TimetrackerContext dbContext, IHubContext<TrackingHub> hub )
         {
             _context = dbContext;
 
@@ -36,6 +40,7 @@ namespace Timetracker.Entities.Controllers
             {
                 PropertyNameCaseInsensitive = true
             };
+            _hub = new Lazy<IHubContext<TrackingHub>>( hub );
         }
 
         /// <summary>
@@ -89,6 +94,29 @@ namespace Timetracker.Entities.Controllers
             if ( linkedProject == null )
             {
                 throw new Exception( TextResource.API_NoAccess );
+            }
+
+            // Если на задачу кто-то тречит - заставить их прекратить
+            var runningWorktracks = _context.Worktracks.Where( x => x.WorktaskId == dbWorkTask.Id && x.Running );
+            if ( model.StateId == 6 && runningWorktracks.Any() )
+            {
+                var tracks = runningWorktracks.ToList();
+                var users = tracks.Select( x => x.UserId );
+
+                foreach ( var userName in users )
+                {
+                    await _hub.Value.Clients.Group( userName.ToString() ).SendAsync( "getActiveTracking", false, null, false, TextResource.API_TrackingTaskClosed )
+                        .ConfigureAwait( false );
+                }
+
+                var now = DateTime.UtcNow;
+                tracks.ForEach( x =>
+                {
+                    x.Running = false;
+                    x.StoppedTime = now;
+                } );
+
+                _context.UpdateRange( tracks );
             }
 
             dbWorkTask.StateId = ( byte ) model.StateId;

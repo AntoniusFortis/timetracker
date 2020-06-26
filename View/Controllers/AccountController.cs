@@ -18,6 +18,7 @@ namespace View.Controllers
     using Timetracker.Models.Helpers;
     using Timetracker.Models.Models;
     using Timetracker.Models.Responses;
+    using Timetracker.View.Resources;
 
     [Produces("application/json")]
     [ApiController]
@@ -60,7 +61,8 @@ namespace View.Controllers
 
                     var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Id == intUserId )
                         .ConfigureAwait( false );
-                    var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId);
+                    var dbToken = await _dbContext.Tokens.FirstOrDefaultAsync( x => x.Id == dbUser.TokenId )
+                        .ConfigureAwait( false );
 
                     if ( dbToken.RefreshToken == model.RefreshToken )
                     {
@@ -93,25 +95,33 @@ namespace View.Controllers
         [HttpPost]
         public async Task<IActionResult> SignIn( [FromBody] SignInModel model )
         {
+            // Валидация
             if ( string.IsNullOrEmpty( model.login.Trim() ) || string.IsNullOrEmpty( model.pass.Trim() ) )
             {
-                throw new Exception( "Отсутствует логин или пароль" );
+                throw new Exception( TextResource.Auth_EmptyValues );
+            }
+
+            if ( model.login.Length < 5 || model.login.Length > 20 )
+            {
+                throw new Exception( TextResource.Auth_LoginWrongLength );
+            }
+
+            if ( model.pass.Length < 4 || model.pass.Length > 30 )
+            {
+                throw new Exception( TextResource.Auth_PassWrongLength );
             }
 
             var dbUser = await _dbContext.Users.FirstOrDefaultAsync( x => x.Login == model.login )
                 .ConfigureAwait(false);
             if ( dbUser == null )
             {
-                throw new Exception( "Пользователя с таким логином не существует" );
+                throw new Exception( "Неправильный логин или пароль" );
             }
 
             var password = PasswordHelpers.EncryptPassword(model.pass, dbUser.Pass.Salt);
             if ( !PasswordHelpers.SlowEquals( password, dbUser.Pass.Password ) )
             {
-                return new JsonResult( new ErrorResponse
-                {
-                    message = "Неправильный логин или пароль"
-                } );
+                throw new Exception( "Неправильный логин или пароль" );
             }
 
             var now = DateTime.UtcNow;
@@ -155,7 +165,7 @@ namespace View.Controllers
 
             dbUser.TokenId = dbToken.Id;
 
-            await _dbContext.SaveChangesAsync()
+            await _dbContext.SaveChangesAsync( true )
                 .ConfigureAwait( false );
 
             return new JsonResult( new SignInResponse

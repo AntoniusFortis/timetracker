@@ -1,6 +1,7 @@
 ﻿import React, { useState, useCallback } from 'react';
 import { Post } from '../../restManager';
 import { Redirect } from 'react-router';
+import cogoToast from 'cogo-toast';
 
 const InputField = (props) => {
     return (
@@ -12,10 +13,13 @@ const InputField = (props) => {
 export const ProjectAdd = () => {
     const [title, setTitle] = useState('');
     const [descr, setDescr] = useState('');
+    const [loading, setLoading] = useState(false);
     const [referrer, setReferrer] = useState(null);
 
     const tryAddProject = useCallback((event) => {
         event.preventDefault();
+
+        setLoading(true);
 
         const body = { title: title, description: descr };
 
@@ -25,21 +29,22 @@ export const ProjectAdd = () => {
                     setReferrer('/project/all');
                 }
                 else {
-                    alert(result.message);
+                    cogoToast.error(result.message);
                 }
+                setLoading(false);
             });
         });
-    }, [title, descr])
+    }, [title, descr, loading])
 
     return (
         <div style={{ width: '300px', margin: '0 auto', paddingTop: '125px', height: '300px', display: 'block' }}>
             {referrer && <Redirect to={referrer} />}
             <form style={{ width: '400px' }} onSubmit={tryAddProject}>
-                <InputField required={true} minLength="5" maxLength="50" type="text" placeholder="Название" value={title} onChange={(event) => setTitle(event.target.value)} />
+                <InputField required={true} minLength="4" maxLength="50" type="text" placeholder="Название" value={title} onChange={(e) => setTitle(e.target.value)} />
                 <div style={{ paddingTop: '15px' }}>
                     <textarea style={{ width: '270px', textAlign: 'center' }} maxLength="250" placeholder="Описание" value={descr} onChange={(e) => setDescr(e.target.value)} />
                 </div>
-                <input style={{ display: 'block', width: '270px', marginTop: '15px' }} type="submit" value="Создать" />
+                <input disabled={loading} style={{ display: 'block', width: '270px', marginTop: '15px' }} type="submit" value="Создать" />
             </form>
         </div>);
 }

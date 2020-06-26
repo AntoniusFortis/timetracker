@@ -1,5 +1,6 @@
 ﻿import React, { PureComponent } from 'react';
 import { Post } from '../../restManager';
+import cogoToast from 'cogo-toast';
 
 export class ProjectInvite extends PureComponent {
     constructor(props) {
@@ -10,8 +11,8 @@ export class ProjectInvite extends PureComponent {
         };
     }
 
-    onUserInputChange = (event) => {
-        this.setState({ user_input: event.target.value });
+    onUserInputChange = (e) => {
+        this.setState({ user_input: e.target.value });
     }
 
     onSubmit = (event) => {
@@ -28,7 +29,7 @@ export class ProjectInvite extends PureComponent {
                     window.location.href = "/project/get/" + projectId;
                 }
                 else {
-                    alert(result.message);
+                    cogoToast.error(result.message);
                 }
             });
         });

@@ -49,9 +49,9 @@ namespace Timetracker.Models.Classes
             base.OnModelCreating( modelBuilder );
 
             modelBuilder.Entity<Worktrack>()
-            .HasOne( p => p.Worktask )
-            .WithMany( t => t.WorkTracks )
-            .OnDelete( DeleteBehavior.Cascade );
+                .HasOne( p => p.Worktask )
+                .WithMany( t => t.WorkTracks )
+                .OnDelete( DeleteBehavior.Cascade );
 
             modelBuilder.Entity<WorkTask>()
                 .HasOne( p => p.Project )

@@ -142,11 +142,47 @@ namespace Timetracker.View.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Закрыта отслеживаемая задача.
+        /// </summary>
+        public static string API_TrackingTaskClosed {
+            get {
+                return ResourceManager.GetString("API_TrackingTaskClosed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Вы не были приглашены в этот проект.
         /// </summary>
         public static string API_YouAreNotInvited {
             get {
                 return ResourceManager.GetString("API_YouAreNotInvited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Отсутствует логин или пароль.
+        /// </summary>
+        public static string Auth_EmptyValues {
+            get {
+                return ResourceManager.GetString("Auth_EmptyValues", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Поле &quot;Логин&quot; имеет недопустимую длину.
+        /// </summary>
+        public static string Auth_LoginWrongLength {
+            get {
+                return ResourceManager.GetString("Auth_LoginWrongLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Поле &quot;Пароль&quot; имеет недопустимую длину.
+        /// </summary>
+        public static string Auth_PassWrongLength {
+            get {
+                return ResourceManager.GetString("Auth_PassWrongLength", resourceCulture);
             }
         }
         

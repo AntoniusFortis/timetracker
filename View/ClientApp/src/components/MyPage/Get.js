@@ -3,6 +3,7 @@ import { Get, Post } from '../../restManager';
 import { Redirect } from 'react-router';
 import { SignalR_Provider } from '../../signalr/SignalR_Provider';
 import { NavMenu } from '../Menu/NavMenu';
+import cogoToast from 'cogo-toast';
 
 const InputField = (props) => {
     return (
@@ -36,8 +37,11 @@ export const MyPageGet = () => {
                     setBirthDate(result.user.BirthDate);
                     setEmail(result.user.Email);
                 }
-                else if ( result.status == 401 || result.status == 403 ) {
+                else if (result.status == 401 || result.status == 403) {
                     setReferrer('/account/signin');
+                }
+                else {
+                    cogoToast.error(result.message);
                 }
             });
         });
@@ -62,7 +66,7 @@ export const MyPageGet = () => {
         event.preventDefault();
 
         if (password != password2) {
-            alert('Ваши пароли не совпадают');
+            cogoToast.error('Ваши пароли не совпадают');
             return;
         }
 

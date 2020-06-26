@@ -1,34 +1,20 @@
 ﻿
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Timetracker.Models.Classes;
+
 
 namespace Timetracker.Models.Extensions
 {
+    using Microsoft.AspNetCore.Authentication.JwtBearer;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.IdentityModel.Tokens;
+    using Microsoft.OpenApi.Models;
+    using System;
+    using System.Threading.Tasks;
+    using Timetracker.Models.Classes;
+
     public static class IServiceCollectionExtented
     {
-        public static int ParseValue( this ControllerBase controller, uint? id )
-        {
-            if ( !id.HasValue )
-            {
-                throw new Exception( "Вы не предоставили поле id" );
-            }
-
-            if ( !int.TryParse( id.Value.ToString(), out var parsedId ) )
-            {
-                throw new Exception( "Недопустимый формат идентификатора" );
-            }
-
-            return parsedId;
-        }
-
         public static void AddDatabase( this IServiceCollection services, IConfiguration configuration )
         {
             services.AddDbContext<TimetrackerContext>( x =>

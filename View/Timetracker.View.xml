@@ -111,9 +111,14 @@
             <response code="403">Отсутствие доступа</response>
             <response code="400">Ошибка формата идентификатора</response>  
         </member>
+        <member name="M:Timetracker.Entities.Controllers.MyPageController.Get">
+            <summary>
+            Получить информацию авторизованного пользоввателя
+            </summary>
+        </member>
         <member name="M:Timetracker.Entities.Controllers.MyPageController.Update(Timetracker.Models.Models.MyPageModel)">
             <summary>
-            Изменить персональную информацию о пользователе
+            Изменить информацию о пользователе
             </summary>
         </member>
         <member name="M:Timetracker.Entities.Controllers.StateController.GetAll">
@@ -265,9 +270,29 @@
               Looks up a localized string similar to Не существует задачи с таким идентификатором.
             </summary>
         </member>
+        <member name="P:Timetracker.View.Resources.TextResource.API_TrackingTaskClosed">
+            <summary>
+              Looks up a localized string similar to Закрыта отслеживаемая задача.
+            </summary>
+        </member>
         <member name="P:Timetracker.View.Resources.TextResource.API_YouAreNotInvited">
             <summary>
               Looks up a localized string similar to Вы не были приглашены в этот проект.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.Auth_EmptyValues">
+            <summary>
+              Looks up a localized string similar to Отсутствует логин или пароль.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.Auth_LoginWrongLength">
+            <summary>
+              Looks up a localized string similar to Поле &quot;Логин&quot; имеет недопустимую длину.
+            </summary>
+        </member>
+        <member name="P:Timetracker.View.Resources.TextResource.Auth_PassWrongLength">
+            <summary>
+              Looks up a localized string similar to Поле &quot;Пароль&quot; имеет недопустимую длину.
             </summary>
         </member>
         <member name="P:Timetracker.View.Resources.TextResource.SignalR_TaskIsRemoved">

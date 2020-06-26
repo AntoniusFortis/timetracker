@@ -20,7 +20,7 @@ import { MyPageGet } from './components/Mypage/Get';
 
 import { ErrorPageUnauthorized } from './components/Other/ErrorPage';
 
-import { Report } from './components/Report/Get';
+import { Report } from './components/Report/GetReport';
 
 import './custom.css'
 

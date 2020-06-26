@@ -5,6 +5,7 @@ import './NavMenu.css';
 import { hasAuthorized, getToken } from '../Account';
 import moment from 'moment'
 import { SignalR_Provider } from '../../signalr/SignalR_Provider';
+import cogoToast from 'cogo-toast';
 
 const TrackingTimer = (props) => {
     const [elapsed, setElapsed] = useState(0);
@@ -59,7 +60,7 @@ class HeaderMenuTracking extends Component {
 
     showMessage = (text) => {
         if (text.trim() !== '') {
-            alert(text);
+            cogoToast.info(text);
         }
     }
 

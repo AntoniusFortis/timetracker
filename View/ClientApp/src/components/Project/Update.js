@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Get, Post } from '../../restManager';
 import { Redirect } from 'react-router';
+import cogoToast from 'cogo-toast';
 
 const InputField = (props) => {
     return (
@@ -38,7 +39,7 @@ export const ProjectUpdate = (props) => {
                     setReferrer('/project/all/');
                 }
                 else {
-                    alert(result.message);
+                    cogoToast.error(result.message);
                 }
             });
         });

@@ -39,16 +39,31 @@ namespace Timetracker.View.Hubs
                 return;
             }
 
-            var projectId = await _dbContext.Worktasks.AsNoTracking()
+            var worktaskData = await _dbContext.Worktasks.AsNoTracking()
                     .Where( x => x.Id == worktaskId )
-                    .Select( x => x.ProjectId )
+                    .Select( x => new { x.ProjectId, x.State } )
                     .FirstOrDefaultAsync()
                     .ConfigureAwait(false);
 
+            if ( worktaskData == null )
+            {
+                await Clients.Caller.SendAsync( "getActiveTracking", false, null, false, "Не существует задачи с таким идентификатором" )
+                    .ConfigureAwait( false );
+                return;
+            }
+
+            var projectId = worktaskData.ProjectId;
             if ( _dbContext.GetLinkedAcceptedProject( projectId, userId ) == null )
             {
                 await Clients.Caller.SendAsync( "getActiveTracking", false, null, false, "У вас недостаточно прав, чтобы отслеживать эту задачу." )
                     .ConfigureAwait( false );
+                return;
+            }
+
+            if ( worktaskData.State.Id == 6 )
+            {
+                await Clients.Caller.SendAsync( "getActiveTracking", false, null, false, "Данная задача уже закрыта" )
+               .ConfigureAwait( false );
                 return;
             }
 

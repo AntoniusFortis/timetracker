@@ -144,8 +144,20 @@
   <data name="API_NotExistWorktaskId" xml:space="preserve">
     <value>Не существует задачи с таким идентификатором</value>
   </data>
+  <data name="API_TrackingTaskClosed" xml:space="preserve">
+    <value>Закрыта отслеживаемая задача</value>
+  </data>
   <data name="API_YouAreNotInvited" xml:space="preserve">
     <value>Вы не были приглашены в этот проект</value>
+  </data>
+  <data name="Auth_EmptyValues" xml:space="preserve">
+    <value>Отсутствует логин или пароль</value>
+  </data>
+  <data name="Auth_LoginWrongLength" xml:space="preserve">
+    <value>Поле "Логин" имеет недопустимую длину</value>
+  </data>
+  <data name="Auth_PassWrongLength" xml:space="preserve">
+    <value>Поле "Пароль" имеет недопустимую длину</value>
   </data>
   <data name="SignalR_TaskIsRemoved" xml:space="preserve">
     <value>Задача была удалена и больше не отслеживается</value>

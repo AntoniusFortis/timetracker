@@ -47,6 +47,7 @@ namespace Timetracker.View.Controllers
         {
             int taskId = this.ParseValue( id );
 
+            // Проверяем существует ли задача
             var task = await _context.Worktasks.FirstOrDefaultAsync( x => x.Id == taskId )
                 .ConfigureAwait( false );
             if ( task == null )
@@ -109,6 +110,7 @@ namespace Timetracker.View.Controllers
                 throw new Exception( TextResource.API_NoAccess );
             }
 
+            // Проверка, что поля в нужном формате
             if ( !DateTime.TryParse( model.startDate, out var startedDate ) )
             {
                 throw new Exception( TextResource.API_BadDateFormat );
@@ -121,11 +123,13 @@ namespace Timetracker.View.Controllers
 
             endDate = endDate.AddDays( 1 );
 
+            // Дата С не должна быть больше даты До
             if ( endDate < startedDate )
             {
                 throw new Exception( TextResource.API_BadDateCompare );
             }
 
+            // Существует ли задача
             bool projectExist = await _context.Projects.AsNoTracking()
                 .AnyAsync( x => x.Id == model.projectId )
                 .ConfigureAwait( false );
@@ -148,7 +152,8 @@ namespace Timetracker.View.Controllers
                 bool userExist = await _context.Users.AsNoTracking()
                 .AnyAsync( x => x.Id == model.userId.Value )
                 .ConfigureAwait( false );
-                if ( userExist )
+                // Есть ли пользователь
+                if ( !userExist )
                 {
                     throw new Exception( TextResource.API_NotExistUserId );
                 }
@@ -162,6 +167,7 @@ namespace Timetracker.View.Controllers
                 bool taskExist = await _context.Worktasks.AsNoTracking()
                 .AnyAsync( x => x.Id == model.taskId.Value )
                 .ConfigureAwait( false );
+                // Есть ли задача
                 if ( !taskExist )
                 {
                     throw new Exception( TextResource.API_NotExistWorktaskId );
@@ -171,7 +177,7 @@ namespace Timetracker.View.Controllers
             }
 
             // Собираем информацию по трекам
-            var worktracks = await worktracksQuery.Select( x => new ReportResponse
+            var worktracks = await worktracksQuery.OrderByDescending( x => x.StartedTime ).Select( x => new ReportResponse
             {
                 id = x.Id,
                 login = x.User.Login,

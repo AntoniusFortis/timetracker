@@ -5,6 +5,7 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ using Timetracker.View.Resources;
 
 namespace Timetracker.Entities.Controllers
 {
+    [Authorize]
     [Produces( "application/json" )]
     [ApiController]
     [Route( "api/[controller]/[action]" )]
@@ -36,6 +38,9 @@ namespace Timetracker.Entities.Controllers
             };
         }
 
+        /// <summary>
+        /// Получить информацию авторизованного пользоввателя
+        /// </summary>
         [HttpGet]
         public async Task<JsonResult> Get()
         {
@@ -70,7 +75,7 @@ namespace Timetracker.Entities.Controllers
         }
 
         /// <summary>
-        /// Изменить персональную информацию о пользователе
+        /// Изменить информацию о пользователе
         /// </summary>
         [HttpPost]
         public async Task<JsonResult> Update( MyPageModel model )

@@ -1,11 +1,12 @@
-﻿import React, { PureComponent, Component } from 'react';
+﻿import React, { Component } from 'react';
 import Select from 'react-select';
 import { Get, Delete, Post } from '../../restManager';
 import { TrackingService } from '../../services/TrackingService'
 import { Tabs, Tab } from '../../Tabs';
 import moment from 'moment'
 import { Redirect } from 'react-router';
-import { NavLink } from 'reactstrap';
+import cogoToast from 'cogo-toast';
+
 const editIcon = require('../editProject.png');
 const deleteIcon = require('../deleteProject.png');
 
@@ -26,16 +27,17 @@ export class TaskGet extends Component {
     }
 
     componentDidMount() {
-        this.getStatesData().then(this.getTaskData());
+        this.getStatesData();
+        this.getTaskData();
         this.getWorktacksData();
     }
 
-    async getTaskData() {
-        Get("api/task/get?id=" + this.props.match.params.taskId, (response) => {
-            response.json()
-                .then(result => {
-                    this.setState({ worktask: result.worktask, project: result.project, isAdmin: result.isAdmin !== 1 });
-                });
+    getTaskData = () => {
+        const projectId = this.props.match.params.taskId;
+        Get('api/task/get?id=' + projectId, (response) => {
+            response.json().then(result => {
+                this.setState({ worktask: result.worktask, project: result.project, isAdmin: result.isAdmin !== 1, loading: false  });
+            });
         });
     }
 
@@ -43,7 +45,10 @@ export class TaskGet extends Component {
         Get("api/worktrack/getall?id=" + this.props.match.params.taskId, (response) => {
             response.json()
                 .then(result => {
-                    this.setState({ worktracks: result, loading: false });
+                    if (result.status)
+                        this.setState({ referrer: '/' });
+                    else
+                        this.setState({ worktracks: result, loading: false });
                 });
         });
     }
@@ -136,9 +141,14 @@ export class TaskGet extends Component {
         Delete("api/task/delete?Id=" + this.state.worktask.Id,
             {},
             (response) => {
-                if (response.status === 200) {
-                    this.setState({ referrer: '/project/get/' + this.state.worktask.Id });
-                }
+                response.json().then(result => {
+                    if (result.status === 200) {
+                        this.setState({ referrer: '/project/get/' + this.state.project.Id });
+                    }
+                    else {
+                        cogoToast.error(result.message);
+                    }
+                });
             });
     }
 
@@ -147,7 +157,7 @@ export class TaskGet extends Component {
     }
 
     render() {
-        const { loading, worktask, worktracks } = this.state;
+        const { loading, worktask, worktracks, isAdmin } = this.state;
 
         if (loading) {
             return <div />;
@@ -156,21 +166,21 @@ export class TaskGet extends Component {
         const worktaskInfo = this.renderTaskTable(worktask);
         const worktracksInfo = this.renderWorktracksTable(worktracks);
 
-        const removebutton = this.state.isAdmin ? <div style={{ display: "inline-block", margin: '5px' }}>
+        const removebutton = isAdmin ? <div style={{ display: "inline-block", margin: '5px' }}>
             <form onSubmit={this.onRemoveWorktask}>
                 <button style={{ border: 'none', paddingLeft: '2px' }}><img src={deleteIcon} style={{ marginBottom: '3px' }} width="28"></img><span>Удалить</span></button>
             </form>
         </div> : (<div />);
 
-        const changeButton = this.state.isAdmin ? <div style={{ display: "inline-block", margin: '5px' }}>
+        const changeButton = isAdmin ? <div style={{ display: "inline-block", margin: '5px' }}>
             <button onClick={this.onClickEditProject} style={{ border: 'none', paddingLeft: '2px' }}><img src={editIcon} style={{ marginBottom: '3px' }} width="28"></img><span>Редактировать</span></button>
         </div> : (<div />);
 
         return (
             <div>
-                {this.state.referrer && <Redirect to={this.state.referrer} />}
+                {this.state.referrer != null && <Redirect to={this.state.referrer} />}
                 <div style={{ display: "block" }}>
-                    <h4>Задача: {this.state.worktask.Title}</h4>
+                    <h4>Задача: {worktask.Title}</h4>
                 </div>
                 <div style={{ height: '40px' }}>
                     {removebutton}
